@@ -1,0 +1,112 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-container.profile-modal {
+  max-width: 600px;
+  max-height: 90vh;
+  width: 100%;
+  background: white;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+.profile-modal .modal-body {
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.profile-view-header {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.profile-view-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--primary-dark);
+}
+
+.profile-other-name {
+  margin: 0.25rem 0;
+  color: var(--text-muted);
+}
+
+.profile-badges {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge-sm {
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: white;
+  font-weight: 500;
+}
+
+.badge-sm.bg-gray {
+  background-color: #6b7280;
+}
+
+.badge-sm.bg-purple {
+  background-color: #8b5cf6;
+}
+
+.badge-sm.bg-blue {
+  background-color: #3b82f6;
+}
+
+.profile-view-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.profile-view-details .detail-item {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.profile-view-details .detail-item strong {
+  color: var(--text-dark);
+}
+
+.detail-item.full-width {
+  grid-column: span 2;
+}
+
+.profile-bio {
+  margin-top: 0.5rem;
+  white-space: pre-wrap;
+  color: var(--text-muted);
+  line-height: 1.5;
+}

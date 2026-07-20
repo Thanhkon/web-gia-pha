@@ -1,0 +1,541 @@
+.tree-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 4rem);
+  background-color: var(--bg-main);
+  background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23d69e2e" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+  overflow: hidden;
+  position: relative;
+}
+
+.tree-toolbar {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  background: white;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+}
+
+/* Filter Dropdown */
+.filter-dropdown-container {
+  position: relative;
+}
+
+.filter-dropdown-menu {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  width: 220px;
+  z-index: 100;
+  animation: fade-in 0.2s ease-out;
+}
+
+.filter-dropdown-menu h4 {
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--primary-dark);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.25rem;
+}
+
+.filter-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: color 0.2s;
+}
+
+.filter-checkbox-label:hover {
+  color: var(--primary);
+}
+
+.filter-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.tree-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+}
+
+.tree-container.dragging {
+  cursor: grabbing;
+}
+
+.tree-canvas {
+  transform-origin: 0 0;
+  width: 100%;
+  height: 100%;
+  padding: 4rem;
+}
+
+/* Recursive CSS Tree Styles */
+.css-tree {
+  display: flex;
+  justify-content: center;
+}
+
+.css-tree ul {
+  margin: 0;
+  padding: 0;
+  padding-top: 60px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  transition: all 0.5s;
+}
+
+.css-tree li {
+  float: left;
+  text-align: center;
+  list-style-type: none;
+  position: relative;
+  padding: 60px 40px 0 40px;
+  transition: all 0.5s;
+}
+
+/* We will use ::before and ::after to draw the connectors */
+.css-tree li::before, .css-tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  border-top: 2px solid var(--accent);
+  width: 50%;
+  height: 60px;
+}
+
+.css-tree li::after {
+  right: auto;
+  left: 50%;
+  border-left: 2px solid var(--accent);
+}
+
+/* We need to remove left-right connectors from elements without any siblings */
+.css-tree li:only-child::after, .css-tree li:only-child::before {
+  display: none;
+}
+
+/* Remove space from the top of single children */
+.css-tree li:only-child {
+  padding-top: 0;
+}
+
+/* Remove left connector from first child and right connector from last child */
+.css-tree li:first-child::before, .css-tree li:last-child::after {
+  border: 0 none;
+}
+
+/* Adding back the vertical connector to the last nodes */
+.css-tree li:last-child::before {
+  border-right: 2px solid var(--accent);
+  border-radius: 0 5px 0 0;
+}
+
+.css-tree li:first-child::after {
+  border-radius: 5px 0 0 0;
+}
+
+/* Time to add downward connectors from parents */
+.css-tree ul ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-left: 2px solid var(--accent);
+  width: 0;
+  height: 60px;
+}
+
+/* Node Layout Containers */
+.node-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.node-row {
+  display: flex;
+  position: relative;
+  align-items: stretch;
+  height: 100%;
+  gap: 1rem;
+}
+
+/* Nút Thu gọn / Mở rộng (Toggle Button) */
+.toggle-collapse-btn {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+}
+
+.toggle-collapse-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent-light);
+  box-shadow: var(--shadow-md);
+  transform: translateX(-50%) scale(1.1);
+}
+
+/* Node styling */
+.node-card {
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  text-decoration: none;
+  color: var(--text-main);
+  font-family: inherit;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: var(--radius-lg);
+  background-color: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 160px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-shadow: 0 4px 6px -1px rgba(155, 44, 44, 0.1), 0 2px 4px -1px rgba(155, 44, 44, 0.06);
+  position: relative;
+}
+
+.node-card.female {
+  border-top: 4px solid #f472b6;
+}
+
+.node-card.male {
+  border-top: 4px solid #3b82f6;
+}
+
+.node-card.in-law {
+  border-top-style: dashed;
+}
+
+.node-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(155, 44, 44, 0.2), 0 4px 6px -2px rgba(155, 44, 44, 0.1);
+  z-index: 5;
+}
+
+.node-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(243,244,246,0.5) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.node-card > * {
+  z-index: 1;
+}
+
+.node-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  margin: 0 auto 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+/* HIỂU THỊ ĐÃ XÓA (Soft Delete) */
+.node-card.node-deleted {
+  opacity: 0.5;
+  filter: grayscale(100%);
+  border-style: dashed;
+}
+
+.node-card.node-deleted .node-name {
+  text-decoration: line-through;
+}
+
+/* ĐA QUAN HỆ (Multi-Spouse Branches) */
+/* Cấu trúc ul li của spouse-groups-list sẽ thừa kế mặc định từ .css-tree ul và .css-tree li */
+
+/* Cấu trúc ul li của spouse-groups-list sẽ thừa kế mặc định từ .css-tree ul và .css-tree li */
+
+.node-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.15rem;
+  color: var(--primary-dark);
+  width: 100%;
+  text-align: center;
+}
+
+.node-dates {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.node-badges {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  background-color: var(--bg-main);
+  color: var(--primary);
+  border: 1px solid rgba(155, 44, 44, 0.2);
+  font-weight: 600;
+}
+
+.badge.primary {
+  background-color: var(--accent);
+  color: #fff;
+  border-color: var(--accent-light);
+}
+
+/* --- COUPLE NODE & MULTI-SPOUSE --- */
+.couple-node {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 20px; /* Space for the ul::before line to travel through */
+}
+
+.couple-collapse-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  z-index: 5;
+}
+
+/* Ensure child UL lines up perfectly under the couple-node */
+.spouse-group-branch > ul {
+  position: relative;
+}
+
+.spouse-group-branch > ul::before {
+  content: '';
+  position: absolute;
+  top: -20px; /* Connects up to the bottom of the couple-node */
+  left: 50%;
+  border-left: 2px solid var(--accent);
+  width: 0;
+  height: 20px;
+}
+
+/* Zoom controls */
+.zoom-controls {
+  display: flex;
+  gap: 0.25rem;
+  background-color: white;
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  margin-right: 0.5rem;
+}
+
+.zoom-controls .btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-controls .btn-icon:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+}
+
+/* --- COUPLE FRAME (GiaphaOS Style) --- */
+.couple-frame {
+  display: flex;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: visible;
+  position: relative;
+  align-items: stretch;
+}
+
+/* Remove default card border/shadow when inside a frame */
+.couple-frame .node-card {
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+  margin: 0;
+  min-width: 150px;
+  flex: 1;
+  width: 50%;
+}
+
+.couple-frame .node-card:only-child {
+  width: 100%;
+}
+
+/* Keep the colored top border for gender */
+.couple-frame .node-card.female { border-top: 4px solid #f472b6; }
+.couple-frame .node-card.male { border-top: 4px solid #3b82f6; }
+.couple-frame .node-card.in-law { border-top-style: dashed; }
+
+.couple-frame .node-card:first-child {
+  border-top-left-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+}
+
+.couple-frame .node-card:last-child {
+  border-top-right-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+.couple-divider {
+  width: 1px;
+  background-color: var(--border-color);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Move the button to bottom edge of the divider */
+.couple-divider .couple-collapse-btn {
+  position: absolute;
+  bottom: -12px;
+  top: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  z-index: 10;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- NODE ADD MENU STYLES --- */
+.node-add-btn-wrapper {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+}
+
+.node-add-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.node-add-btn:hover, .node-add-btn-wrapper:hover .node-add-btn {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.node-add-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  overflow: hidden;
+  animation: fade-in 0.15s ease-out;
+}
+
+.node-add-menu button {
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.node-add-menu button:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary-dark);
+}
+
+/* Nhãn nhóm con theo từng người vợ/chồng */
+.spouse-group-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  display: inline-block;
+  font-weight: 500;
+  position: relative;
+  z-index: 10;
+}
+
+/* Wrapper cho node đơn lẻ (không có vợ/chồng) — cần position relative cho toggle-collapse-btn */
+.single-spouse-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* couple-node cần display flex để căn giữa */
+.couple-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

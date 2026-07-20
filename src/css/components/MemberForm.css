@@ -1,0 +1,79 @@
+/* MemberForm.css - Styles specifically for the member editing form */
+
+.member-form-container {
+  max-width: 800px;
+  max-height: 90vh;
+}
+
+.member-form {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.member-form-scrollable {
+  overflow-y: auto;
+  padding: 1.5rem;
+  max-height: calc(90vh - 140px);
+}
+
+.member-form-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: var(--bg-hover);
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group-checkbox {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.2rem;
+}
+
+.checkbox-label-padded {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.date-input-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.deceased-alert {
+  background-color: #fff5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  border: 1px solid #fed7d7;
+}
+
+.deceased-alert-text {
+  font-size: 0.85rem;
+  color: #c53030;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

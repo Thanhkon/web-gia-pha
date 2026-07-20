@@ -1,0 +1,139 @@
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectPendingRequests, selectProcessedRequests, approveRequest, rejectRequest, deleteRequest } from '../../store/slices/editRequestsSlice';
+import { updateMember } from '../../store/slices/membersSlice';
+import RequestCard from '../../components/EditRequests/RequestCard';
+import RequestDetailModal from '../../components/EditRequests/RequestDetailModal';
+import { Trash2 } from 'lucide-react';
+import '../../css/pages/AdminEditRequests.css';
+
+const AdminEditRequests = () => {
+  const dispatch = useDispatch();
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'processed'
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  
+  const pendingRequests = useSelector(selectPendingRequests);
+  const processedRequests = useSelector(selectProcessedRequests);
+  
+  const currentUser = useSelector(state => state.auth.user);
+  const persons = useSelector(state => state.members.persons);
+
+  const handleApprove = (requestId, adminNote) => {
+    const request = pendingRequests.find(r => r.id === requestId);
+    if (!request) return;
+
+    // 1. Tìm member thật trong store để lấy object nguyên bản
+    const targetMember = persons.find(p => p.id === request.targetMemberId);
+    if (!targetMember) {
+      alert('Lỗi: Thành viên này không còn tồn tại trong hệ thống (có thể đã bị xoá).');
+      return;
+    }
+
+    // 2. Tạo object member mới áp dụng các thay đổi
+    const updatedMember = { ...targetMember };
+    Object.entries(request.changes).forEach(([field, vals]) => {
+      updatedMember[field] = vals.new;
+    });
+
+    // 3. Dispatch updateMember
+    dispatch(updateMember(updatedMember));
+
+    // 4. Dispatch approveRequest
+    dispatch(approveRequest({ 
+      id: requestId, 
+      adminNote, 
+      reviewerName: currentUser?.name || 'Admin' 
+    }));
+    
+    setSelectedRequest(null);
+    alert('Đã duyệt và áp dụng thay đổi thành công!');
+  };
+
+  const handleReject = (requestId, adminNote) => {
+    dispatch(rejectRequest({ 
+      id: requestId, 
+      adminNote, 
+      reviewerName: currentUser?.name || 'Admin' 
+    }));
+    setSelectedRequest(null);
+  };
+
+  const handleDelete = (requestId) => {
+    if (window.confirm('Bạn có chắc chắn muốn xoá vĩnh viễn bản ghi yêu cầu này khỏi lịch sử?')) {
+      dispatch(deleteRequest(requestId));
+    }
+  };
+
+  const renderRequests = (requests, isHistory = false) => {
+    if (requests.length === 0) {
+      return (
+        <div className="empty-state">
+          <p>{isHistory ? 'Chưa có yêu cầu nào được xử lý.' : 'Không có yêu cầu nào đang chờ duyệt.'}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="admin-requests-grid">
+        {requests.map(req => (
+          <div key={req.id} className="admin-request-wrapper">
+            <RequestCard request={req} />
+            <div className="admin-request-actions">
+              {req.status === 'pending' ? (
+                <button className="btn btn-primary btn-full" onClick={() => setSelectedRequest(req)}>
+                  Xem chi tiết & Xử lý
+                </button>
+              ) : (
+                <button className="btn btn-outline btn-full btn-danger-outline" onClick={() => handleDelete(req.id)}>
+                  <Trash2 size={16} style={{marginRight: '8px'}} /> Xoá khỏi lịch sử
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="admin-page admin-requests-page">
+      <header className="admin-page-header">
+        <div>
+          <h1 className="admin-page-title">Quản lý Yêu cầu Chỉnh sửa</h1>
+          <p className="admin-page-subtitle">Duyệt hoặc từ chối các yêu cầu thay đổi thông tin từ thành viên họ tộc.</p>
+        </div>
+      </header>
+
+      <div className="admin-tabs">
+        <button 
+          className={`admin-tab ${activeTab === 'pending' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pending')}
+        >
+          Đang chờ xử lý
+          {pendingRequests.length > 0 && <span className="tab-badge">{pendingRequests.length}</span>}
+        </button>
+        <button 
+          className={`admin-tab ${activeTab === 'processed' ? 'active' : ''}`}
+          onClick={() => setActiveTab('processed')}
+        >
+          Lịch sử đã xử lý
+        </button>
+      </div>
+
+      <div className="admin-content">
+        {activeTab === 'pending' ? renderRequests(pendingRequests) : renderRequests(processedRequests, true)}
+      </div>
+
+      {selectedRequest && (
+        <RequestDetailModal 
+          request={selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
+      )}
+    </div>
+  );
+};
+
+export default AdminEditRequests;
