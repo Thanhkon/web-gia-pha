@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './layouts/AdminLayout';
@@ -58,7 +58,8 @@ const App = () => {
               {/* Admin Protected Routes */}
               <Route path="/admin" element={<ProtectedRoute />}>
                 <Route element={<AdminLayout />}>
-                  <Route index element={<AdminMembers />} />
+                  <Route index element={<Navigate to="members" replace />} />
+                  <Route path="members" element={<AdminMembers />} />
                   <Route path="tree" element={<FamilyTree />} />
                   <Route path="requests" element={<AdminEditRequests />} />
                   <Route path="content" element={<NotFoundPage />} />
