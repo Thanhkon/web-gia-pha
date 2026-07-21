@@ -15,7 +15,10 @@ const TreeNode = React.memo(({
   filters,
   onAddChild,
   onAddSpouse,
-  onViewDetails
+  onViewDetails,
+  isKinshipMode,
+  kinshipNodeA,
+  kinshipNodeB
 }) => {
   // Cycle guard với Set: O(1) thay vì O(n) array.includes()
   if (ancestorSet.has(personId)) return null;
@@ -65,6 +68,9 @@ const TreeNode = React.memo(({
           onAddChild={onAddChild}
           onAddSpouse={onAddSpouse}
           onViewDetails={onViewDetails}
+          isKinshipMode={isKinshipMode}
+          kinshipNodeA={kinshipNodeA}
+          kinshipNodeB={kinshipNodeB}
         />
       ))}
     </ul>
@@ -81,6 +87,9 @@ const TreeNode = React.memo(({
             onAddSpouse={onAddSpouse}
             id={`node-${person.id}`}
             onViewDetails={onViewDetails}
+            isKinshipMode={isKinshipMode}
+            kinshipNodeA={kinshipNodeA}
+            kinshipNodeB={kinshipNodeB}
           />
           {collapseBtn}
         </div>
@@ -101,6 +110,9 @@ const TreeNode = React.memo(({
               onAddSpouse={onAddSpouse}
               id={`node-${person.id}`}
               onViewDetails={onViewDetails}
+              isKinshipMode={isKinshipMode}
+              kinshipNodeA={kinshipNodeA}
+              kinshipNodeB={kinshipNodeB}
             />
 
             {spouses.map((spouse) => (
@@ -112,6 +124,9 @@ const TreeNode = React.memo(({
                   onAddSpouse={onAddSpouse}
                   id={`node-${spouse.id}`}
                   onViewDetails={onViewDetails}
+                  isKinshipMode={isKinshipMode}
+                  kinshipNodeA={kinshipNodeA}
+                  kinshipNodeB={kinshipNodeB}
                 />
               </React.Fragment>
             ))}
@@ -145,6 +160,9 @@ const TreeNode = React.memo(({
                             onAddChild={onAddChild}
                             onAddSpouse={onAddSpouse}
                             onViewDetails={onViewDetails}
+                            isKinshipMode={isKinshipMode}
+                            kinshipNodeA={kinshipNodeA}
+                            kinshipNodeB={kinshipNodeB}
                           />
                         ))}
                       </ul>
@@ -167,6 +185,9 @@ const TreeNode = React.memo(({
                           onAddChild={onAddChild}
                           onAddSpouse={onAddSpouse}
                           onViewDetails={onViewDetails}
+                          isKinshipMode={isKinshipMode}
+                          kinshipNodeA={kinshipNodeA}
+                          kinshipNodeB={kinshipNodeB}
                         />
                       ))}
                     </ul>
@@ -186,6 +207,9 @@ const TreeNode = React.memo(({
                   onAddChild={onAddChild}
                   onAddSpouse={onAddSpouse}
                   onViewDetails={onViewDetails}
+                  isKinshipMode={isKinshipMode}
+                  kinshipNodeA={kinshipNodeA}
+                  kinshipNodeB={kinshipNodeB}
                 />
               ))
             )}
@@ -208,7 +232,10 @@ const TreeGraph = React.memo(({
   filters,
   onAddChild,
   onAddSpouse,
-  onViewDetails
+  onViewDetails,
+  isKinshipMode,
+  kinshipNodeA,
+  kinshipNodeB
 }) => {
   return (
     <div className="css-tree">
@@ -223,6 +250,9 @@ const TreeGraph = React.memo(({
             onAddChild={onAddChild}
             onAddSpouse={onAddSpouse}
             onViewDetails={onViewDetails}
+            isKinshipMode={isKinshipMode}
+            kinshipNodeA={kinshipNodeA}
+            kinshipNodeB={kinshipNodeB}
             ancestorSet={EMPTY_SET}
           />
         ))}

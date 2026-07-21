@@ -1,0 +1,124 @@
+.kinship-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.kinship-modal-content {
+  background-color: var(--bg-main);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 600px;
+  overflow: hidden;
+  animation: modal-pop 0.3s ease-out;
+}
+
+@keyframes modal-pop {
+  0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.kinship-modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kinship-modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.kinship-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.kinship-close-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.kinship-modal-body {
+  display: flex;
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+
+.kinship-card {
+  flex: 1;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.kinship-role {
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.kinship-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--bg-hover);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.kinship-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kinship-name {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.kinship-years {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.kinship-gender {
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
