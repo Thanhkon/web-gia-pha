@@ -7,7 +7,9 @@ import { buildAdjacencyLists } from '../utils/familyTreeUtils';
 import TreeToolbar from '../components/FamilyTree/TreeToolbar';
 import TreeGraph from '../components/FamilyTree/TreeGraph';
 import MemberProfileModal from '../components/MemberProfileModal';
+import KinshipModal from '../components/FamilyTree/KinshipModal';
 import { getTreeData } from '../utils/familyTreeUtils';
+import { computeKinship } from '../utils/kinshipHelpers';
 import '../css/pages/FamilyTree.css';
 
 // Hằng số ngoài component — không bao giờ bị tạo lại, tránh stale closure trong useCallback
@@ -32,6 +34,13 @@ const FamilyTree = () => {
   const [newMember, setNewMember] = useState(EMPTY_MEMBER);
   const [viewingMember, setViewingMember] = useState(null);
 
+  // Tra cứu quan hệ xưng hô
+  const [isKinshipMode, setIsKinshipMode] = useState(false);
+  const [kinshipNodeA, setKinshipNodeA] = useState(null);
+  const [kinshipNodeB, setKinshipNodeB] = useState(null);
+  const [kinshipResult, setKinshipResult] = useState(null);
+  const [isKinshipModalOpen, setIsKinshipModalOpen] = useState(false);
+
   const onAddChild = useCallback((person) => {
     setNewMember({
       ...EMPTY_MEMBER,
@@ -53,8 +62,16 @@ const FamilyTree = () => {
   }, []);
 
   const onViewDetails = useCallback((person) => {
+    if (isKinshipMode) {
+      if (!kinshipNodeA) {
+        setKinshipNodeA(person);
+      } else if (!kinshipNodeB && person.id !== kinshipNodeA.id) {
+        setKinshipNodeB(person);
+      }
+      return;
+    }
     setViewingMember(person);
-  }, []);
+  }, [isKinshipMode, kinshipNodeA, kinshipNodeB]);
 
   const handleAddSubmit = useCallback(async (submittedData) => {
     return new Promise(resolve => {
@@ -119,6 +136,33 @@ const FamilyTree = () => {
   // personsArray để truyền vào MemberForm — tránh Object.values() mỗi render
   const personsArray = useMemo(() => Array.from(personsMap.values()), [personsMap]);
 
+  // Tính toán quan hệ khi đã chọn đủ 2 người
+  useEffect(() => {
+    if (kinshipNodeA && kinshipNodeB) {
+      const result = computeKinship(kinshipNodeA, kinshipNodeB, personsArray, relationships);
+      setKinshipResult(result);
+      setIsKinshipModalOpen(true);
+    }
+  }, [kinshipNodeA, kinshipNodeB, personsArray, relationships]);
+
+  const handleCloseKinshipModal = () => {
+    setIsKinshipModalOpen(false);
+    setKinshipNodeA(null);
+    setKinshipNodeB(null);
+    setKinshipResult(null);
+  };
+
+  const handleToggleKinshipMode = () => {
+    setIsKinshipMode(prev => !prev);
+    if (isKinshipMode) {
+      // Khi tắt chế độ tra cứu thì reset trạng thái
+      setKinshipNodeA(null);
+      setKinshipNodeB(null);
+      setKinshipResult(null);
+      setIsKinshipModalOpen(false);
+    }
+  };
+
   // Căn giữa lần đầu render
   useEffect(() => {
     const timer = setTimeout(centerTree, 100);
@@ -139,6 +183,8 @@ const FamilyTree = () => {
         zoomIn={zoomIn}
         zoomOut={zoomOut}
         centerTree={centerTree}
+        isKinshipMode={isKinshipMode}
+        onToggleKinshipMode={handleToggleKinshipMode}
       />
 
       <div
@@ -164,6 +210,9 @@ const FamilyTree = () => {
             onAddChild={onAddChild}
             onAddSpouse={onAddSpouse}
             onViewDetails={onViewDetails}
+            isKinshipMode={isKinshipMode}
+            kinshipNodeA={kinshipNodeA}
+            kinshipNodeB={kinshipNodeB}
           />
         </div>
       </div>
@@ -187,6 +236,14 @@ const FamilyTree = () => {
           onClose={() => setViewingMember(null)}
         />
       )}
+
+      <KinshipModal 
+        isOpen={isKinshipModalOpen}
+        onClose={handleCloseKinshipModal}
+        kinshipResult={kinshipResult}
+        personA={kinshipNodeA}
+        personB={kinshipNodeB}
+      />
     </div>
   );
 };

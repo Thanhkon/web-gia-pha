@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Minus, Plus, RefreshCw, Filter } from 'lucide-react';
+import { Minus, Plus, RefreshCw, Filter, Users } from 'lucide-react';
 
 const TreeToolbar = ({
   filters,
   setFilters,
   zoomIn,
   zoomOut,
-  centerTree
+  centerTree,
+  isKinshipMode,
+  onToggleKinshipMode
 }) => {
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
@@ -57,6 +59,15 @@ const TreeToolbar = ({
           <Minus size={18} />
         </button>
       </div>
+
+      <button 
+        className={`btn ${isKinshipMode ? 'btn-primary' : 'btn-outline'}`} 
+        onClick={onToggleKinshipMode}
+      >
+        <Users size={16} style={{ display: 'inline', marginRight: '4px' }} />
+        {isKinshipMode ? 'Hủy tra cứu' : 'Tra cứu quan hệ'}
+      </button>
+
       <button className="btn btn-secondary" onClick={centerTree}>
         <RefreshCw size={16} style={{ display: 'inline', marginRight: '4px' }} />
         Căn giữa
