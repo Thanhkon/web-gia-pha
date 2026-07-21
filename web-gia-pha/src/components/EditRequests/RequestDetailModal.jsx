@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, XCircle } from 'lucide-react';
+import { FIELD_DICT } from './RequestForm';
+import ConfirmModal from '../common/ConfirmModal';
 
 const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
   const [adminNote, setAdminNote] = useState('');
+  const [confirmType, setConfirmType] = useState(null); // 'approve' | 'reject' | null
 
   if (!request) return null;
 
-  const handleApprove = () => {
-    if (window.confirm(`Xác nhận duyệt yêu cầu sửa thông tin cho ${request.targetMemberName}?`)) {
-      onApprove(request.id, adminNote);
-    }
-  };
+  const handleApproveClick = () => setConfirmType('approve');
 
-  const handleReject = () => {
+  const handleRejectClick = () => {
     if (!adminNote) {
       alert('Vui lòng nhập lý do từ chối để thông báo cho người gửi.');
       return;
     }
-    if (window.confirm('Xác nhận TỪ CHỐI yêu cầu này?')) {
-      onReject(request.id, adminNote);
-    }
+    setConfirmType('reject');
+  };
+
+  const handleConfirm = () => {
+    if (confirmType === 'approve') onApprove(request.id, adminNote);
+    else if (confirmType === 'reject') onReject(request.id, adminNote);
+    setConfirmType(null);
   };
 
   return (
@@ -27,7 +30,6 @@ const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
       <div className="modal-container request-detail-modal">
         <div className="modal-header">
           <h2>Chi tiết yêu cầu chỉnh sửa</h2>
-          <button type="button" className="icon-btn" onClick={onClose}><X size={20} /></button>
         </div>
 
         <div className="modal-body request-detail-body">
@@ -57,9 +59,9 @@ const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
               <tbody>
                 {Object.entries(request.changes).map(([field, vals]) => (
                   <tr key={field}>
-                    <td className="field-name">{field}</td>
-                    <td className="old-val"><del>{vals.old || '(Trống)'}</del></td>
-                    <td className="new-val"><ins>{vals.new || '(Trống)'}</ins></td>
+                    <td className="field-name">{FIELD_DICT[field] || field}</td>
+                    <td className="old-val"><del>{String(vals.old) || '(Trống)'}</del></td>
+                    <td className="new-val"><ins>{String(vals.new) || '(Trống)'}</ins></td>
                   </tr>
                 ))}
               </tbody>
@@ -80,15 +82,29 @@ const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose}>Thoát</button>
           <div className="action-buttons">
-            <button type="button" className="btn btn-danger" onClick={handleReject}>
+            <button type="button" className="btn btn-danger" onClick={handleRejectClick}>
               <XCircle size={16} /> Từ chối
             </button>
-            <button type="button" className="btn btn-success" onClick={handleApprove}>
+            <button type="button" className="btn btn-success" onClick={handleApproveClick}>
               <CheckCircle size={16} /> Duyệt & Áp dụng
             </button>
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!confirmType}
+        title={confirmType === 'approve' ? 'Duyệt yêu cầu' : 'Từ chối yêu cầu'}
+        message={
+          confirmType === 'approve'
+            ? `Xác nhận duyệt và áp dụng thay đổi cho ${request.targetMemberName}?`
+            : 'Xác nhận TỪ CHỐI yêu cầu này?'
+        }
+        onConfirm={handleConfirm}
+        onCancel={() => setConfirmType(null)}
+        isDanger={confirmType === 'reject'}
+        confirmText={confirmType === 'approve' ? 'Duyệt' : 'Từ chối'}
+      />
     </div>
   );
 };

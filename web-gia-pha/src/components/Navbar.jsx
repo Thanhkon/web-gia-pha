@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -13,6 +13,21 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleNavClick = (path) => {
     setIsMobileMenuOpen(false);
@@ -121,12 +136,12 @@ const Navbar = () => {
         </div>
 
         <div className="nav-actions">
-          <button className="icon-btn notification-btn" aria-label="Thông báo">
+          <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => navigate('/notifications')}>
             <Bell size={20} />
             <span className="notification-dot"></span>
           </button>
 
-          <div className="user-menu-container">
+          <div className="user-menu-container" ref={userMenuRef}>
             <button className="avatar-btn" aria-label="Tài khoản" onClick={handleAuthClick}>
               {isAuthenticated ? (
                 <>

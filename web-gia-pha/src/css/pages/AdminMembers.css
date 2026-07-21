@@ -339,6 +339,7 @@
   flex-direction: column;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0;
 }
 
 .form-group label {
@@ -515,4 +516,22 @@
   border-radius: 0.25rem;
   font-family: monospace;
   color: #93c5fd; /* blue-300 */
+}
+
+.text-right {
+  text-align: right;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.deleted-badge {
+  background-color: #4b5563;
+  color: white;
+}
+
+.table-empty-state {
+  text-align: center;
+  padding: 2rem;
 }

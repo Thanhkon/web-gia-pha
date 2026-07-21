@@ -8,9 +8,11 @@ import '../css/pages/EditRequests.css';
 const EditRequests = () => {
   const dispatch = useDispatch();
   
-  // Use state instead of localStorage for simple user session grouping (for UI filtering only)
-  // We assume the user wants to see what they just submitted in this session.
-  const [currentUserNames, setCurrentUserNames] = useState(new Set());
+  // Dùng localStorage để giữ lại danh sách tên người gửi trên máy này
+  const [currentUserNames, setCurrentUserNames] = useState(() => {
+    const saved = localStorage.getItem('family_tree_requester_names');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const allRequests = useSelector(selectAllRequests);
@@ -23,7 +25,11 @@ const EditRequests = () => {
 
   const handleSubmit = (requestData) => {
     dispatch(submitRequest(requestData));
-    setCurrentUserNames(prev => new Set(prev).add(requestData.submittedBy.name));
+    
+    const newNames = new Set(currentUserNames).add(requestData.submittedBy.name);
+    setCurrentUserNames(newNames);
+    localStorage.setItem('family_tree_requester_names', JSON.stringify([...newNames]));
+    
     alert('Yêu cầu đã được gửi thành công! Vui lòng chờ Admin phê duyệt.');
   };
 

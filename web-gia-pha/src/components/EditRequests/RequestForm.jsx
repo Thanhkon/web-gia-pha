@@ -1,5 +1,26 @@
 import React, { useState } from 'react';
-import { Send, AlertCircle } from 'lucide-react';
+import { Send, AlertCircle, Plus, X } from 'lucide-react';
+import SearchableSelect from '../common/SearchableSelect';
+
+export const FIELD_DICT = {
+  fullName: 'Họ và tên',
+  otherName: 'Tên gọi khác',
+  gender: 'Giới tính',
+  birthDate: 'Ngày sinh (Dương lịch)',
+  birthLunarDate: 'Ngày sinh (Âm lịch)',
+  birthYear: 'Năm sinh',
+  isDeceased: 'Đã khuất (true/false)',
+  deathDate: 'Ngày mất (Dương lịch)',
+  deathLunarDate: 'Ngày mất (Âm lịch)',
+  occupation: 'Nghề nghiệp',
+  address: 'Quê quán/Địa chỉ',
+  phone: 'Số điện thoại',
+  email: 'Email',
+  notes: 'Ghi chú',
+  branch: 'Chi / Nhánh',
+  generation: 'Đời thứ mấy',
+  birthOrder: 'Con thứ (Thứ tự sinh)'
+};
 
 const RequestForm = ({ persons, onSubmit, pendingCount }) => {
   const [selectedPersonId, setSelectedPersonId] = useState('');
@@ -7,6 +28,9 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
   const [reason, setReason] = useState('');
   const [submitterName, setSubmitterName] = useState('');
   const [submitterPhone, setSubmitterPhone] = useState('');
+  
+  const [selectedFieldToAdd, setSelectedFieldToAdd] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   const selectedPerson = persons.find(p => p.id === selectedPersonId);
 
@@ -25,7 +49,17 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const addFieldToChanges = () => {
+    if (selectedFieldToAdd && !changes[selectedFieldToAdd]) {
+      setChanges(prev => ({
+        ...prev,
+        [selectedFieldToAdd]: { old: selectedPerson[selectedFieldToAdd] || '', new: '' }
+      }));
+    }
+    setSelectedFieldToAdd('');
+  };
+
+  const handlePreview = (e) => {
     e.preventDefault();
     if (pendingCount >= 5) {
       alert('Bạn đang có quá 5 yêu cầu chờ duyệt. Vui lòng chờ Admin xử lý trước khi gửi thêm.');
@@ -35,7 +69,17 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
       alert('Vui lòng chọn thành viên, nhập thông tin thay đổi, lý do và tên người gửi.');
       return;
     }
+    
+    const emptyFields = Object.values(changes).filter(c => String(c.new).trim() === '');
+    if (emptyFields.length > 0) {
+      alert('Vui lòng nhập giá trị mới cho tất cả các trường bạn muốn thay đổi, hoặc xóa trường đó đi nếu không cần thiết.');
+      return;
+    }
 
+    setShowPreview(true);
+  };
+
+  const handleConfirmSubmit = () => {
     onSubmit({
       type: 'edit_member',
       targetMemberId: selectedPersonId,
@@ -48,13 +92,25 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
       }
     });
 
-    // Reset form
     setSelectedPersonId('');
     setChanges({});
     setReason('');
     setSubmitterName('');
     setSubmitterPhone('');
+    setShowPreview(false);
   };
+
+  const personOptions = persons.map(p => ({
+    value: p.id,
+    label: `${p.fullName} (Đời ${p.generation})`
+  }));
+
+  const availableFieldOptions = Object.keys(FIELD_DICT)
+    .filter(key => !changes[key])
+    .map(key => ({
+      value: key,
+      label: FIELD_DICT[key]
+    }));
 
   return (
     <div className="request-form-card panel">
@@ -63,79 +119,81 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
       </div>
       <div className="panel-body">
         {pendingCount >= 5 && (
-          <div className="alert-warning" style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#fffbeb', color: '#92400e', borderRadius: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div className="alert-warning">
             <AlertCircle size={20} />
             <span>Bạn đã đạt giới hạn 5 yêu cầu đang chờ duyệt. Vui lòng đợi.</span>
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="request-form">
+        <form onSubmit={handlePreview} className="request-form">
           <div className="form-group">
             <label>Chọn thành viên cần sửa <span className="required">*</span></label>
-            <select
+            <SearchableSelect
+              options={personOptions}
               value={selectedPersonId}
-              onChange={(e) => {
-                setSelectedPersonId(e.target.value);
+              onChange={(val) => {
+                setSelectedPersonId(val);
                 setChanges({});
               }}
-              required
+              placeholder="-- Gõ để tìm thành viên --"
               disabled={pendingCount >= 5}
-            >
-              <option value="">-- Chọn thành viên --</option>
-              {persons.map(p => (
-                <option key={p.id} value={p.id}>{p.fullName} (Đời {p.generation})</option>
-              ))}
-            </select>
+            />
           </div>
 
           {selectedPerson && (
             <div className="changes-section">
               <h4>Thông tin muốn thay đổi</h4>
-              <p className="changes-help">Chỉ điền vào những trường bạn muốn sửa. Nếu không đổi, vui lòng để trống.</p>
+              <p className="changes-help">Thêm các trường bạn muốn sửa và nhập thông tin mới.</p>
               
               <div className="changes-grid">
-                <div className="change-field-row">
-                  <label>Năm sinh (Hiện tại: {selectedPerson.birthYear || '?'})</label>
-                  <input
-                    type="number"
-                    placeholder="Nhập năm sinh mới..."
-                    value={changes.birthYear?.new || ''}
-                    onChange={(e) => handleFieldChange('birthYear', e.target.value)}
-                    disabled={pendingCount >= 5}
-                  />
-                  {changes.birthYear && <button type="button" className="btn-remove" onClick={() => handleRemoveField('birthYear')}>Xóa</button>}
-                </div>
-                
-                <div className="change-field-row">
-                  <label>Nghề nghiệp (Hiện tại: {selectedPerson.occupation || 'Chưa rõ'})</label>
-                  <input
-                    type="text"
-                    placeholder="Nhập nghề nghiệp mới..."
-                    value={changes.occupation?.new || ''}
-                    onChange={(e) => handleFieldChange('occupation', e.target.value)}
-                    disabled={pendingCount >= 5}
-                  />
-                  {changes.occupation && <button type="button" className="btn-remove" onClick={() => handleRemoveField('occupation')}>Xóa</button>}
-                </div>
-
-                 <div className="change-field-row">
-                  <label>Quê quán/Địa chỉ (Hiện tại: {selectedPerson.address || 'Chưa rõ'})</label>
-                  <input
-                    type="text"
-                    placeholder="Nhập địa chỉ mới..."
-                    value={changes.address?.new || ''}
-                    onChange={(e) => handleFieldChange('address', e.target.value)}
-                    disabled={pendingCount >= 5}
-                  />
-                  {changes.address && <button type="button" className="btn-remove" onClick={() => handleRemoveField('address')}>Xóa</button>}
-                </div>
+                {Object.keys(changes).map(field => (
+                  <div key={field} className="change-field-row">
+                    <label>
+                      {FIELD_DICT[field]} 
+                      <span className="current-val-text"> (Hiện tại: {String(selectedPerson[field] || 'Trống')})</span>
+                    </label>
+                    <div className="change-input-group">
+                      <input
+                        type="text"
+                        className="form-control flex-1"
+                        placeholder={`Nhập ${FIELD_DICT[field].toLowerCase()} mới...`}
+                        value={changes[field].new}
+                        onChange={(e) => handleFieldChange(field, e.target.value)}
+                        disabled={pendingCount >= 5}
+                      />
+                      <button type="button" className="btn-remove-icon" onClick={() => handleRemoveField(field)} title="Xóa trường này">
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
+
+              {availableFieldOptions.length > 0 && (
+                <div className="add-field-control">
+                  <select 
+                    className="form-control" 
+                    value={selectedFieldToAdd} 
+                    onChange={e => setSelectedFieldToAdd(e.target.value)}
+                    disabled={pendingCount >= 5}
+                  >
+                    <option value="">-- Chọn trường cần sửa --</option>
+                    {availableFieldOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn btn-outline" onClick={addFieldToChanges} disabled={!selectedFieldToAdd || pendingCount >= 5}>
+                    <Plus size={16} className="icon-mr-4" /> Thêm
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           <div className="form-group">
             <label>Lý do chỉnh sửa <span className="required">*</span></label>
             <textarea
+              className="form-control"
               placeholder="Vui lòng mô tả chi tiết lý do bạn muốn đổi thông tin (VD: Tên đệm bị sai, cập nhật nghề nghiệp mới...)"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
@@ -150,6 +208,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
               <label>Họ và tên người gửi <span className="required">*</span></label>
               <input
                 type="text"
+                className="form-control"
                 placeholder="Nhập tên của bạn..."
                 value={submitterName}
                 onChange={(e) => setSubmitterName(e.target.value)}
@@ -161,6 +220,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
               <label>Số điện thoại liên hệ</label>
               <input
                 type="tel"
+                className="form-control"
                 placeholder="Tuỳ chọn..."
                 value={submitterPhone}
                 onChange={(e) => setSubmitterPhone(e.target.value)}
@@ -170,10 +230,61 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
           </div>
 
           <button type="submit" className="btn btn-primary submit-btn" disabled={pendingCount >= 5}>
-            <Send size={18} /> Gửi yêu cầu
+            <Send size={18} className="icon-mr-8" /> Xem trước yêu cầu
           </button>
         </form>
       </div>
+
+      {showPreview && (
+        <div className="modal-overlay">
+          <div className="modal-container preview-modal">
+            <div className="modal-header">
+              <h2>Xác nhận yêu cầu chỉnh sửa</h2>
+              <button type="button" className="icon-btn" onClick={() => setShowPreview(false)}><X size={20} /></button>
+            </div>
+            <div className="modal-body">
+              <p>Bạn đang gửi yêu cầu sửa đổi thông tin cho thành viên <strong>{selectedPerson.fullName}</strong>.</p>
+              
+              <div className="diff-section my-4">
+                <h4>Các thay đổi đề xuất:</h4>
+                <table className="diff-table">
+                  <thead>
+                    <tr>
+                      <th>Trường dữ liệu</th>
+                      <th>Đang có</th>
+                      <th>Đề xuất mới</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.keys(changes).map(field => (
+                      <tr key={field}>
+                        <td className="field-name">{FIELD_DICT[field] || field}</td>
+                        <td className="old-val"><del>{String(changes[field].old) || '(Trống)'}</del></td>
+                        <td className="new-val"><ins>{String(changes[field].new) || '(Trống)'}</ins></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="preview-summary-box">
+                <p><strong>Lý do:</strong> {reason}</p>
+                <p><strong>Người gửi:</strong> {submitterName} {submitterPhone ? `(${submitterPhone})` : ''}</p>
+              </div>
+              
+              <div className="alert-warning mt-4">
+                Lưu ý: Yêu cầu của bạn sẽ được gửi đến Quản trị viên để kiểm tra và phê duyệt trước khi áp dụng vào gia phả.
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline" onClick={() => setShowPreview(false)}>Quay lại sửa</button>
+              <button type="button" className="btn btn-primary" onClick={handleConfirmSubmit}>
+                <Send size={16} className="icon-mr-8" /> Xác nhận gửi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

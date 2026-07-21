@@ -10,6 +10,7 @@ import '../css/pages/PublicMembers.css';
 
 const PublicMembers = () => {
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
+  const relationships = useSelector(state => state.members.relationships);
   
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,8 +80,9 @@ const PublicMembers = () => {
 
       {viewingMember && (
         <MemberProfileModal 
-          person={viewingMember} 
-          persons={persons} 
+          member={viewingMember} 
+          persons={persons}
+          relationships={relationships}
           onClose={() => setViewingMember(null)} 
         />
       )}

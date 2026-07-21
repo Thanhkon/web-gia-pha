@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './layouts/AdminLayout';
 import ErrorBoundary from './ErrorBoundary';
+import { Loader2 } from 'lucide-react';
 import './App.css';
 
 // Lazy load các trang nặng để giảm initial bundle size
@@ -13,10 +14,11 @@ const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const EditRequests = lazy(() => import('./pages/EditRequests'));
 const AdminEditRequests = lazy(() => import('./pages/admin/AdminEditRequests'));
 const PublicMembers = lazy(() => import('./pages/PublicMembers'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh', color: 'var(--text-muted)', fontSize: '1rem' }}>
-    Đang tải...
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh', color: 'var(--text-muted)', fontSize: '1rem', gap: '8px' }}>
+    <Loader2 size={24} className="spin-icon" /> Đang tải...
   </div>
 );
 
@@ -57,10 +59,11 @@ const App = () => {
               <Route path="/admin" element={<ProtectedRoute />}>
                 <Route element={<AdminLayout />}>
                   <Route index element={<AdminMembers />} />
-                  <Route path="members" element={<AdminMembers />} />
                   <Route path="tree" element={<FamilyTree />} />
                   <Route path="requests" element={<AdminEditRequests />} />
-                  <Route path="*" element={<div style={{ padding: '4rem', textAlign: 'center' }}>Chức năng đang xây dựng...</div>} />
+                  <Route path="content" element={<NotFoundPage />} />
+                  <Route path="settings" element={<NotFoundPage />} />
+                  <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Route>
 
@@ -68,7 +71,7 @@ const App = () => {
                 <>
                   <Navbar />
                   <main className="main-content">
-                    <div style={{ padding: '4rem', textAlign: 'center' }}>Trang không tồn tại.</div>
+                    <NotFoundPage />
                   </main>
                 </>
               } />

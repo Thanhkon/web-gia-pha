@@ -3,11 +3,22 @@ import { X, RefreshCw } from 'lucide-react';
 import GeneralInfo from './GeneralInfo';
 import DateInfo from './DateInfo';
 import ContactInfo from './ContactInfo';
+import ConfirmModal from '../../common/ConfirmModal';
 import '../../../css/components/MemberForm.css';
 
 const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  const handleCancelClick = () => {
+    const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
+    if (hasChanges) {
+      setShowCancelConfirm(true);
+    } else {
+      onCancel();
+    }
+  };
 
   /**
    * handleChange: xử lý tất cả side effects ngay trong hàm thay đổi.
@@ -107,7 +118,6 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
       <div className="modal-container member-form-container">
         <div className="modal-header">
           <h2>{isEditing ? 'Cập nhật Thành viên' : 'Thêm Thành viên mới'}</h2>
-          <button type="button" className="icon-btn" onClick={onCancel}><X size={20} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="member-form">
@@ -118,7 +128,7 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
           </div>
 
           <div className="member-form-footer">
-            <button type="button" className="btn btn-outline" onClick={onCancel} disabled={isSubmitting}>Hủy</button>
+            <button type="button" className="btn btn-outline" onClick={handleCancelClick} disabled={isSubmitting}>Hủy</button>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
               {isSubmitting ? (
                 <span><RefreshCw size={14} className="spin-icon" style={{ display: 'inline', marginRight: '6px' }} /> Đang lưu...</span>
@@ -129,6 +139,17 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
           </div>
         </form>
       </div>
+
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        title="Xác nhận hủy"
+        message="Bạn có dữ liệu chưa lưu. Bạn có chắc chắn muốn đóng form? Mọi thay đổi sẽ bị mất."
+        onConfirm={onCancel}
+        confirmText="Đóng & Bỏ qua"
+        onCancel={() => setShowCancelConfirm(false)}
+        cancelText="Tiếp tục chỉnh sửa"
+        isDanger={true}
+      />
     </div>
   );
 };

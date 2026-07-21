@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { FIELD_DICT } from './RequestForm';
 
 const RequestCard = ({ request }) => {
   const getStatusBadge = () => {
@@ -42,7 +43,7 @@ const RequestCard = ({ request }) => {
           <ul>
             {Object.entries(request.changes).map(([field, vals]) => (
               <li key={field}>
-                <code>{field}</code>: <del>{vals.old || '(Trống)'}</del> <span>→</span> <ins>{vals.new || '(Trống)'}</ins>
+                <strong>{FIELD_DICT[field] || field}</strong>: <del>{String(vals.old) || '(Trống)'}</del> <span>→</span> <ins>{String(vals.new) || '(Trống)'}</ins>
               </li>
             ))}
           </ul>

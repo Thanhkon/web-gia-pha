@@ -4,6 +4,7 @@ import { selectPendingRequests, selectProcessedRequests, approveRequest, rejectR
 import { updateMember } from '../../store/slices/membersSlice';
 import RequestCard from '../../components/EditRequests/RequestCard';
 import RequestDetailModal from '../../components/EditRequests/RequestDetailModal';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { Trash2 } from 'lucide-react';
 import '../../css/pages/AdminEditRequests.css';
 
@@ -11,6 +12,7 @@ const AdminEditRequests = () => {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'processed'
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   
   const pendingRequests = useSelector(selectPendingRequests);
   const processedRequests = useSelector(selectProcessedRequests);
@@ -59,9 +61,14 @@ const AdminEditRequests = () => {
   };
 
   const handleDelete = (requestId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xoá vĩnh viễn bản ghi yêu cầu này khỏi lịch sử?')) {
-      dispatch(deleteRequest(requestId));
+    setDeleteConfirmId(requestId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      dispatch(deleteRequest(deleteConfirmId));
     }
+    setDeleteConfirmId(null);
   };
 
   const renderRequests = (requests, isHistory = false) => {
@@ -132,6 +139,16 @@ const AdminEditRequests = () => {
           onReject={handleReject}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteConfirmId}
+        title="Xóa lịch sử yêu cầu"
+        message="Bạn có chắc chắn muốn xoá vĩnh viễn bản ghi yêu cầu này khỏi lịch sử?"
+        onConfirm={confirmDelete}
+        confirmText="Xóa vĩnh viễn"
+        onCancel={() => setDeleteConfirmId(null)}
+        isDanger={true}
+      />
     </div>
   );
 };
