@@ -1,0 +1,142 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, ChevronDown } from 'lucide-react';
+import '../../css/components/SearchableSelect.css';
+
+const SearchableSelect = ({ 
+  options, // Array of { value, label, group (optional) }
+  value, 
+  onChange, 
+  placeholder = '-- Chọn --', 
+  disabled = false,
+  className = ''
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const wrapperRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Lọc options dựa trên từ khóa tìm kiếm
+  const filteredOptions = options.filter(opt => 
+    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Phân nhóm (nếu có group)
+  const groupedOptions = filteredOptions.reduce((acc, opt) => {
+    const group = opt.group || 'Khác';
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(opt);
+    return acc;
+  }, {});
+  
+  // Xác định xem có sử dụng group không
+  const hasGroups = options.some(opt => opt.group);
+
+  // Tìm label của option đang được chọn
+  const selectedOption = options.find(opt => opt.value === value);
+  const displayValue = selectedOption ? selectedOption.label : '';
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [wrapperRef]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    } else {
+      setSearchTerm(''); // Xóa từ khóa khi đóng
+    }
+  }, [isOpen]);
+
+  const toggleDropdown = () => {
+    if (!disabled) setIsOpen(!isOpen);
+  };
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className={`searchable-select ${disabled ? 'disabled' : ''} ${className}`} ref={wrapperRef}>
+      <div 
+        className={`searchable-select-header ${isOpen ? 'open' : ''}`} 
+        onClick={toggleDropdown}
+      >
+        <div className={`selected-value ${!selectedOption ? 'placeholder' : ''}`}>
+          {displayValue || placeholder}
+        </div>
+        <ChevronDown size={16} className={`chevron-icon ${isOpen ? 'rotated' : ''}`} />
+      </div>
+
+      {isOpen && (
+        <div className="searchable-select-dropdown">
+          <div className="searchable-select-search-box">
+            <Search size={16} className="search-icon" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Gõ để tìm kiếm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          <div className="searchable-select-list">
+            <div 
+              className={`searchable-select-option ${value === '' ? 'selected' : ''}`}
+              onClick={() => handleSelect('')}
+            >
+              -- Không chọn / Trống --
+            </div>
+            
+            {filteredOptions.length === 0 ? (
+              <div className="searchable-select-no-results">Không tìm thấy kết quả</div>
+            ) : (
+              hasGroups ? (
+                Object.entries(groupedOptions).map(([group, opts]) => (
+                  opts.length > 0 && (
+                    <div key={group} className="searchable-select-group">
+                      <div className="searchable-select-group-title">{group}</div>
+                      {opts.map(opt => (
+                        <div 
+                          key={opt.value} 
+                          className={`searchable-select-option ${value === opt.value ? 'selected' : ''}`}
+                          onClick={() => handleSelect(opt.value)}
+                        >
+                          {opt.label}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ))
+              ) : (
+                filteredOptions.map(opt => (
+                  <div 
+                    key={opt.value} 
+                    className={`searchable-select-option ${value === opt.value ? 'selected' : ''}`}
+                    onClick={() => handleSelect(opt.value)}
+                  >
+                    {opt.label}
+                  </div>
+                ))
+              )
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SearchableSelect;

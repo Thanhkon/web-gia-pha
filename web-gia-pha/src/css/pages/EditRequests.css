@@ -119,19 +119,40 @@
   border-radius: var(--radius-md);
 }
 
-.btn-remove {
-  align-self: flex-start;
+.btn-remove-icon {
   background: none;
   border: none;
   color: #e53e3e;
-  font-size: 0.85rem;
   cursor: pointer;
-  padding: 0;
-  margin-top: 0.25rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s;
 }
 
-.btn-remove:hover {
-  text-decoration: underline;
+.btn-remove-icon:hover {
+  background-color: #fee2e2;
+}
+
+.current-val-text {
+  font-weight: normal;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-left: 0.25rem;
+}
+
+.add-field-control {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+.add-field-control select {
+  flex: 1;
 }
 
 .submit-btn {
@@ -268,4 +289,79 @@
   font-size: 0.85rem;
   color: #38a169;
   font-style: italic;
+}
+
+/* Modal styles for Preview */
+.preview-modal .diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.preview-modal .diff-table th,
+.preview-modal .diff-table td {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.preview-modal .diff-table th {
+  background-color: var(--bg-hover);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.preview-modal .diff-table .old-val del {
+  color: #e53e3e;
+  background-color: #fed7d7;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.preview-modal .diff-table .new-val ins {
+  color: #38a169;
+  background-color: #c6f6d5;
+  padding: 0 4px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.submit-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.75rem;
+  font-size: 1rem;
+}
+
+.change-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.icon-mr-4 {
+  margin-right: 4px;
+}
+
+.icon-mr-8 {
+  margin-right: 8px;
+}
+
+.my-4 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.preview-summary-box {
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import SearchableSelect from '../../common/SearchableSelect';
 
 const GeneralInfo = ({ formData, onChange, persons }) => {
   const relationships = useSelector(state => state.members.relationships);
@@ -41,6 +42,21 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
     }
   };
 
+  const fatherOptions = [
+    ...prioritizedMales.map(m => ({ value: m.id, label: `${m.fullName} (Chồng)`, group: 'Các Chồng của Mẹ' })),
+    ...otherMales.map(m => ({ value: m.id, label: `${m.fullName} (Đời ${m.generation})`, group: 'Danh sách khác' }))
+  ];
+
+  const motherOptions = [
+    ...prioritizedFemales.map(f => ({ value: f.id, label: `${f.fullName} (Vợ)`, group: 'Các Vợ của Cha' })),
+    ...otherFemales.map(f => ({ value: f.id, label: `${f.fullName} (Đời ${f.generation})`, group: 'Danh sách khác' }))
+  ];
+  
+  const spouseOptions = (formData.gender === 'female' ? availableMales : availableFemales).map(p => ({
+    value: p.id,
+    label: `${p.fullName} (Đời ${p.generation})`
+  }));
+
   return (
     <div className="form-section">
       <h3 className="form-section-title">1. Thông tin Định danh</h3>
@@ -79,31 +95,21 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
       <div className="form-row">
         <div className="form-group">
           <label>Là con của Cha</label>
-          <select className="form-control" value={formData.fatherId} onChange={e => onChange('fatherId', e.target.value)}>
-            <option value="">-- Không rõ  --</option>
-            {prioritizedMales.length > 0 && (
-              <optgroup label="Các Chồng của Mẹ">
-                {prioritizedMales.map(m => <option key={m.id} value={m.id}>{m.fullName} (Chồng)</option>)}
-              </optgroup>
-            )}
-            <optgroup label="Danh sách khác">
-              {otherMales.map(m => <option key={m.id} value={m.id}>{m.fullName} (Đời {m.generation})</option>)}
-            </optgroup>
-          </select>
+          <SearchableSelect 
+            options={fatherOptions}
+            value={formData.fatherId || ''}
+            onChange={(val) => onChange('fatherId', val)}
+            placeholder="-- Không rõ --"
+          />
         </div>
         <div className="form-group">
           <label>Là con của Mẹ</label>
-          <select className="form-control" value={formData.motherId} onChange={e => onChange('motherId', e.target.value)}>
-            <option value="">-- Không rõ --</option>
-            {prioritizedFemales.length > 0 && (
-              <optgroup label="Các Vợ của Cha">
-                {prioritizedFemales.map(f => <option key={f.id} value={f.id}>{f.fullName} (Vợ)</option>)}
-              </optgroup>
-            )}
-            <optgroup label="Danh sách khác">
-              {otherFemales.map(f => <option key={f.id} value={f.id}>{f.fullName} (Đời {f.generation})</option>)}
-            </optgroup>
-          </select>
+          <SearchableSelect 
+            options={motherOptions}
+            value={formData.motherId || ''}
+            onChange={(val) => onChange('motherId', val)}
+            placeholder="-- Không rõ --"
+          />
         </div>
       </div>
 
@@ -111,20 +117,24 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
         <div className="form-row">
           <div className="form-group">
             <label>{formData.gender === 'female' ? 'Là Vợ của' : 'Là Chồng của'}</label>
-            <select className="form-control" value={formData.spouseId || ''} onChange={e => onChange('spouseId', e.target.value)}>
-              <option value="">{formData.gender === 'female' ? '-- Chọn Chồng --' : '-- Chọn Vợ --'}</option>
-              {(formData.gender === 'female' ? availableMales : availableFemales).map(p => (
-                <option key={p.id} value={p.id}>{p.fullName} (Đời {p.generation})</option>
-              ))}
-            </select>
+            <SearchableSelect 
+              options={spouseOptions}
+              value={formData.spouseId || ''}
+              onChange={(val) => onChange('spouseId', val)}
+              placeholder={formData.gender === 'female' ? '-- Chọn Chồng --' : '-- Chọn Vợ --'}
+            />
           </div>
         </div>
       )}
 
-      <div className="form-row form-row-3">
+      <div className="form-row form-row-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
         <div className="form-group">
           <label>Đời thứ mấy *</label>
           <input type="number" required min="1" className="form-control" value={formData.generation} onChange={e => onChange('generation', e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>Con thứ *</label>
+          <input type="number" required min="1" className="form-control" value={formData.birthOrder || ''} onChange={e => onChange('birthOrder', e.target.value)} title="Thứ tự sinh trong gia đình (1 = Con cả, 2 = Con thứ 2...)" placeholder="VD: 1" />
         </div>
         <div className="form-group">
           <label>Chi / Nhánh</label>

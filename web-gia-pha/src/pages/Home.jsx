@@ -89,7 +89,7 @@ const Home = () => {
                 ))
               )}
             </div>
-            <button className="btn btn-outline" style={{ width: '100%', marginTop: '1rem' }} onClick={() => navigate('/events')}>
+            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/events')}>
               Xem tất cả <ChevronRight size={16} />
             </button>
           </div>
@@ -115,7 +115,7 @@ const Home = () => {
                 ))
               )}
             </div>
-            <button className="btn btn-outline" style={{ width: '100%', marginTop: '1rem' }} onClick={() => navigate('/posts')}>
+            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/posts')}>
               Đọc thêm <ChevronRight size={16} />
             </button>
           </div>
@@ -138,7 +138,7 @@ const Home = () => {
                 ))
               )}
             </div>
-            <button className="btn btn-outline" style={{ width: '100%', marginTop: '1rem' }} onClick={() => navigate('/albums')}>
+            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/albums')}>
               Mở thư viện <ChevronRight size={16} />
             </button>
           </div>

@@ -48,23 +48,31 @@
 }
 
 .date-input-group {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  display: flex;
   gap: 0.5rem;
+}
+
+.date-input-group input {
+  flex: 1;
+  min-width: 0; /* Ngăn chặn input bị tràn ra ngoài container */
+}
+
+.date-input-group input:last-child {
+  flex: 1.2; /* Cho ô "Năm" rộng hơn một chút vì có 4 chữ số */
 }
 
 .deceased-alert {
   background-color: #fff5f5;
   padding: 1rem;
   border-radius: 8px;
-  margin-top: 1rem;
   border: 1px solid #fed7d7;
 }
 
 .deceased-alert-text {
   font-size: 0.85rem;
   color: #c53030;
-  margin-bottom: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
   font-style: italic;
 }
 

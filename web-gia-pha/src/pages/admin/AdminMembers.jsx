@@ -6,6 +6,7 @@ import MemberProfileModal from '../../components/MemberProfileModal';
 import MembersFilterBar from '../../components/Admin/MembersFilterBar';
 import MembersTable from '../../components/Admin/MembersTable';
 import Pagination from '../../components/Pagination';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { addMember, updateMember, deleteMember, addRelationship, addMembersBulk } from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
 import '../../css/pages/AdminMembers.css';
@@ -24,6 +25,7 @@ const AdminMembers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewingMember, setViewingMember] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,7 +33,7 @@ const AdminMembers = () => {
 
   const emptyMember = {
     fullName: '', otherName: '', gender: 'male', 
-    generation: 1, branch: '', isInLaw: false, 
+    generation: 1, birthOrder: 1, branch: '', isInLaw: false, 
     fatherId: '', motherId: '', spouseId: '',
     birthDate: '', 
     isDeceased: false, deathDate: '', deathLunarDate: '',
@@ -100,14 +102,14 @@ const AdminMembers = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa thành viên này khỏi gia phả?')) {
-      const isHardDelete = window.confirm(
-        'Bạn có muốn XÓA VĨNH VIỄN (Hard delete) không?\n\n' +
-        '- Chọn OK: Xóa vĩnh viễn khỏi Database (Cảnh báo: Có thể gây đứt gãy Sơ đồ Cây)\n' +
-        '- Chọn Cancel: Xóa mềm (An toàn - Làm mờ, giữ nguyên cấu trúc Sơ đồ)'
-      );
-      dispatch(deleteMember({ id, hardDelete: isHardDelete }));
+    setDeleteConfirm({ isOpen: true, id });
+  };
+
+  const confirmDelete = (isHardDelete) => {
+    if (deleteConfirm.id) {
+      dispatch(deleteMember({ id: deleteConfirm.id, hardDelete: isHardDelete }));
     }
+    setDeleteConfirm({ isOpen: false, id: null });
   };
 
   const handleImportExcel = (e) => {
@@ -231,10 +233,24 @@ const AdminMembers = () => {
       {viewingMember && (
         <MemberProfileModal
           member={viewingMember}
+          persons={persons}
+          relationships={relationships}
           onClose={() => setViewingMember(null)}
           onEdit={(member) => handleEdit(member)}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Xóa thành viên"
+        message="Bạn có chắc chắn muốn xóa thành viên này? Bạn có thể Xóa tạm (ẩn đi) hoặc Xóa vĩnh viễn khỏi hệ thống."
+        onConfirm={() => confirmDelete(true)}
+        confirmText="Xóa vĩnh viễn"
+        onSecondaryConfirm={() => confirmDelete(false)}
+        secondaryText="Xóa tạm (An toàn)"
+        onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+        isDanger={true}
+      />
     </div>
   );
 };

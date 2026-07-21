@@ -40,17 +40,17 @@ const AdminLayout = () => {
           <NavLink to="/admin/requests" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Yêu cầu chỉnh sửa">
             <Edit3 size={18} /> 
             {!isCollapsed && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <div className="sidebar-link-content">
                 <span>Yêu cầu chỉnh sửa</span>
                 {pendingRequestsCount > 0 && (
-                  <span style={{ backgroundColor: '#e53e3e', color: 'white', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                  <span className="sidebar-badge">
                     {pendingRequestsCount}
                   </span>
                 )}
               </div>
             )}
             {isCollapsed && pendingRequestsCount > 0 && (
-              <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#e53e3e', borderRadius: '50%' }}></span>
+              <span className="sidebar-badge-dot"></span>
             )}
           </NavLink>
           <NavLink to="/admin/content" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Bài viết & Sự kiện">

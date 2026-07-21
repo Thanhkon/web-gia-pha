@@ -13,7 +13,7 @@ import '../css/pages/FamilyTree.css';
 // Hằng số ngoài component — không bao giờ bị tạo lại, tránh stale closure trong useCallback
 const EMPTY_MEMBER = {
   fullName: '', otherName: '', gender: 'male',
-  generation: 1, branch: '', isInLaw: false,
+  generation: 1, birthOrder: 1, branch: '', isInLaw: false,
   fatherId: '', motherId: '', spouseId: '',
   birthDate: '',
   isDeceased: false, deathDate: '', deathLunarDate: '',
@@ -182,6 +182,8 @@ const FamilyTree = () => {
       {viewingMember && (
         <MemberProfileModal
           member={viewingMember}
+          persons={personsArray}
+          relationships={relationships}
           onClose={() => setViewingMember(null)}
         />
       )}

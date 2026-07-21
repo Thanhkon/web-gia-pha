@@ -4,15 +4,24 @@ import '../css/components/MemberProfileModal.css';
 import avatarMale from '../assets/avatar-male.svg';
 import avatarFemale from '../assets/avatar-female.svg';
 
-const MemberProfileModal = ({ member, onClose, onEdit }) => {
+const MemberProfileModal = ({ member, persons = [], relationships = [], onClose, onEdit }) => {
   if (!member) return null;
+
+  // Find relationships
+  const findPerson = (id) => persons.find(p => p.id === id);
+  const father = findPerson(member.fatherId);
+  const mother = findPerson(member.motherId);
+  
+  const spouseIds = relationships
+    .filter(r => r.type === 'marriage' && (r.person_a === member.id || r.person_b === member.id))
+    .map(r => r.person_a === member.id ? r.person_b : r.person_a);
+  const spouses = spouseIds.map(id => findPerson(id)).filter(Boolean);
 
   return (
     <div className="modal-overlay">
       <div className="modal-container profile-modal">
         <div className="modal-header">
           <h2>Hồ sơ Thành viên</h2>
-          <button className="icon-btn" onClick={onClose}><X size={20} /></button>
         </div>
         <div className="modal-body">
           <div className="profile-view-header">
@@ -40,8 +49,23 @@ const MemberProfileModal = ({ member, onClose, onEdit }) => {
             {member.isDeceased && (
                <div className="detail-item"><strong>Ngày mất (Âm):</strong> {member.deathLunarDate || 'Chưa cập nhật'}</div>
             )}
+            <div className="detail-item"><strong>Nơi sinh:</strong> {member.birthPlace || 'Chưa cập nhật'}</div>
             <div className="detail-item full-width"><strong>Địa chỉ:</strong> {member.address || 'Chưa cập nhật'}</div>
-            <div className="detail-item full-width"><strong>Nghề nghiệp:</strong> {member.occupation || 'Chưa cập nhật'}</div>
+            <div className="detail-item"><strong>Nghề nghiệp:</strong> {member.occupation || 'Chưa cập nhật'}</div>
+            <div className="detail-item"><strong>Học vấn:</strong> {member.education || 'Chưa cập nhật'}</div>
+            <div className="detail-item"><strong>Điện thoại:</strong> {member.phone || 'Chưa cập nhật'}</div>
+            <div className="detail-item"><strong>Email:</strong> {member.email || 'Chưa cập nhật'}</div>
+            
+            <div className="detail-item full-width profile-relationships">
+              <strong>Quan hệ gia đình:</strong>
+              <div className="profile-relationships-list">
+                <div>• Cha: {father ? father.fullName : 'Không rõ'}</div>
+                <div>• Mẹ: {mother ? mother.fullName : 'Không rõ'}</div>
+                {spouses.length > 0 && (
+                  <div>• Vợ/Chồng: {spouses.map(s => s.fullName).join(', ')}</div>
+                )}
+              </div>
+            </div>
             {member.biography && (
                <div className="detail-item full-width"><strong>Tiểu sử:</strong> <p className="profile-bio">{member.biography}</p></div>
             )}

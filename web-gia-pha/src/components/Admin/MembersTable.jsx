@@ -13,7 +13,7 @@ const MembersTable = ({
 }) => {
   return (
     <>
-      <div className="view-toggle" style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1.5rem' }}>
+      <div className="view-toggle">
         <button
           className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
           onClick={() => setViewMode('table')}
@@ -41,7 +41,7 @@ const MembersTable = ({
                   <th>Năm sinh</th>
                   <th>Đời</th>
                   <th>Vai trò / Trạng thái</th>
-                  {(handleEdit || handleDelete) && <th style={{ textAlign: 'right' }}>Thao tác</th>}
+                  {(handleEdit || handleDelete) && <th className="text-right">Thao tác</th>}
                 </tr>
               </thead>
               <tbody>
@@ -54,7 +54,7 @@ const MembersTable = ({
                           alt="avatar"
                           className="table-avatar"
                         />
-                        <span style={{ fontWeight: 600 }}>{p.fullName}</span>
+                        <span className="font-semibold">{p.fullName}</span>
                       </div>
                     </td>
                     <td>{p.gender === 'male' ? 'Nam' : 'Nữ'}</td>
@@ -62,14 +62,14 @@ const MembersTable = ({
                     <td>Đời thứ {p.generation}</td>
                     <td>
                       <div className="table-badges">
-                        {p.isDeleted && <span className="badge-sm bg-gray" style={{ backgroundColor: '#4b5563', color: 'white' }}>Đã xóa</span>}
+                        {p.isDeleted && <span className="badge-sm bg-gray deleted-badge">Đã xóa</span>}
                         {p.isInLaw && <span className="badge-sm bg-purple">Dâu/Rể</span>}
                         {p.role && <span className="badge-sm bg-blue">{p.role}</span>}
                         {p.isDeceased && <span className="badge-sm bg-gray">Đã khuất</span>}
                       </div>
                     </td>
                     {(handleEdit || handleDelete) && (
-                      <td style={{ textAlign: 'right' }}>
+                      <td className="text-right">
                         <div className="action-buttons">
                           <button className="btn-icon text-primary" onClick={() => setViewingMember(p)} title="Xem hồ sơ"><Eye size={16} /></button>
                           {handleEdit && <button className="btn-icon text-blue" onClick={() => handleEdit(p)} title="Chỉnh sửa"><Edit2 size={16} /></button>}
@@ -81,7 +81,7 @@ const MembersTable = ({
                 ))}
                 {filteredPersons.length === 0 && (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Không tìm thấy thành viên.</td>
+                    <td colSpan="6" className="table-empty-state">Không tìm thấy thành viên.</td>
                   </tr>
                 )}
               </tbody>
@@ -107,7 +107,7 @@ const MembersTable = ({
                   <h4 className="card-name">{p.fullName}</h4>
                   <p className="card-meta">Sinh năm: {p.birthYear} | Đời {p.generation}</p>
                   <div className="card-badges">
-                    {p.isDeleted && <span className="badge-sm bg-gray" style={{ backgroundColor: '#4b5563', color: 'white' }}>Đã xóa</span>}
+                    {p.isDeleted && <span className="badge-sm bg-gray deleted-badge">Đã xóa</span>}
                     {p.isInLaw && <span className="badge-sm bg-purple">Dâu/Rể</span>}
                   </div>
                 </div>

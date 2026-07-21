@@ -1,0 +1,38 @@
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.not-found-icon {
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+  color: var(--primary);
+}
+
+.not-found-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+}
+
+.not-found-text {
+  color: var(--text-muted);
+  max-width: 500px;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.not-found-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.not-found-btn-icon {
+  margin-right: 8px;
+}
