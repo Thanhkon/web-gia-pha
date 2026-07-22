@@ -8,11 +8,11 @@ import {
   Plus,
   Search,
 } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import EventActionDialog from '../components/Events/EventActionDialog';
 import EventDetailModal from '../components/Events/EventDetailModal';
 import EventFormModal from '../components/Events/EventFormModal';
 import {
-  canManageEvents,
   eventStatusLabels,
   eventTypeLabels,
   eventTypeOptions,
@@ -20,7 +20,7 @@ import {
   roleLabels,
 } from '../constants/eventConstants';
 import useDebounce from '../hooks/useDebounce';
-import { eventService } from '../services/eventService';
+import { canCreateEvent, canManageEvent, eventService } from '../services/eventService';
 import { buildCalendarDays, isDateBetween } from '../services/calendarService';
 import '../css/pages/AdminMembers.css';
 import '../css/pages/Events.css';
@@ -60,6 +60,7 @@ const EventMiniList = ({ title, events, emptyText, onView }) => (
 );
 
 const Events = () => {
+  const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
   const [currentUser, setCurrentUser] = useState(null);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,7 +78,8 @@ const Events = () => {
   const [error, setError] = useState('');
 
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const canManage = canManageEvents(currentUser);
+  const canCreate = canCreateEvent(currentUser);
+  const canManageSelectedEvent = selectedEvent ? canManageEvent(currentUser, selectedEvent) : false;
   const hasOpenModal = Boolean(selectedEvent || isFormOpen || cancelTarget || deleteTarget);
 
   const loadEvents = useCallback(async () => {
@@ -92,14 +94,15 @@ const Events = () => {
         type: typeFilter,
       };
 
-      const [userResponse, calendarResponse, todayResponse, upcomingResponse] = await Promise.all([
-        eventService.getCurrentUser(),
-        eventService.getCalendarEvents(params),
-        eventService.getTodayEvents({ search: debouncedSearch, type: typeFilter }),
-        eventService.getUpcomingEvents(30, { search: debouncedSearch, type: typeFilter }),
+      const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated);
+      const actor = userResponse.data;
+      const [calendarResponse, todayResponse, upcomingResponse] = await Promise.all([
+        eventService.getCalendarEvents(params, actor),
+        eventService.getTodayEvents({ search: debouncedSearch, type: typeFilter }, actor),
+        eventService.getUpcomingEvents(30, { search: debouncedSearch, type: typeFilter }, actor),
       ]);
 
-      setCurrentUser(userResponse.data);
+      setCurrentUser(actor);
       setCalendarEvents(calendarResponse.data);
       setTodayEvents(todayResponse.data);
       setUpcomingEvents(upcomingResponse.data);
@@ -111,7 +114,7 @@ const Events = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearch, monthDate, typeFilter]);
+  }, [authUser, debouncedSearch, isAuthenticated, monthDate, typeFilter]);
 
   useEffect(() => {
     loadEvents();
@@ -149,7 +152,7 @@ const Events = () => {
   const openDetail = async (eventId) => {
     setError('');
     try {
-      const response = await eventService.getEventById(eventId);
+      const response = await eventService.getEventById(eventId, currentUser);
       setSelectedEvent(response.data);
     } catch (detailError) {
       setError(detailError.message || 'Không thể mở chi tiết sự kiện.');
@@ -157,11 +160,21 @@ const Events = () => {
   };
 
   const openCreateForm = () => {
+    if (!canCreateEvent(currentUser)) {
+      setError('Bạn không có quyền tạo sự kiện.');
+      return;
+    }
+
     setEditingEvent(null);
     setIsFormOpen(true);
   };
 
   const openEditForm = () => {
+    if (!canManageEvent(currentUser, selectedEvent)) {
+      setError('Bạn không có quyền chỉnh sửa sự kiện này.');
+      return;
+    }
+
     setEditingEvent(selectedEvent);
     setSelectedEvent(null);
     setIsFormOpen(true);
@@ -173,9 +186,9 @@ const Events = () => {
 
     try {
       if (editingEvent) {
-        await eventService.updateEvent(editingEvent.id, payload);
+        await eventService.updateEvent(editingEvent.id, payload, currentUser);
       } else {
-        await eventService.createEvent(payload);
+        await eventService.createEvent(payload, currentUser);
       }
 
       setIsFormOpen(false);
@@ -189,11 +202,21 @@ const Events = () => {
   };
 
   const requestCancel = () => {
+    if (!canManageEvent(currentUser, selectedEvent)) {
+      setError('Bạn không có quyền hủy sự kiện này.');
+      return;
+    }
+
     setCancelTarget(selectedEvent);
     setSelectedEvent(null);
   };
 
   const requestDelete = () => {
+    if (!canManageEvent(currentUser, selectedEvent)) {
+      setError('Bạn không có quyền xóa sự kiện này.');
+      return;
+    }
+
     setDeleteTarget(selectedEvent);
     setSelectedEvent(null);
   };
@@ -203,7 +226,7 @@ const Events = () => {
     setError('');
 
     try {
-      await eventService.cancelEvent(cancelTarget.id, payload);
+      await eventService.cancelEvent(cancelTarget.id, payload, currentUser);
       setCancelTarget(null);
       await loadEvents();
     } catch (cancelError) {
@@ -218,7 +241,7 @@ const Events = () => {
     setError('');
 
     try {
-      await eventService.deleteEvent(deleteTarget.id, payload);
+      await eventService.deleteEvent(deleteTarget.id, payload, currentUser);
       setDeleteTarget(null);
       await loadEvents();
     } catch (deleteError) {
@@ -246,7 +269,7 @@ const Events = () => {
             {currentUser && (
               <span className="role-chip">Vai trò: {roleLabels[currentUser.role]}</span>
             )}
-            {canManage && (
+            {canCreate && (
               <button className="btn btn-primary" type="button" onClick={openCreateForm}>
                 <Plus size={18} /> Tạo sự kiện
               </button>
@@ -388,7 +411,7 @@ const Events = () => {
 
       <EventDetailModal
         event={selectedEvent}
-        canManage={canManage}
+        canManage={canManageSelectedEvent}
         onClose={() => setSelectedEvent(null)}
         onEdit={openEditForm}
         onCancelEvent={requestCancel}
