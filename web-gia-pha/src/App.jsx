@@ -80,6 +80,8 @@ const App = () => {
                 <>
                   <Navbar />
                   <main className="main-content"><PostEditor mode="edit" /></main>
+                </>
+              } />
               <Route path="/events" element={
                 <>
                   <Navbar />
