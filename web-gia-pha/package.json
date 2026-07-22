@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test:lunar": "node scripts/check-lunar-dates.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

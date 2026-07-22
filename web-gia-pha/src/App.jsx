@@ -17,6 +17,7 @@ const PublicMembers = lazy(() => import('./pages/PublicMembers'));
 const Posts = lazy(() => import('./pages/Posts'));
 const PostDetail = lazy(() => import('./pages/PostDetail'));
 const PostEditor = lazy(() => import('./pages/PostEditor'));
+const Events = lazy(() => import('./pages/Events'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -79,6 +80,10 @@ const App = () => {
                 <>
                   <Navbar />
                   <main className="main-content"><PostEditor mode="edit" /></main>
+              <Route path="/events" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Events /></main>
                 </>
               } />
 
