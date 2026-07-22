@@ -13,7 +13,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  
+
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const Navbar = () => {
     if (isAuthenticated) {
       setIsUserMenuOpen(!isUserMenuOpen);
     } else {
-      dispatch(login({ name: 'Nguyễn Văn A' }));
+      dispatch(login({ name: 'Admin' }));
     }
   };
 
@@ -133,6 +133,14 @@ const Navbar = () => {
               </div>
             </div>
           ))}
+
+          {/* Direct link for Kinship Lookup placed after dropdowns */}
+          <button
+            className={`nav-link direct-link ${location.pathname === '/kinship-lookup' ? 'active' : ''}`}
+            onClick={() => handleNavClick('/kinship-lookup')}
+          >
+            Tra cứu xưng hô
+          </button>
         </div>
 
         <div className="nav-actions">

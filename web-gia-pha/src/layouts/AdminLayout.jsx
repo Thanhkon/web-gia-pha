@@ -53,7 +53,7 @@ const AdminLayout = () => {
               <span className="sidebar-badge-dot"></span>
             )}
           </NavLink>
-          <NavLink to="/admin/content" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Bài viết & Sự kiện">
+          <NavLink to="/admin/events" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Bài viết & Sự kiện">
             <FileText size={18} /> {!isCollapsed && <span>Bài viết & Sự kiện</span>}
           </NavLink>
           <NavLink to="/admin/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Cài đặt chung">

@@ -15,6 +15,7 @@ const EditRequests = lazy(() => import('./pages/EditRequests'));
 const AdminEditRequests = lazy(() => import('./pages/admin/AdminEditRequests'));
 const PublicMembers = lazy(() => import('./pages/PublicMembers'));
 const Events = lazy(() => import('./pages/Events'));
+const KinshipLookup = lazy(() => import('./pages/KinshipLookup'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -61,6 +62,12 @@ const App = () => {
                   <main className="main-content"><Events /></main>
                 </>
               } />
+              <Route path="/kinship-lookup" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><KinshipLookup /></main>
+                </>
+              } />
 
               {/* Admin Protected Routes */}
               <Route path="/admin" element={<ProtectedRoute />}>
@@ -69,7 +76,7 @@ const App = () => {
                   <Route path="members" element={<AdminMembers />} />
                   <Route path="tree" element={<FamilyTree />} />
                   <Route path="requests" element={<AdminEditRequests />} />
-                  <Route path="content" element={<NotFoundPage />} />
+                  <Route path="events" element={<Events />} />
                   <Route path="settings" element={<NotFoundPage />} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>

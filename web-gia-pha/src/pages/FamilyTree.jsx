@@ -26,6 +26,16 @@ const EMPTY_MEMBER = {
 const FamilyTree = () => {
   const containerRef = useRef(null);
 
+  // Ngăn chặn cuộn trang mặc định (vì onWheel của React bị giới hạn passive event)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const preventScroll = (e) => e.preventDefault();
+    el.addEventListener('wheel', preventScroll, { passive: false });
+    return () => el.removeEventListener('wheel', preventScroll);
+  }, []);
+
+
   const dispatch = useDispatch();
   const persons = useSelector(state => state.members.persons);
   const relationships = useSelector(state => state.members.relationships);
@@ -99,15 +109,22 @@ const FamilyTree = () => {
   const {
     scale, position, isDragging,
     onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onWheel,
-    resetView, zoomIn, zoomOut
+    resetView, zoomIn, zoomOut, updatePosition, updateScale
   } = usePanZoom(0.85);
 
   const centerTree = useCallback(() => {
     if (!containerRef.current) return;
-    const el = containerRef.current;
-    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-    resetView();
-  }, [resetView]);
+
+    const defaultScale = 0.85;
+    const width = containerRef.current.clientWidth;
+
+    // Do transform-origin là 0 0, khi scale xuống 0.85, khung vẽ sẽ bị thu nhỏ còn 85% chiều rộng.
+    // Khoảng trống hụt đi chia đôi sẽ là phần bù (offset) để đẩy khung vẽ ra chính giữa.
+    const centerX = (width - (width * defaultScale)) / 2;
+
+    updateScale(defaultScale);
+    updatePosition({ x: centerX, y: 0 });
+  }, [updateScale, updatePosition]);
 
   const [filters, setFilters] = useState({
     hideDaughtersInLaw: false,
@@ -237,7 +254,7 @@ const FamilyTree = () => {
         />
       )}
 
-      <KinshipModal 
+      <KinshipModal
         isOpen={isKinshipModalOpen}
         onClose={handleCloseKinshipModal}
         kinshipResult={kinshipResult}

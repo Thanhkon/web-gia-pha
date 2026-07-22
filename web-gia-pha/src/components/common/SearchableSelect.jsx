@@ -15,10 +15,22 @@ const SearchableSelect = ({
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Hàm loại bỏ dấu tiếng Việt để tìm kiếm mượt hơn
+  const removeAccents = (str) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+  };
+
   // Lọc options dựa trên từ khóa tìm kiếm
-  const filteredOptions = options.filter(opt => 
-    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOptions = options.filter(opt => {
+    const labelRaw = opt.label.toLowerCase();
+    const searchRaw = searchTerm.toLowerCase();
+    if (labelRaw.includes(searchRaw)) return true;
+    
+    // Tìm kiếm không dấu
+    const labelNoAccents = removeAccents(labelRaw);
+    const searchNoAccents = removeAccents(searchRaw);
+    return labelNoAccents.includes(searchNoAccents);
+  });
 
   // Phân nhóm (nếu có group)
   const groupedOptions = filteredOptions.reduce((acc, opt) => {
