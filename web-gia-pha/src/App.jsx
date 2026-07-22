@@ -14,6 +14,9 @@ const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const EditRequests = lazy(() => import('./pages/EditRequests'));
 const AdminEditRequests = lazy(() => import('./pages/admin/AdminEditRequests'));
 const PublicMembers = lazy(() => import('./pages/PublicMembers'));
+const Posts = lazy(() => import('./pages/Posts'));
+const PostDetail = lazy(() => import('./pages/PostDetail'));
+const PostEditor = lazy(() => import('./pages/PostEditor'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -52,6 +55,30 @@ const App = () => {
                 <>
                   <Navbar />
                   <main className="main-content"><PublicMembers /></main>
+                </>
+              } />
+              <Route path="/posts" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Posts /></main>
+                </>
+              } />
+              <Route path="/posts/new" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><PostEditor mode="create" /></main>
+                </>
+              } />
+              <Route path="/posts/:id" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><PostDetail /></main>
+                </>
+              } />
+              <Route path="/posts/:id/edit" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><PostEditor mode="edit" /></main>
                 </>
               } />
 
