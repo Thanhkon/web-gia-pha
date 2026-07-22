@@ -14,6 +14,7 @@ const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const EditRequests = lazy(() => import('./pages/EditRequests'));
 const AdminEditRequests = lazy(() => import('./pages/admin/AdminEditRequests'));
 const PublicMembers = lazy(() => import('./pages/PublicMembers'));
+const Events = lazy(() => import('./pages/Events'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -52,6 +53,12 @@ const App = () => {
                 <>
                   <Navbar />
                   <main className="main-content"><PublicMembers /></main>
+                </>
+              } />
+              <Route path="/events" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Events /></main>
                 </>
               } />
 
