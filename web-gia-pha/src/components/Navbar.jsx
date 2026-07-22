@@ -4,6 +4,8 @@ import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid } from '
 import { useSelector, useDispatch } from 'react-redux';
 import { login, logout } from '../store/slices/authSlice';
 import { mockCurrentUser, mockRoleLabels } from '../data/mockAuth';
+import { mockCurrentUser } from '../data/mockAuth';
+import { POST_ROLE_LABELS } from '../types/posts';
 import '../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -47,7 +49,7 @@ const Navbar = () => {
     {
       name: 'Hoạt động',
       items: [
-        { name: 'Tin tức', path: '/posts' },
+        { name: 'Bài viết', path: '/posts' },
         { name: 'Sự kiện', path: '/events' },
         { name: 'Thư viện ảnh', path: '/gallery' },
       ]
@@ -164,6 +166,7 @@ const Navbar = () => {
                 <div className="user-dropdown-header">
                   <strong>{user?.name}</strong>
                   <span>{mockRoleLabels[user?.role] || 'Khách'}</span>
+                  <span>{POST_ROLE_LABELS[user?.role] || 'Khách'}</span>
                 </div>
                 <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin'); }}>
                   <LayoutGrid size={16} /> Bảng điều khiển
