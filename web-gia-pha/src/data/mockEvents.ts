@@ -189,4 +189,3 @@ export const mockEvents: Event[] = [
     updatedAt: '2026-07-21T07:30:00+07:00',
   },
 ];
-
