@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { login, logout } from '../store/slices/authSlice';
+import { logout } from '../store/slices/authSlice';
 import '../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -57,7 +57,8 @@ const Navbar = () => {
     if (isAuthenticated) {
       setIsUserMenuOpen(!isUserMenuOpen);
     } else {
-      dispatch(login({ name: 'Nguyễn Văn A' }));
+      setIsMobileMenuOpen(false);
+      navigate('/login');
     }
   };
 
@@ -140,6 +141,19 @@ const Navbar = () => {
             <Bell size={20} />
             <span className="notification-dot"></span>
           </button>
+
+          {!isAuthenticated && (
+            <button
+              type="button"
+              className="register-btn"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                navigate('/register');
+              }}
+            >
+              Đăng ký
+            </button>
+          )}
 
           <div className="user-menu-container" ref={userMenuRef}>
             <button className="avatar-btn" aria-label="Tài khoản" onClick={handleAuthClick}>

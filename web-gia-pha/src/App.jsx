@@ -9,12 +9,15 @@ import './App.css';
 
 // Lazy load các trang nặng để giảm initial bundle size
 const Home = lazy(() => import('./pages/Home'));
+const PublicHome = lazy(() => import('./pages/PublicHome'));
 const FamilyTree = lazy(() => import('./pages/FamilyTree'));
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const EditRequests = lazy(() => import('./pages/EditRequests'));
 const AdminEditRequests = lazy(() => import('./pages/admin/AdminEditRequests'));
 const PublicMembers = lazy(() => import('./pages/PublicMembers'));
 const Events = lazy(() => import('./pages/Events'));
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -34,9 +37,20 @@ const App = () => {
               <Route path="/" element={
                 <>
                   <Navbar />
-                  <main className="main-content"><Home /></main>
+                  <main className="main-content"><PublicHome /></main>
                 </>
               } />
+              <Route path="/home" element={<ProtectedRoute />}>
+                <Route
+                  index
+                  element={
+                    <>
+                      <Navbar />
+                      <main className="main-content"><Home /></main>
+                    </>
+                  }
+                />
+              </Route>
               <Route path="/family-tree" element={
                 <>
                   <Navbar />
@@ -59,6 +73,18 @@ const App = () => {
                 <>
                   <Navbar />
                   <main className="main-content"><Events /></main>
+                </>
+              } />
+              <Route path="/login" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Login /></main>
+                </>
+              } />
+              <Route path="/register" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Register /></main>
                 </>
               } />
 
