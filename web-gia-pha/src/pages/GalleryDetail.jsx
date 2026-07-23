@@ -1,0 +1,402 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Edit3,
+  Eye,
+  EyeOff,
+  FileImage,
+  Globe2,
+  Loader2,
+  Lock,
+  Trash2,
+  Upload,
+  Video,
+} from 'lucide-react';
+import ConfirmModal from '../components/common/ConfirmModal';
+import {
+  AlbumFormModal,
+  GalleryBadge,
+  MediaEditModal,
+  UploadMediaModal,
+} from '../components/gallery/GalleryModals';
+import ImageLightbox from '../components/gallery/ImageLightbox';
+import { formatDate } from '../components/gallery/galleryViewUtils';
+import {
+  canDeleteAlbum,
+  canDeleteMedia,
+  canManageAlbum,
+  canUpdateAlbum,
+  canUpdateMedia,
+  canUploadMedia,
+  galleryService,
+  getGalleryActor,
+} from '../services/galleryService';
+import {
+  ALBUM_STATUS,
+  ALBUM_STATUS_LABELS,
+  ALBUM_VISIBILITY,
+  ALBUM_VISIBILITY_LABELS,
+  MEDIA_TYPE,
+  MEDIA_TYPE_LABELS,
+} from '../types/gallery';
+import '../css/pages/Gallery.css';
+
+const GalleryDetail = () => {
+  const { albumId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const actor = useMemo(() => getGalleryActor(user, isAuthenticated), [user, isAuthenticated]);
+  const [album, setAlbum] = useState(null);
+  const [albumForm, setAlbumForm] = useState(null);
+  const [uploadAlbum, setUploadAlbum] = useState(null);
+  const [editingMedia, setEditingMedia] = useState(null);
+  const [lightboxMedia, setLightboxMedia] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const backUrl = location.state?.from || `/gallery${location.search || ''}`;
+  const isManager = canManageAlbum(actor, album);
+  const imageItems = useMemo(() => (
+    album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE) || []
+  ), [album]);
+  const imageCount = album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE).length || 0;
+  const videoCount = album?.media.filter((item) => item.type === MEDIA_TYPE.VIDEO).length || 0;
+  const totalCount = album?.media.length || 0;
+
+  const goBackToLibrary = () => {
+    navigate(backUrl);
+  };
+
+  const loadAlbum = useCallback(async () => {
+    if (!albumId) return;
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const data = await galleryService.getAlbumById(albumId, actor);
+      setAlbum(data);
+    } catch (loadError) {
+      setAlbum(null);
+      setError(loadError.message || 'Không thể tải chi tiết album.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [actor, albumId]);
+
+  useEffect(() => {
+    loadAlbum();
+  }, [loadAlbum]);
+
+  const handleSaveAlbum = async (payload) => {
+    if (!album) return;
+
+    setIsSaving(true);
+    try {
+      const updatedAlbum = await galleryService.updateAlbum(album.id, payload, actor);
+      setAlbum(updatedAlbum);
+      setAlbumForm(null);
+      setNotice({ type: 'success', text: 'Album đã được cập nhật.' });
+    } catch (saveError) {
+      setNotice({ type: 'error', text: saveError.message || 'Không thể lưu album.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpload = async (files, descriptions) => {
+    if (!uploadAlbum) return;
+
+    setIsUploading(true);
+    try {
+      const updatedAlbum = await galleryService.uploadMedia(uploadAlbum.id, files, actor, descriptions);
+      setAlbum(updatedAlbum);
+      setUploadAlbum(null);
+      setNotice({ type: 'success', text: 'Tệp đã được tải lên album.' });
+    } catch (uploadError) {
+      setNotice({ type: 'error', text: uploadError.message || 'Không thể tải tệp lên album.' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    if (!album) return;
+
+    try {
+      const updatedAlbum = await galleryService.toggleAlbumStatus(album.id, actor);
+      setAlbum(updatedAlbum);
+      setNotice({
+        type: 'success',
+        text: album.status === ALBUM_STATUS.VISIBLE ? 'Album đã được ẩn.' : 'Album đã được hiển thị.',
+      });
+    } catch (toggleError) {
+      setNotice({ type: 'error', text: toggleError.message || 'Không thể đổi trạng thái album.' });
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmAction) return;
+
+    setIsSaving(true);
+    try {
+      if (confirmAction.type === 'deleteAlbum') {
+        await galleryService.deleteAlbum(confirmAction.album.id, actor);
+        setConfirmAction(null);
+        navigate(backUrl, {
+          state: { notice: 'Album và toàn bộ ảnh, video bên trong đã được xóa.' },
+        });
+        return;
+      }
+
+      if (confirmAction.type === 'deleteMedia') {
+        const updatedAlbum = await galleryService.deleteMedia(confirmAction.album.id, confirmAction.media.id, actor);
+        setAlbum(updatedAlbum);
+        setNotice({ type: 'success', text: 'Ảnh hoặc video đã được xóa khỏi album.' });
+      }
+
+      setConfirmAction(null);
+    } catch (confirmError) {
+      setNotice({ type: 'error', text: confirmError.message || 'Thao tác thất bại.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveMediaDescription = async (description) => {
+    if (!album || !editingMedia) return;
+
+    setIsSaving(true);
+    try {
+      const updatedAlbum = await galleryService.updateMedia(album.id, editingMedia.id, { description }, actor);
+      setAlbum(updatedAlbum);
+      setEditingMedia(null);
+      setNotice({ type: 'success', text: 'Mô tả tệp đã được cập nhật.' });
+    } catch (saveError) {
+      setNotice({ type: 'error', text: saveError.message || 'Không thể lưu mô tả.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="gallery-page container animate-fade-in">
+        <div className="gallery-loading">
+          <Loader2 className="spin-icon" size={28} />
+          <span>Đang tải chi tiết album...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !album) {
+    return (
+      <div className="gallery-page container animate-fade-in">
+        <button className="gallery-back-link" type="button" onClick={goBackToLibrary}>
+          <ArrowLeft size={18} /> Quay lại thư viện
+        </button>
+        <div className="gallery-detail-empty" role="alert">
+          <FileImage size={42} />
+          <h1>Không thể mở album</h1>
+          <p>{error || 'Album không tồn tại hoặc bạn không có quyền xem.'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="gallery-page gallery-detail-page container animate-fade-in">
+      <button className="gallery-back-link" type="button" onClick={goBackToLibrary}>
+        <ArrowLeft size={18} /> Quay lại thư viện
+      </button>
+
+      <header className="gallery-detail-page-header">
+        <div className="gallery-detail-heading">
+          <div className="gallery-detail-title-row">
+            <div>
+              <span className="gallery-eyebrow">Chi tiết album</span>
+              <h1>{album.title}</h1>
+            </div>
+          </div>
+          <p>{album.description || 'Chưa có mô tả.'}</p>
+          <div className="gallery-card-badges">
+            <GalleryBadge type={album.visibility.toLowerCase()}>
+              {album.visibility === ALBUM_VISIBILITY.PUBLIC ? <Globe2 size={13} /> : <Lock size={13} />}
+              {ALBUM_VISIBILITY_LABELS[album.visibility]}
+            </GalleryBadge>
+            <GalleryBadge type={album.status.toLowerCase()}>
+              {album.status === ALBUM_STATUS.VISIBLE ? <Eye size={13} /> : <EyeOff size={13} />}
+              {ALBUM_STATUS_LABELS[album.status]}
+            </GalleryBadge>
+          </div>
+        </div>
+
+        <div className="gallery-detail-meta">
+          <div>
+            <span>Người tạo</span>
+            <strong>{album.createdBy?.name || 'Không rõ'}</strong>
+          </div>
+          <div>
+            <span>Ngày tạo</span>
+            <strong>{formatDate(album.createdAt)}</strong>
+          </div>
+          <div>
+            <span>Tổng số tệp</span>
+            <strong>{totalCount} tệp</strong>
+          </div>
+          <div>
+            <span>Ảnh / Video</span>
+            <strong>{imageCount} ảnh, {videoCount} video</strong>
+          </div>
+        </div>
+
+        {isManager && (
+          <div className="gallery-manager-actions">
+            {canUpdateAlbum(actor, album) && (
+              <button className="btn btn-outline" type="button" onClick={() => setAlbumForm({ album })}>
+                <Edit3 size={16} /> Chỉnh sửa album
+              </button>
+            )}
+            <button className="btn btn-outline" type="button" onClick={handleToggleStatus}>
+              {album.status === ALBUM_STATUS.VISIBLE ? <EyeOff size={16} /> : <Eye size={16} />}
+              {album.status === ALBUM_STATUS.VISIBLE ? 'Ẩn album' : 'Hiển thị album'}
+            </button>
+            {canUploadMedia(actor, album) && (
+              <button className="btn btn-outline" type="button" onClick={() => setUploadAlbum(album)}>
+                <Upload size={16} /> Thêm ảnh/video
+              </button>
+            )}
+            {canDeleteAlbum(actor, album) && (
+              <button className="btn btn-danger" type="button" onClick={() => setConfirmAction({ type: 'deleteAlbum', album })}>
+                <Trash2 size={16} /> Xóa album
+              </button>
+            )}
+          </div>
+        )}
+      </header>
+
+      {notice && (
+        <div className={`gallery-notice gallery-notice-${notice.type}`} role="status">
+          <span>{notice.text}</span>
+          <button type="button" onClick={() => setNotice(null)}>Đóng</button>
+        </div>
+      )}
+
+      <section className="gallery-detail-media-section">
+        <div className="gallery-section-title">
+          <h2>Ảnh và video</h2>
+          <span>{totalCount} tệp</span>
+        </div>
+
+        {album.media.length === 0 ? (
+          <div className="gallery-media-empty">Album chưa có ảnh hoặc video.</div>
+        ) : (
+          <div className="gallery-media-grid">
+            {album.media.map((media) => (
+              <article className="gallery-media-card" key={media.id}>
+                <button
+                  className="gallery-media-preview"
+                  type="button"
+                  onClick={() => {
+                    if (media.type === MEDIA_TYPE.IMAGE) setLightboxMedia(media);
+                  }}
+                >
+                  {media.type === MEDIA_TYPE.VIDEO ? (
+                    <>
+                      <img src={media.thumbnailUrl} alt={media.fileName} loading="lazy" />
+                      <span className="gallery-video-mark"><Video size={18} /></span>
+                    </>
+                  ) : (
+                    <img src={media.thumbnailUrl || media.url} alt={media.description || media.fileName} loading="lazy" />
+                  )}
+                </button>
+                <div className="gallery-media-body">
+                  <div className="gallery-media-title">
+                    <strong>{media.fileName}</strong>
+                    <GalleryBadge type={media.type.toLowerCase()}>{MEDIA_TYPE_LABELS[media.type]}</GalleryBadge>
+                  </div>
+                  {media.description && <p>{media.description}</p>}
+                </div>
+
+                {isManager && (
+                  <div className="gallery-media-actions">
+                    {canUpdateMedia(actor, album) && (
+                      <button className="icon-btn" type="button" onClick={() => setEditingMedia(media)} aria-label="Sửa mô tả tệp">
+                        <Edit3 size={16} />
+                      </button>
+                    )}
+                    {canDeleteMedia(actor, album) && (
+                      <button
+                        className="icon-btn text-danger"
+                        type="button"
+                        onClick={() => setConfirmAction({ type: 'deleteMedia', album, media })}
+                        aria-label="Xóa tệp"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {albumForm && (
+        <AlbumFormModal
+          album={albumForm.album}
+          isSaving={isSaving}
+          onClose={() => setAlbumForm(null)}
+          onSubmit={handleSaveAlbum}
+        />
+      )}
+
+      <UploadMediaModal
+        album={uploadAlbum}
+        isUploading={isUploading}
+        onClose={() => setUploadAlbum(null)}
+        onSubmit={handleUpload}
+      />
+
+      <MediaEditModal
+        media={editingMedia}
+        isSaving={isSaving}
+        onClose={() => setEditingMedia(null)}
+        onSubmit={handleSaveMediaDescription}
+      />
+
+      <ImageLightbox
+        image={lightboxMedia}
+        images={imageItems}
+        onClose={() => setLightboxMedia(null)}
+        onSelectImage={setLightboxMedia}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(confirmAction)}
+        title={confirmAction?.type === 'deleteAlbum' ? 'Xóa album?' : 'Xóa ảnh hoặc video?'}
+        message={
+          confirmAction?.type === 'deleteAlbum'
+            ? `Bạn chắc chắn muốn xóa album "${confirmAction?.album.title}"? Toàn bộ ảnh và video trong album cũng sẽ bị xóa.`
+            : `Bạn chắc chắn muốn xóa "${confirmAction?.media.fileName}" khỏi album?`
+        }
+        confirmText={confirmAction?.type === 'deleteAlbum' ? 'Xóa album' : 'Xóa'}
+        cancelText="Hủy"
+        isDanger
+        isLoading={isSaving}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirm}
+      />
+    </div>
+  );
+};
+
+export default GalleryDetail;

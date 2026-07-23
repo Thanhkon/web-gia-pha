@@ -18,6 +18,8 @@ const Posts = lazy(() => import('./pages/Posts'));
 const PostDetail = lazy(() => import('./pages/PostDetail'));
 const PostEditor = lazy(() => import('./pages/PostEditor'));
 const Events = lazy(() => import('./pages/Events'));
+const Gallery = lazy(() => import('./pages/Gallery'));
+const GalleryDetail = lazy(() => import('./pages/GalleryDetail'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -88,6 +90,19 @@ const App = () => {
                   <main className="main-content"><Events /></main>
                 </>
               } />
+              <Route path="/gallery" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Gallery /></main>
+                </>
+              } />
+              <Route path="/albums/:albumId" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><GalleryDetail /></main>
+                </>
+              } />
+              <Route path="/albums" element={<Navigate to="/gallery" replace />} />
 
               {/* Admin Protected Routes */}
               <Route path="/admin" element={<ProtectedRoute />}>

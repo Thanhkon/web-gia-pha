@@ -50,7 +50,7 @@ const Home = () => {
             <button className="btn btn-glass" onClick={() => navigate('/posts')}>
               <FileText size={18} /> Bài Viết
             </button>
-            <button className="btn btn-glass" onClick={() => navigate('/albums')}>
+            <button className="btn btn-glass" onClick={() => navigate('/gallery')}>
               <Image size={18} /> Thư Viện
             </button>
             <button className="btn btn-glass" onClick={() => navigate('/edit-requests')}>
@@ -138,7 +138,7 @@ const Home = () => {
                 ))
               )}
             </div>
-            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/albums')}>
+            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/gallery')}>
               Mở thư viện <ChevronRight size={16} />
             </button>
           </div>
