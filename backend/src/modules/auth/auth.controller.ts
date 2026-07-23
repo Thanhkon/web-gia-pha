@@ -1,4 +1,6 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { AccessTokenGuard } from './guards/access-token.guard';
+import type { AuthenticatedRequest } from './guards/access-token.guard';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -19,6 +21,12 @@ export class AuthController {
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Get('me')
+  me(@Req() request: AuthenticatedRequest) {
+    return request.user;
   }
 
   @Post('refresh-token')
@@ -46,3 +54,4 @@ export class AuthController {
     return this.authService.changePassword(changePasswordDto);
   }
 }
+
