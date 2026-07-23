@@ -1,12 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { mockGalleryAlbums } from '../../data/mockGallery';
+import { ALBUM_STATUS } from '../../types/gallery';
 
 const initialState = {
-  data: [
-    { id: 1, title: 'Lễ Thanh Minh 2026', img: '' },
-    { id: 2, title: 'Khánh thành Từ đường', img: '' },
-    { id: 3, title: 'Họp mặt đầu xuân', img: '' },
-    { id: 4, title: 'Trao thưởng Khuyến học', img: '' }
-  ],
+  data: mockGalleryAlbums
+    .filter((album) => album.status === ALBUM_STATUS.VISIBLE)
+    .slice(0, 4)
+    .map((album) => ({
+      id: album.id,
+      title: album.title,
+      img: album.coverImage,
+    })),
 };
 
 export const albumsSlice = createSlice({
@@ -15,7 +19,7 @@ export const albumsSlice = createSlice({
   reducers: {
     setAlbums: (state, action) => {
       state.data = action.payload;
-    }
+    },
   },
 });
 
