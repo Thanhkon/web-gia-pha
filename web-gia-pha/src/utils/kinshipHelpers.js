@@ -12,11 +12,12 @@ const DESCENDANTS = ["", "Con", "Cháu", "Chắt", "Chít", "Chút", "Chét", "C
 
 function getSeniority(a, b) {
   if (!a || !b || a.id === b.id) return "equal";
-  if (a.birthOrder != null && b.birthOrder != null) {
-    return a.birthOrder < b.birthOrder ? "senior" : a.birthOrder > b.birthOrder ? "junior" : "equal";
-  }
-  if (a.birthYear != null && b.birthYear != null) {
-    return a.birthYear < b.birthYear ? "senior" : a.birthYear > b.birthYear ? "junior" : "equal";
+  
+  const yearA = a.birthYear || (a.dateOfBirth ? new Date(a.dateOfBirth).getFullYear() : null);
+  const yearB = b.birthYear || (b.dateOfBirth ? new Date(b.dateOfBirth).getFullYear() : null);
+
+  if (yearA != null && yearB != null) {
+    return yearA < yearB ? "senior" : yearA > yearB ? "junior" : "equal";
   }
   return "equal";
 }

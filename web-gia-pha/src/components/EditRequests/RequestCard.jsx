@@ -4,7 +4,7 @@ import { FIELD_DICT } from './RequestForm';
 
 const RequestCard = ({ request }) => {
   const getStatusBadge = () => {
-    switch (request.status) {
+    switch (request.status?.toLowerCase()) {
       case 'pending':
         return <span className="badge badge-warning"><Clock size={12} /> Đang chờ</span>;
       case 'approved':
@@ -25,9 +25,9 @@ const RequestCard = ({ request }) => {
     <div className="request-card">
       <div className="request-card-header">
         <div>
-          <h4 className="request-target">Sửa thông tin: <strong>{request.targetMemberName}</strong></h4>
+          <h4 className="request-target">Sửa thông tin: <strong>{request.targetMember?.fullName || request.targetMemberName || 'Không rõ'}</strong></h4>
           <div className="request-meta">
-            <span>Gửi bởi: <strong>{request.submittedBy.name}</strong></span>
+            <span>Gửi bởi: <strong>{request.submittedByName || request.submittedBy?.name || 'Ẩn danh'}</strong></span>
             <span>•</span>
             <span>{formatDate(request.createdAt)}</span>
           </div>
@@ -49,13 +49,13 @@ const RequestCard = ({ request }) => {
           </ul>
         </div>
 
-        {request.status === 'rejected' && request.adminNote && (
+        {request.status?.toLowerCase() === 'rejected' && request.adminNote && (
           <div className="request-reject-reason">
             <strong>Ghi chú từ Admin:</strong> {request.adminNote}
           </div>
         )}
         
-        {request.status === 'approved' && request.reviewedAt && (
+        {request.status?.toLowerCase() === 'approved' && request.reviewedAt && (
           <div className="request-approve-info">
             Duyệt vào lúc {formatDate(request.reviewedAt)} bởi Admin.
           </div>

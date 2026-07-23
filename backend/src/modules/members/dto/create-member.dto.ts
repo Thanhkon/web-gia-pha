@@ -6,6 +6,8 @@ export class CreateMemberDto {
   generation?: number | null;
   role?: string | null;
   dateOfBirth?: string | Date | null;
+  isDeceased?: boolean;
+  isInLaw?: boolean;
   dateOfDeath?: string | Date | null;
   placeOfBirth?: string | null;
   currentAddress?: string | null;

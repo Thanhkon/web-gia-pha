@@ -11,7 +11,7 @@ const FamilyNodeCard = ({ person, onAddChild, onAddSpouse, id, onViewDetails, is
   return (
     <div 
       id={id} 
-      className={`node-card ${person.gender} ${person.isInLaw ? 'in-law' : ''} ${person.isDeleted ? 'node-deleted' : ''} ${isSelectedA ? 'kinship-selected' : ''} ${isSelectedB ? 'kinship-target' : ''} ${isKinshipMode ? 'kinship-mode-hover' : ''}`} 
+      className={`node-card ${person.gender} ${person.isInLaw ? 'in-law' : ''} ${person.isDeceased ? 'node-deceased' : ''} ${person.isDeleted ? 'node-deleted' : ''} ${isSelectedA ? 'kinship-selected' : ''} ${isSelectedB ? 'kinship-target' : ''} ${isKinshipMode ? 'kinship-mode-hover' : ''}`} 
       onClick={() => onViewDetails && onViewDetails(person)}
     >
 
@@ -30,14 +30,14 @@ const FamilyNodeCard = ({ person, onAddChild, onAddSpouse, id, onViewDetails, is
         </div>
       )}
       <img
-        src={person.imageUrl || (person.gender === 'male' ? avatarMale : avatarFemale)}
+        src={person.avatarUrl || (person.gender === 'male' ? avatarMale : avatarFemale)}
         alt={person.fullName}
         className="node-avatar"
       />
       <div className="node-name">{person.fullName}</div>
       <div className="node-dates">
-        {person.birthYear || (person.birthDate && person.birthDate.split('-')[0]) || '?'}
-        {person.isDeceased ? ` - ${person.deathYear || (person.deathDate && person.deathDate.split('-')[0]) || '?'}` : ''}
+        {person.birthYear || (person.dateOfBirth && new Date(person.dateOfBirth).getFullYear()) || '?'}
+        {person.isDeceased ? ` - ${person.deathYear || (person.dateOfDeath && new Date(person.dateOfDeath).getFullYear()) || '?'}` : ''}
       </div>
       <div className="node-badges">
         <span className="badge">Đời {person.generation}</span>

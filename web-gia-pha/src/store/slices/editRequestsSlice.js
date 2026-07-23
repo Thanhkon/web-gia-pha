@@ -1,62 +1,121 @@
-import { createSlice, createSelector } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
+import apiClient from '../../utils/apiClient';
 
-const loadFromSessionStorage = (key, defaultData) => {
-  try {
-    const saved = sessionStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultData;
-  } catch (e) {
-    return defaultData;
+export const fetchRequests = createAsyncThunk(
+  'editRequests/fetchRequests',
+  async (familyId, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get(`/families/${familyId}/edit-requests`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch requests');
+    }
   }
-};
+);
+
+export const addRequest = createAsyncThunk(
+  'editRequests/addRequest',
+  async ({ familyId, requestData }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post(`/families/${familyId}/edit-requests`, requestData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to add request');
+    }
+  }
+);
+
+export const approveRequestThunk = createAsyncThunk(
+  'editRequests/approveRequest',
+  async ({ id, adminNote, reviewerName }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.patch(`/edit-requests/${id}/approve`, {
+        adminNote,
+        reviewedBy: reviewerName
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to approve request');
+    }
+  }
+);
+
+export const rejectRequestThunk = createAsyncThunk(
+  'editRequests/rejectRequest',
+  async ({ id, adminNote, reviewerName }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.patch(`/edit-requests/${id}/reject`, {
+        adminNote,
+        reviewedBy: reviewerName
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to reject request');
+    }
+  }
+);
+
+export const deleteRequestThunk = createAsyncThunk(
+  'editRequests/deleteRequest',
+  async (id, { rejectWithValue }) => {
+    try {
+      await apiClient.delete(`/edit-requests/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete request');
+    }
+  }
+);
 
 const initialState = {
-  items: loadFromSessionStorage('giapha_edit_requests', [])
+  items: [],
+  loading: false,
+  error: null
 };
 
 const editRequestsSlice = createSlice({
   name: 'editRequests',
   initialState,
-  reducers: {
-    submitRequest: (state, action) => {
-      // payload: { type, targetMemberId, targetMemberName, changes, reason, submittedBy }
-      const newRequest = {
-        ...action.payload,
-        id: `req_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        status: 'pending',
-        adminNote: '',
-        createdAt: new Date().toISOString(),
-        reviewedAt: null,
-        reviewedBy: null
-      };
-      state.items.push(newRequest);
-    },
-    approveRequest: (state, action) => {
-      const { id, adminNote, reviewerName } = action.payload;
-      const index = state.items.findIndex(r => r.id === id);
-      if (index !== -1) {
-        state.items[index].status = 'approved';
-        state.items[index].adminNote = adminNote || '';
-        state.items[index].reviewedAt = new Date().toISOString();
-        state.items[index].reviewedBy = reviewerName;
-      }
-    },
-    rejectRequest: (state, action) => {
-      const { id, adminNote, reviewerName } = action.payload;
-      const index = state.items.findIndex(r => r.id === id);
-      if (index !== -1) {
-        state.items[index].status = 'rejected';
-        state.items[index].adminNote = adminNote || '';
-        state.items[index].reviewedAt = new Date().toISOString();
-        state.items[index].reviewedBy = reviewerName;
-      }
-    },
-    deleteRequest: (state, action) => {
-      state.items = state.items.filter(r => r.id !== action.payload);
-    }
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // fetchRequests
+      .addCase(fetchRequests.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchRequests.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(fetchRequests.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // addRequest
+      .addCase(addRequest.fulfilled, (state, action) => {
+        state.items.push(action.payload);
+      })
+      // approveRequest
+      .addCase(approveRequestThunk.fulfilled, (state, action) => {
+        const index = state.items.findIndex(r => r.id === action.payload.id);
+        if (index !== -1) {
+          state.items[index] = action.payload;
+        }
+      })
+      // rejectRequest
+      .addCase(rejectRequestThunk.fulfilled, (state, action) => {
+        const index = state.items.findIndex(r => r.id === action.payload.id);
+        if (index !== -1) {
+          state.items[index] = action.payload;
+        }
+      })
+      // deleteRequest
+      .addCase(deleteRequestThunk.fulfilled, (state, action) => {
+        state.items = state.items.filter(r => r.id !== action.payload);
+      });
   }
 });
-
-export const { submitRequest, approveRequest, rejectRequest, deleteRequest } = editRequestsSlice.actions;
 
 // Selectors
 export const selectAllRequests = state => state.editRequests.items;

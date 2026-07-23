@@ -53,6 +53,30 @@ export const addMemberToFamily = createAsyncThunk(
   }
 );
 
+export const updateMemberToFamily = createAsyncThunk(
+  'members/updateMember',
+  async ({ memberId, memberData }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.patch(`/members/${memberId}`, memberData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update member');
+    }
+  }
+);
+
+export const deleteMemberFromFamily = createAsyncThunk(
+  'members/deleteMember',
+  async (memberId, { rejectWithValue }) => {
+    try {
+      await apiClient.delete(`/members/${memberId}`);
+      return memberId;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete member');
+    }
+  }
+);
+
 export const addParentChildRelation = createAsyncThunk(
   'members/addParentChild',
   async (relationData, { rejectWithValue }) => {
@@ -140,6 +164,17 @@ const membersSlice = createSlice({
       })
       .addCase(addMarriageRelation.fulfilled, (state, action) => {
         state.relationships.push(action.payload);
+      })
+      .addCase(updateMemberToFamily.fulfilled, (state, action) => {
+        const index = state.persons.findIndex(p => p.id === action.payload.id);
+        if (index !== -1) {
+          state.persons[index] = action.payload;
+        }
+      })
+      .addCase(deleteMemberFromFamily.fulfilled, (state, action) => {
+        const id = action.payload;
+        state.persons = state.persons.filter(p => p.id !== id);
+        state.relationships = state.relationships.filter(r => r.person_a !== id && r.person_b !== id);
       });
   }
 });

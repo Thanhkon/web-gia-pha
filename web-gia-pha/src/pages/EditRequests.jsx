@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { submitRequest, selectAllRequests, selectPendingCount } from '../store/slices/editRequestsSlice';
+import { addRequest, fetchRequests, selectAllRequests } from '../store/slices/editRequestsSlice';
 import RequestForm from '../components/EditRequests/RequestForm';
 import RequestCard from '../components/EditRequests/RequestCard';
 import '../css/pages/EditRequests.css';
@@ -14,23 +14,44 @@ const EditRequests = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
   
+  useEffect(() => {
+    dispatch(fetchRequests(1)); // CURRENT_FAMILY_ID = 1
+  }, [dispatch]);
+  
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const allRequests = useSelector(selectAllRequests);
   
   // Lọc ra các request do người dùng hiện tại (trên trình duyệt này) vừa gửi
   // Để đơn giản, ta sẽ lưu lại tên những người gửi trong tab hiện tại.
-  const myRequests = allRequests.filter(r => currentUserNames.has(r.submittedBy.name)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const myRequests = allRequests.filter(r => currentUserNames.has(r.submittedByName)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   
-  const myPendingCount = myRequests.filter(r => r.status === 'pending').length;
+  const myPendingCount = myRequests.filter(r => r.status === 'PENDING').length;
 
-  const handleSubmit = (requestData) => {
-    dispatch(submitRequest(requestData));
-    
-    const newNames = new Set(currentUserNames).add(requestData.submittedBy.name);
-    setCurrentUserNames(newNames);
-    localStorage.setItem('family_tree_requester_names', JSON.stringify([...newNames]));
-    
-    alert('Yêu cầu đã được gửi thành công! Vui lòng chờ Admin phê duyệt.');
+  const handleSubmit = async (requestData) => {
+    try {
+      const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
+
+      await dispatch(addRequest({
+        familyId: CURRENT_FAMILY_ID,
+        requestData: {
+          targetMemberId: requestData.targetMemberId,
+          requestType: requestData.type,
+          changes: requestData.changes,
+          reason: requestData.reason,
+          submittedByName: requestData.submittedBy.name,
+          submittedByPhone: requestData.submittedBy.phone
+        }
+      })).unwrap();
+
+      const newNames = new Set(currentUserNames).add(requestData.submittedBy.name);
+      setCurrentUserNames(newNames);
+      localStorage.setItem('family_tree_requester_names', JSON.stringify([...newNames]));
+      
+      alert('Yêu cầu đã được gửi thành công! Vui lòng chờ Admin phê duyệt.');
+    } catch (error) {
+      console.error(error);
+      alert('Có lỗi xảy ra khi gửi yêu cầu.');
+    }
   };
 
   return (

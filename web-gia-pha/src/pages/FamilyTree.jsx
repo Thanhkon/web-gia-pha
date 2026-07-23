@@ -20,12 +20,13 @@ import '../css/pages/FamilyTree.css';
 // Hằng số ngoài component — không bao giờ bị tạo lại, tránh stale closure trong useCallback
 const EMPTY_MEMBER = {
   fullName: '', otherName: '', gender: 'male',
-  generation: 1, birthOrder: 1, branch: '', isInLaw: false,
+  generation: 1, role: '', isInLaw: false,
   fatherId: '', motherId: '', spouseId: '',
-  birthDate: '',
-  isDeceased: false, deathDate: '', deathLunarDate: '',
-  birthPlace: '', address: '',
-  education: '', occupation: '', biography: '', notes: ''
+  dateOfBirth: '',
+  isDeceased: false, dateOfDeath: '', deathLunarDate: '',
+  placeOfBirth: '', currentAddress: '',
+  education: '', occupation: '', biography: '', note: '',
+  avatarUrl: ''
 };
 
 const FamilyTree = () => {
@@ -107,14 +108,18 @@ const FamilyTree = () => {
           otherName: submittedData.otherName,
           gender: submittedData.gender,
           generation: submittedData.generation,
-          dateOfBirth: submittedData.birthDate || null,
-          dateOfDeath: submittedData.deathDate || null,
-          placeOfBirth: submittedData.birthPlace || null,
-          currentAddress: submittedData.address || null,
+          role: submittedData.role || null,
+          isInLaw: submittedData.isInLaw || false,
+          dateOfBirth: submittedData.dateOfBirth || null,
+          isDeceased: submittedData.isDeceased || false,
+          dateOfDeath: submittedData.dateOfDeath || null,
+          placeOfBirth: submittedData.placeOfBirth || null,
+          currentAddress: submittedData.currentAddress || null,
           education: submittedData.education || null,
           occupation: submittedData.occupation || null,
           biography: submittedData.biography || null,
-          note: submittedData.notes || null,
+          note: submittedData.note || null,
+          avatarUrl: submittedData.avatarUrl || null,
         }
       })).unwrap();
 
@@ -186,9 +191,28 @@ const FamilyTree = () => {
 
     const adjacency = buildAdjacencyLists(relationships, pMap);
 
-    const rootNodes = currentPersons.filter(p => {
+    // Xử lý tìm roots: 
+    // Những người không có cha mẹ sẽ là root. 
+    // Tuy nhiên, nếu vợ chồng đều không có cha mẹ, ta chỉ lấy 1 người làm root (ưu tiên nam) để tránh trùng lặp khung.
+    const rootNodes = [];
+    const seenAsSpouse = new Set();
+    
+    // Ưu tiên xử lý nam trước để làm root chính
+    const sortedForRoots = [...currentPersons].sort((a, b) => {
+      if (a.gender === 'male' && b.gender !== 'male') return -1;
+      if (a.gender !== 'male' && b.gender === 'male') return 1;
+      return 0;
+    });
+
+    sortedForRoots.forEach(p => {
       const parents = adjacency[p.id]?.parents || [];
-      return parents.length === 0 && !p.isInLaw;
+      const isActuallyInLaw = p.isInLaw; // Vẫn giữ fallback nếu frontend có truyền
+      
+      if (parents.length === 0 && !isActuallyInLaw && !seenAsSpouse.has(p.id)) {
+        rootNodes.push(p);
+        const spouses = adjacency[p.id]?.spouses || [];
+        spouses.forEach(sId => seenAsSpouse.add(sId));
+      }
     });
 
     return { personsMap: pMap, adj: adjacency, roots: rootNodes };

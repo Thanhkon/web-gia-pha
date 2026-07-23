@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as XLSX from 'xlsx';
 import MemberForm from '../../components/Admin/MemberForm/MemberForm';
@@ -8,18 +8,24 @@ import MembersTable from '../../components/Admin/MembersTable';
 import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { 
-  addMemberToFamily, 
-  updateMemberSync, 
-  deleteMemberSync, 
+  fetchFamilyTree,
+  addMemberToFamily,
   addParentChildRelation,
-  addMarriageRelation
+  addMarriageRelation,
+  updateMemberToFamily,
+  deleteMemberFromFamily
 } from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
 import '../../css/pages/AdminMembers.css';
 
 const AdminMembers = () => {
   const dispatch = useDispatch();
-  const persons = useSelector(state => state.members.persons);
+
+  useEffect(() => {
+    dispatch(fetchFamilyTree(1)); // Tạm thời hardcode familyId = 1
+  }, [dispatch]);
+
+  const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const relationships = useSelector(state => state.members.relationships);
   
   const [viewMode, setViewMode] = useState('table');
@@ -39,12 +45,13 @@ const AdminMembers = () => {
 
   const emptyMember = {
     fullName: '', otherName: '', gender: 'male', 
-    generation: 1, birthOrder: 1, branch: '', isInLaw: false, 
+    generation: 1, role: '', isInLaw: false, 
     fatherId: '', motherId: '', spouseId: '',
-    birthDate: '', 
-    isDeceased: false, deathDate: '', deathLunarDate: '',
-    birthPlace: '', address: '', 
-    education: '', occupation: '', biography: '', notes: ''
+    dateOfBirth: '', 
+    isDeceased: false, dateOfDeath: '', deathLunarDate: '',
+    placeOfBirth: '', currentAddress: '', 
+    education: '', occupation: '', biography: '', note: '',
+    avatarUrl: ''
   };
 
   const [newMember, setNewMember] = useState(emptyMember);
@@ -75,7 +82,27 @@ const AdminMembers = () => {
   const handleAddSubmit = async (submittedData) => {
     try {
       if (editingId) {
-        dispatch(updateMemberSync({ ...submittedData }));
+        await dispatch(updateMemberToFamily({ 
+          memberId: editingId, 
+          memberData: {
+            fullName: submittedData.fullName,
+            otherName: submittedData.otherName,
+            gender: submittedData.gender,
+            generation: submittedData.generation,
+            role: submittedData.role || null,
+            isInLaw: submittedData.isInLaw || false,
+            dateOfBirth: submittedData.dateOfBirth || null,
+            isDeceased: submittedData.isDeceased || false,
+            dateOfDeath: submittedData.dateOfDeath || null,
+            placeOfBirth: submittedData.placeOfBirth || null,
+            currentAddress: submittedData.currentAddress || null,
+            education: submittedData.education || null,
+            occupation: submittedData.occupation || null,
+            biography: submittedData.biography || null,
+            note: submittedData.note || null,
+            avatarUrl: submittedData.avatarUrl || null,
+          }
+        })).unwrap();
       } else {
         const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
         const newMember = await dispatch(addMemberToFamily({
@@ -85,14 +112,18 @@ const AdminMembers = () => {
             otherName: submittedData.otherName,
             gender: submittedData.gender,
             generation: submittedData.generation,
-            dateOfBirth: submittedData.birthDate || null,
-            dateOfDeath: submittedData.deathDate || null,
-            placeOfBirth: submittedData.birthPlace || null,
-            currentAddress: submittedData.address || null,
+            role: submittedData.role || null,
+            isInLaw: submittedData.isInLaw || false,
+            dateOfBirth: submittedData.dateOfBirth || null,
+            isDeceased: submittedData.isDeceased || false,
+            dateOfDeath: submittedData.dateOfDeath || null,
+            placeOfBirth: submittedData.placeOfBirth || null,
+            currentAddress: submittedData.currentAddress || null,
             education: submittedData.education || null,
             occupation: submittedData.occupation || null,
             biography: submittedData.biography || null,
-            note: submittedData.notes || null,
+            note: submittedData.note || null,
+            avatarUrl: submittedData.avatarUrl || null,
           }
         })).unwrap();
         
@@ -134,9 +165,14 @@ const AdminMembers = () => {
     setDeleteConfirm({ isOpen: true, id });
   };
 
-  const confirmDelete = (isHardDelete) => {
+  const confirmDelete = async (isHardDelete) => {
     if (deleteConfirm.id) {
-      dispatch(deleteMemberSync({ id: deleteConfirm.id, hardDelete: isHardDelete }));
+      try {
+        await dispatch(deleteMemberFromFamily(deleteConfirm.id)).unwrap();
+      } catch (err) {
+        console.error('Lỗi khi xóa:', err);
+        alert('Có lỗi xảy ra khi xóa!');
+      }
     }
     setDeleteConfirm({ isOpen: false, id: null });
   };
@@ -168,8 +204,8 @@ const AdminMembers = () => {
             gender: row.GioiTinh === 'Nu' || row.GioiTinh === 'Nữ' ? 'female' : 'male',
             generation: Number(row.DoiThu) || 1,
             isInLaw: row.LaDauRe == 1,
-            birthDate: row.NgaySinh ? String(row.NgaySinh) : '',
-            deathDate: row.NgayMat ? String(row.NgayMat) : '',
+            dateOfBirth: row.NgaySinh ? String(row.NgaySinh) : '',
+            dateOfDeath: row.NgayMat ? String(row.NgayMat) : '',
             isDeceased: row.ConSong == 0 || !!row.NgayMat,
             fatherId: row.MaCha ? String(row.MaCha) : '',
             motherId: row.MaMe ? String(row.MaMe) : '',

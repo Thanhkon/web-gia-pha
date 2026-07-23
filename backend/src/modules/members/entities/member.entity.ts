@@ -42,6 +42,12 @@ export class Member {
   @Column({ name: 'dateOfBirth', type: 'timestamp', nullable: true })
   dateOfBirth: Date | null;
 
+  @Column({ default: false })
+  isDeceased: boolean;
+
+  @Column({ default: false })
+  isInLaw: boolean;
+
   @Column({ name: 'dateOfDeath', type: 'timestamp', nullable: true })
   dateOfDeath: Date | null;
 

@@ -2,7 +2,22 @@ import React from 'react';
 import { Solar, Lunar } from 'lunar-javascript';
 
 const DateInputGroup = ({ value, onChange, placeholderYear = "Năm", maxToday = false }) => {
-  const parts = (value || '').split('-');
+  // Parse ISO string thành giờ địa phương để tránh lỗi lùi 1 ngày do lệch múi giờ (UTC -> GMT+7)
+  let dateStr = '';
+  if (value) {
+    if (value.includes('T')) {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        dateStr = `${yyyy}-${mm}-${dd}`;
+      }
+    } else {
+      dateStr = String(value).split(' ')[0];
+    }
+  }
+  const parts = dateStr.split('-');
   const y = parts[0] || '';
   const m = parts[1] || '';
   const d = parts[2] || '';
@@ -31,7 +46,7 @@ const DateInputGroup = ({ value, onChange, placeholderYear = "Năm", maxToday = 
 const DateInfo = ({ formData, onChange }) => {
 
   const handleSolarChange = (val) => {
-    onChange('deathDate', val);
+    onChange('dateOfDeath', val);
     if (!val) {
       onChange('deathLunarDate', '');
       return;
@@ -56,7 +71,7 @@ const DateInfo = ({ formData, onChange }) => {
   const handleLunarChange = (val) => {
     onChange('deathLunarDate', val);
     if (!val) {
-      onChange('deathDate', '');
+      onChange('dateOfDeath', '');
       return;
     }
     
@@ -66,9 +81,11 @@ const DateInfo = ({ formData, onChange }) => {
         const [y, m, d] = parts.map(Number);
         if (y > 0 && m > 0 && d > 0) {
           const lunar = Lunar.fromYmd(y, m, d);
-          const solar = lunar.getSolar();
-          const solarStr = `${solar.getYear()}-${solar.getMonth()}-${solar.getDay()}`;
-          onChange('deathDate', solarStr);
+          if (lunar.isValid()) {
+            const solar = lunar.getSolar();
+            const solarStr = `${solar.getYear()}-${solar.getMonth()}-${solar.getDay()}`;
+            onChange('dateOfDeath', solarStr);
+          }
         }
       }
     } catch (err) {
@@ -78,11 +95,11 @@ const DateInfo = ({ formData, onChange }) => {
 
   return (
     <div className="form-section">
-      <h3 className="form-section-title">2. Thời gian Sinh / Mất</h3>
-      <div className="form-row">
+      <h3 className="form-section-title">2. Thông tin Sinh - Tử</h3>
+      <div className="form-row form-row-2">
         <div className="form-group">
-          <label>Ngày tháng năm sinh (Dương lịch)</label>
-          <DateInputGroup value={formData.birthDate} onChange={val => onChange('birthDate', val)} />
+          <label>Ngày sinh (Dương lịch)</label>
+          <DateInputGroup value={formData.dateOfBirth} onChange={val => onChange('dateOfBirth', val)} maxToday={true} />
         </div>
         <div className="form-group form-group-checkbox">
           <label className="checkbox-label checkbox-label-padded">
@@ -92,7 +109,7 @@ const DateInfo = ({ formData, onChange }) => {
               onChange={e => {
                 onChange('isDeceased', e.target.checked);
                 if (!e.target.checked) {
-                  onChange('deathDate', '');
+                  onChange('dateOfDeath', '');
                   onChange('deathLunarDate', '');
                 }
               }} 
@@ -108,10 +125,10 @@ const DateInfo = ({ formData, onChange }) => {
             * Nhập Ngày Dương lịch hoặc Âm lịch. Hệ thống sẽ tự động tính toán và điền phần còn lại.
           </p>
           <div className="deceased-alert">
-            <div className="form-row">
+            <div className="form-row form-row-2">
               <div className="form-group">
                 <label>Ngày mất (Dương lịch)</label>
-                <DateInputGroup value={formData.deathDate} onChange={handleSolarChange} />
+                <DateInputGroup value={formData.dateOfDeath} onChange={handleSolarChange} />
               </div>
               <div className="form-group">
                 <label>Ngày mất (Âm lịch)</label>

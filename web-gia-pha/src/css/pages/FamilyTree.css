@@ -283,6 +283,16 @@
   transition: transform 0.2s;
 }
 
+/* HIỂU THỊ ĐÃ KHUẤT */
+.node-card.node-deceased {
+  opacity: 0.85;
+  filter: grayscale(100%);
+}
+
+.node-card.node-deceased .node-avatar {
+  border-color: #666;
+}
+
 /* HIỂU THỊ ĐÃ XÓA (Soft Delete) */
 .node-card.node-deleted {
   opacity: 0.5;

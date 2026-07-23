@@ -50,7 +50,7 @@ const MembersTable = ({
                     <td>
                       <div className="person-name-cell">
                         <img
-                          src={p.imageUrl || (p.gender === 'male' ? avatarMale : avatarFemale)}
+                          src={p.avatarUrl || (p.gender === 'male' ? avatarMale : avatarFemale)}
                           alt="avatar"
                           className="table-avatar"
                         />
@@ -93,7 +93,7 @@ const MembersTable = ({
               <div key={p.id} className="member-admin-card">
                 <div className="card-header">
                   <img
-                    src={p.imageUrl || (p.gender === 'male' ? avatarMale : avatarFemale)}
+                    src={p.avatarUrl || (p.gender === 'male' ? avatarMale : avatarFemale)}
                     alt="avatar"
                     className="card-avatar"
                   />

@@ -30,7 +30,7 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
       const next = { ...prev, [field]: value };
 
       // 1. Tự động bật "Đã khuất" nếu nhập ngày mất
-      if ((field === 'deathDate' || field === 'deathLunarDate') && value) {
+      if ((field === 'dateOfDeath' || field === 'deathLunarDate') && value) {
         next.isDeceased = true;
       }
 
@@ -74,11 +74,11 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
     });
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.birthDate) {
-      const selectedDate = new Date(formData.birthDate);
+    if (formData.dateOfBirth) {
+      const selectedDate = new Date(formData.dateOfBirth);
       const today = new Date();
       if (selectedDate > today) {
         alert('Lỗi: Ngày sinh không thể lớn hơn ngày hiện tại!');
@@ -86,8 +86,8 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
       }
     }
 
-    const extractedYear = formData.birthDate
-      ? parseInt(formData.birthDate.substring(0, 4))
+    const extractedYear = formData.dateOfBirth
+      ? parseInt(formData.dateOfBirth.substring(0, 4))
       : (formData.birthYear || 1900);
 
     if (formData.fatherId) {

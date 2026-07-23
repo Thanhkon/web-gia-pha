@@ -26,7 +26,7 @@ const MemberProfileModal = ({ member, persons = [], relationships = [], onClose,
         <div className="modal-body">
           <div className="profile-view-header">
             <img 
-              src={member.imageUrl || (member.gender === 'male' ? avatarMale : avatarFemale)} 
+              src={member.avatarUrl || (member.gender === 'male' ? avatarMale : avatarFemale)} 
               alt="avatar" 
               className="profile-view-avatar"
             />
@@ -44,13 +44,12 @@ const MemberProfileModal = ({ member, persons = [], relationships = [], onClose,
           <div className="profile-view-details">
             <div className="detail-item"><strong>Giới tính:</strong> {member.gender === 'male' ? 'Nam' : 'Nữ'}</div>
             <div className="detail-item"><strong>Đời thứ:</strong> {member.generation}</div>
-            <div className="detail-item"><strong>Chi/Nhánh:</strong> {member.branch || 'Chưa cập nhật'}</div>
-            <div className="detail-item"><strong>Năm sinh:</strong> {member.birthYear || (member.birthDate && member.birthDate.split('-')[0]) || 'Chưa cập nhật'}</div>
+            <div className="detail-item"><strong>Năm sinh:</strong> {member.birthYear || (member.dateOfBirth && new Date(member.dateOfBirth).getFullYear()) || 'Chưa cập nhật'}</div>
             {member.isDeceased && (
                <div className="detail-item"><strong>Ngày mất (Âm):</strong> {member.deathLunarDate || 'Chưa cập nhật'}</div>
             )}
-            <div className="detail-item"><strong>Nơi sinh:</strong> {member.birthPlace || 'Chưa cập nhật'}</div>
-            <div className="detail-item full-width"><strong>Địa chỉ:</strong> {member.address || 'Chưa cập nhật'}</div>
+            <div className="detail-item"><strong>Nơi sinh:</strong> {member.placeOfBirth || 'Chưa cập nhật'}</div>
+            <div className="detail-item full-width"><strong>Địa chỉ:</strong> {member.currentAddress || 'Chưa cập nhật'}</div>
             <div className="detail-item"><strong>Nghề nghiệp:</strong> {member.occupation || 'Chưa cập nhật'}</div>
             <div className="detail-item"><strong>Học vấn:</strong> {member.education || 'Chưa cập nhật'}</div>
             <div className="detail-item"><strong>Điện thoại:</strong> {member.phone || 'Chưa cập nhật'}</div>

@@ -13,7 +13,12 @@ apiClient.interceptors.request.use(
   (config) => {
     // Lấy state hiện tại từ Redux store
     const state = store.getState();
-    const token = state.auth.token;
+    let token = state.auth.token;
+
+    // TODO: Xoá dòng này khi tính năng Đăng nhập được nối API thật
+    if (!token) {
+      token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImVtYWlsIjoidGVzdDU1QGV4YW1wbGUuY29tIiwiaWF0IjoxNzg0Nzk1NzM2LCJleHAiOjE3ODQ4ODIxMzZ9.6r7Hi6zw2bdCO9BR7fnw4BFySNhwH-VlhiAoxuZCuOc';
+    }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
