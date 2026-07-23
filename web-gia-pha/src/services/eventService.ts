@@ -1,5 +1,5 @@
-import { mockCurrentUser } from '../data/mockAuth';
 import { mockEvents } from '../data/mockEvents';
+import { AuthUser, UserRole } from '../types/auth';
 import {
   ApiResponse,
   CancelEventPayload,
@@ -11,7 +11,6 @@ import {
   EventVisibility,
   MockCurrentUser,
   RecurrenceFrequency,
-  UserRole,
 } from '../types/events';
 import {
   formatVietnamDateKey,
@@ -21,9 +20,23 @@ import {
   toVietnamDateTimeOffset,
 } from './calendarService';
 
-let eventStore: Event[] = mockEvents.map((event) => ({ ...event, reminders: [...event.reminders] }));
+const STORAGE_KEY = 'giapha_mock_events';
+const STORAGE_VERSION_KEY = 'giapha_mock_events_version';
+const STORAGE_VERSION = 'events-auth-v3';
+
+let eventStore: Event[] = readStoredEvents();
 
 const wait = (ms = 350) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const guestUser: MockCurrentUser = {
+  id: 'guest',
+  name: 'Khách',
+  role: UserRole.GUEST,
+  familyId: '',
+  memberId: null,
+  isAuthenticated: false,
+  permissions: {},
+};
 
 const createResponse = <T>(data: T): ApiResponse<T> => ({
   data,
@@ -34,18 +47,107 @@ const createResponse = <T>(data: T): ApiResponse<T> => ({
   },
 });
 
+function cloneEvent(event: Event): Event {
+  return {
+    ...event,
+    recurrence: { ...event.recurrence },
+    reminders: event.reminders.map((reminder) => ({ ...reminder })),
+    createdBy: event.createdBy ? { ...event.createdBy } : undefined,
+  };
+}
+
+function cloneEvents(events: Event[]): Event[] {
+  return events.map(cloneEvent);
+}
+
+function readStoredEvents(): Event[] {
+  try {
+    const savedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (saved && savedVersion === STORAGE_VERSION) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return cloneEvents(parsed);
+      }
+    }
+  } catch (error) {
+    console.warn('Could not read events from localStorage:', error);
+  }
+
+  return cloneEvents(mockEvents);
+}
+
+function persistEvents() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(eventStore));
+    localStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION);
+  } catch (error) {
+    console.warn('Could not persist events to localStorage:', error);
+  }
+}
+
+export function getEventActor(user?: AuthUser | null, isAuthenticated = Boolean(user)): MockCurrentUser | null {
+  const validRoles = Object.values(UserRole);
+
+  if (
+    !isAuthenticated
+    || !user
+    || !user.id
+    || !user.name
+    || !user.role
+    || !validRoles.includes(user.role)
+    || (user.role !== UserRole.GUEST && !user.familyId)
+  ) {
+    return null;
+  }
+
+  if (user.role === UserRole.GUEST) {
+    return null;
+  }
+
+  return {
+    ...user,
+    isAuthenticated: true,
+  };
+}
+
+export function canManageEvent(user: MockCurrentUser | null | undefined, event?: Event | null) {
+  if (!user || user.role !== UserRole.FAMILY_HEAD || !user.familyId) {
+    return false;
+  }
+
+  return event ? event.familyId === user.familyId : true;
+}
+
+export const canCreateEvent = (user: MockCurrentUser | null | undefined) => canManageEvent(user);
+export const canUpdateEvent = canManageEvent;
+export const canCancelEvent = canManageEvent;
+export const canDeleteEvent = canManageEvent;
+
+function isPubliclyVisibleStatus(event: Event) {
+  return event.status !== EventStatus.CANCELLED;
+}
+
+export function canViewEvent(event: Event, user: MockCurrentUser | null | undefined) {
+  const actor = user || guestUser;
+
+  if (actor.role === UserRole.GUEST) {
+    return event.visibility === EventVisibility.PUBLIC && isPubliclyVisibleStatus(event);
+  }
+
+  if (!actor.familyId || actor.familyId !== event.familyId) {
+    return false;
+  }
+
+  return actor.role === UserRole.FAMILY_HEAD
+    || (actor.role === UserRole.MEMBER && Boolean(actor.memberId));
+}
+
 const ensureNoMockError = (params?: EventQueryParams) => {
   if (params?.simulateError || params?.search === '__error') {
     throw new Error('Không thể tải dữ liệu sự kiện. Vui lòng thử lại.');
   }
-};
-
-const canViewEvent = (event: Event, user: MockCurrentUser) => {
-  if (user.role === UserRole.GUEST) {
-    return event.visibility === EventVisibility.PUBLIC;
-  }
-
-  return true;
 };
 
 const computeEventStatus = (event: Event, now = new Date()): EventStatus => {
@@ -65,16 +167,16 @@ const toServiceEvent = (event: Event): Event => {
   const status = computeEventStatus(event);
 
   return {
-    ...event,
+    ...cloneEvent(event),
     status,
-    reminders: status === EventStatus.CANCELLED ? [] : event.reminders,
+    reminders: status === EventStatus.CANCELLED ? [] : event.reminders.map((reminder) => ({ ...reminder })),
   };
 };
 
-const getVisibleEvents = () => {
+const getVisibleEvents = (actor: MockCurrentUser | null | undefined) => {
   return eventStore
     .map(toServiceEvent)
-    .filter((event) => event.familyId === mockCurrentUser.familyId && canViewEvent(event, mockCurrentUser));
+    .filter((event) => canViewEvent(event, actor));
 };
 
 const normalizeText = (value = '') => value.trim().toLowerCase();
@@ -103,52 +205,58 @@ const sortByStartDate = (events: Event[]) => {
   return [...events].sort((left, right) => parseLocalDate(left.startAt).getTime() - parseLocalDate(right.startAt).getTime());
 };
 
-const buildEventPayload = (data: EventPayload): EventPayload => ({
-  ...data,
-  familyId: data.familyId ?? mockCurrentUser.familyId,
+const buildEventPayload = (data: EventPayload, actor: MockCurrentUser): EventPayload => ({
+  title: data.title,
+  type: data.type,
+  visibility: data.visibility,
+  description: data.description,
+  location: data.location,
+  inputCalendar: data.inputCalendar,
+  familyId: actor.familyId,
   startAt: toVietnamDateTimeOffset(data.startAt),
   endAt: toVietnamDateTimeOffset(data.endAt),
   recurrence: data.recurrence ?? { frequency: RecurrenceFrequency.NONE, interval: 1 },
-  reminders: data.reminders ?? [],
+  reminders: data.reminders?.map((reminder) => ({ ...reminder })) ?? [],
+  sendNotification: data.sendNotification,
 });
 
 export const eventService = {
-  async getCurrentUser() {
+  async getCurrentUser(user?: AuthUser | null, isAuthenticated = Boolean(user)) {
     await wait(120);
-    return createResponse(mockCurrentUser);
+    return createResponse(getEventActor(user, isAuthenticated));
   },
 
-  async getEvents(params?: EventQueryParams) {
+  async getEvents(params?: EventQueryParams, actor: MockCurrentUser | null = null) {
     await wait();
     ensureNoMockError(params);
-    const data = sortByStartDate(filterEvents(getVisibleEvents(), params));
-    return createResponse(data);
+    const data = sortByStartDate(filterEvents(getVisibleEvents(actor), params));
+    return createResponse(cloneEvents(data));
   },
 
-  async getCalendarEvents(params: EventQueryParams) {
+  async getCalendarEvents(params: EventQueryParams, actor: MockCurrentUser | null = null) {
     await wait();
     ensureNoMockError(params);
 
     const monthDate = new Date(params.year ?? new Date().getFullYear(), params.month ?? new Date().getMonth(), 1);
     const { start, end } = getMonthRange(monthDate);
-    const visibleEvents = getVisibleEvents().filter((event) => isInRange(event, start, end));
+    const visibleEvents = getVisibleEvents(actor).filter((event) => isInRange(event, start, end));
 
-    return createResponse(sortByStartDate(filterEvents(visibleEvents, params)));
+    return createResponse(cloneEvents(sortByStartDate(filterEvents(visibleEvents, params))));
   },
 
-  async getTodayEvents(params?: EventQueryParams) {
+  async getTodayEvents(params?: EventQueryParams, actor: MockCurrentUser | null = null) {
     await wait(240);
     ensureNoMockError(params);
     const todayKey = formatVietnamDateKey(new Date());
-    const data = getVisibleEvents().filter((event) => {
+    const data = getVisibleEvents(actor).filter((event) => {
       return todayKey >= formatVietnamDateKey(event.startAt)
         && todayKey <= formatVietnamDateKey(event.endAt);
     });
 
-    return createResponse(sortByStartDate(filterEvents(data, params)));
+    return createResponse(cloneEvents(sortByStartDate(filterEvents(data, params))));
   },
 
-  async getUpcomingEvents(days = 30, params?: EventQueryParams) {
+  async getUpcomingEvents(days = 30, params?: EventQueryParams, actor: MockCurrentUser | null = null) {
     await wait(260);
     ensureNoMockError(params);
     const start = parseLocalDate(`${formatVietnamDateKey(new Date())}T00:00:00+07:00`);
@@ -156,68 +264,85 @@ export const eventService = {
     end.setDate(end.getDate() + days);
     end.setHours(23, 59, 59, 999);
 
-    const data = getVisibleEvents().filter((event) => (
+    const data = getVisibleEvents(actor).filter((event) => (
       event.status !== EventStatus.CANCELLED && isInRange(event, start, end)
     ));
 
-    return createResponse(sortByStartDate(filterEvents(data, params)));
+    return createResponse(cloneEvents(sortByStartDate(filterEvents(data, params))));
   },
 
-  async getEventById(eventId: string) {
+  async getEventById(eventId: string, actor: MockCurrentUser | null = null) {
     await wait(180);
-    const event = getVisibleEvents().find((item) => item.id === eventId);
-    if (!event) {
+    const event = eventStore.map(toServiceEvent).find((item) => item.id === eventId);
+    if (!event || !canViewEvent(event, actor)) {
       throw new Error('Không tìm thấy sự kiện hoặc bạn không có quyền xem.');
     }
 
-    return createResponse(event);
+    return createResponse(cloneEvent(event));
   },
 
-  async createEvent(data: EventPayload) {
+  async createEvent(data: EventPayload, actor: MockCurrentUser | null = null) {
     await wait();
+    if (!actor || !canCreateEvent(actor)) {
+      throw new Error('Bạn không có quyền tạo sự kiện.');
+    }
+
     const now = formatVietnamDateTimeOffset();
-    const payload = buildEventPayload(data);
+    const payload = buildEventPayload(data, actor);
     const event: Event = {
       ...payload,
       id: `evt-${Date.now()}`,
       status: EventStatus.UPCOMING,
-      createdBy: mockCurrentUser,
+      createdBy: {
+        id: actor.id,
+        name: actor.name,
+      },
       createdAt: now,
       updatedAt: now,
     };
 
-    eventStore = [...eventStore, event];
+    eventStore = [...eventStore, cloneEvent(event)];
+    persistEvents();
     return createResponse(toServiceEvent(event));
   },
 
-  async updateEvent(eventId: string, data: Partial<EventPayload>) {
+  async updateEvent(eventId: string, data: Partial<EventPayload>, actor: MockCurrentUser | null = null) {
     await wait();
     const existing = eventStore.find((event) => event.id === eventId);
-    if (!existing) {
-      throw new Error('Không tìm thấy sự kiện cần cập nhật.');
+    if (!existing || !canUpdateEvent(actor, existing)) {
+      throw new Error('Bạn không có quyền chỉnh sửa sự kiện này.');
     }
 
     const updatedEvent: Event = {
       ...existing,
-      ...data,
+      title: data.title ?? existing.title,
+      type: data.type ?? existing.type,
+      visibility: data.visibility ?? existing.visibility,
+      description: data.description ?? existing.description,
+      location: data.location ?? existing.location,
+      inputCalendar: data.inputCalendar ?? existing.inputCalendar,
       startAt: data.startAt ? toVietnamDateTimeOffset(data.startAt) : existing.startAt,
       endAt: data.endAt ? toVietnamDateTimeOffset(data.endAt) : existing.endAt,
-      familyId: data.familyId ?? existing.familyId,
+      recurrence: data.recurrence ? { ...data.recurrence } : { ...existing.recurrence },
+      reminders: data.reminders?.map((reminder) => ({ ...reminder })) ?? existing.reminders.map((reminder) => ({ ...reminder })),
+      sendNotification: data.sendNotification ?? existing.sendNotification,
+      familyId: existing.familyId,
+      createdBy: existing.createdBy ? { ...existing.createdBy } : undefined,
       updatedAt: formatVietnamDateTimeOffset(),
     };
 
-    eventStore = eventStore.map((event) => (event.id === eventId ? updatedEvent : event));
+    eventStore = eventStore.map((event) => (event.id === eventId ? cloneEvent(updatedEvent) : event));
+    persistEvents();
     return createResponse(toServiceEvent(updatedEvent));
   },
 
-  async cancelEvent(eventId: string, data: CancelEventPayload) {
+  async cancelEvent(eventId: string, data: CancelEventPayload, actor: MockCurrentUser | null = null) {
     await wait();
     const event = eventStore.find((item) => item.id === eventId);
-    if (!event) {
-      throw new Error('Không tìm thấy sự kiện cần hủy.');
+    if (!event || !canCancelEvent(actor, event)) {
+      throw new Error('Bạn không có quyền hủy sự kiện này.');
     }
 
-    // Mock only updates the selected occurrence; backend will interpret recurrence scope.
     const cancelledEvent: Event = {
       ...event,
       status: EventStatus.CANCELLED,
@@ -226,19 +351,20 @@ export const eventService = {
       updatedAt: formatVietnamDateTimeOffset(),
     };
 
-    eventStore = eventStore.map((item) => (item.id === eventId ? cancelledEvent : item));
+    eventStore = eventStore.map((item) => (item.id === eventId ? cloneEvent(cancelledEvent) : item));
+    persistEvents();
     return createResponse(toServiceEvent(cancelledEvent));
   },
 
-  async deleteEvent(eventId: string, _data?: DeleteEventPayload) {
+  async deleteEvent(eventId: string, _data?: DeleteEventPayload, actor: MockCurrentUser | null = null) {
     await wait();
     const event = eventStore.find((item) => item.id === eventId);
-    if (!event) {
-      throw new Error('Không tìm thấy sự kiện cần xóa.');
+    if (!event || !canDeleteEvent(actor, event)) {
+      throw new Error('Bạn không có quyền xóa sự kiện này.');
     }
 
     eventStore = eventStore.filter((item) => item.id !== eventId);
+    persistEvents();
     return createResponse({ deleted: true, eventId });
   },
 };
-

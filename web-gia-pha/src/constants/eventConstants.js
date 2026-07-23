@@ -50,7 +50,5 @@ export const roleLabels = {
   [UserRole.GUEST]: 'Khách',
 };
 
-export const canManageEvents = (user) => user?.role === UserRole.FAMILY_HEAD;
-
 export const isRecurringEvent = (event) => event?.recurrence?.frequency && event.recurrence.frequency !== RecurrenceFrequency.NONE;
 

@@ -1,9 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { mockAuthState } from '../../data/mockAuth';
 
 const initialState = {
-  // Dữ liệu mẫu (mock data), có thể đổi null thành object { name: 'Người dùng A' } để test
-  user: null,
-  isAuthenticated: false,
+  user: mockAuthState.user,
+  isAuthenticated: mockAuthState.isAuthenticated,
 };
 
 export const authSlice = createSlice({

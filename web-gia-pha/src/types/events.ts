@@ -1,8 +1,6 @@
-export enum UserRole {
-  FAMILY_HEAD = 'FAMILY_HEAD',
-  MEMBER = 'MEMBER',
-  GUEST = 'GUEST',
-}
+import { AuthUser, UserRole } from './auth';
+
+export { UserRole };
 
 export enum EventType {
   DEATH_ANNIVERSARY = 'DEATH_ANNIVERSARY',
@@ -134,9 +132,4 @@ export interface ApiResponse<T> {
   };
 }
 
-export interface MockCurrentUser {
-  id: string;
-  familyId: string;
-  name: string;
-  role: UserRole;
-}
+export type MockCurrentUser = AuthUser;

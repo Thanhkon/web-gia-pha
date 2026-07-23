@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users } from 'lucide-react';
+import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { login, logout } from '../store/slices/authSlice';
+import { mockCurrentUser, mockRoleLabels } from '../data/mockAuth';
 import '../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -46,7 +47,7 @@ const Navbar = () => {
     {
       name: 'Hoạt động',
       items: [
-        { name: 'Tin tức', path: '/posts' },
+        { name: 'Bài viết', path: '/posts' },
         { name: 'Sự kiện', path: '/events' },
         { name: 'Thư viện ảnh', path: '/gallery' },
       ]
@@ -57,7 +58,7 @@ const Navbar = () => {
     if (isAuthenticated) {
       setIsUserMenuOpen(!isUserMenuOpen);
     } else {
-      dispatch(login({ name: 'Admin' }));
+      dispatch(login(mockCurrentUser));
     }
   };
 
@@ -170,7 +171,7 @@ const Navbar = () => {
               <div className="user-dropdown-menu">
                 <div className="user-dropdown-header">
                   <strong>{user?.name}</strong>
-                  <span>Quản trị viên</span>
+                  <span>{mockRoleLabels[user?.role] || 'Khách'}</span>
                 </div>
                 <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin'); }}>
                   <LayoutGrid size={16} /> Bảng điều khiển
