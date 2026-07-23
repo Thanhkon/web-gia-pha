@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { login, logout } from '../store/slices/authSlice';
-import { mockCurrentUser, mockRoleLabels } from '../data/mockAuth';
+import { loginUser, registerUser, logout } from '../store/slices/authSlice';
+import { mockRoleLabels } from '../data/mockAuth';
 import '../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -54,11 +54,22 @@ const Navbar = () => {
     }
   ];
 
-  const handleAuthClick = () => {
+  const handleAuthClick = async () => {
     if (isAuthenticated) {
       setIsUserMenuOpen(!isUserMenuOpen);
     } else {
-      dispatch(login(mockCurrentUser));
+      try {
+        const credentials = { email: 'admin@giapha.com', password: 'password123' };
+        // Try login first
+        const loginResult = await dispatch(loginUser(credentials));
+        if (loginResult.error) {
+          // If login fails (user not found), register then login
+          await dispatch(registerUser({ ...credentials, name: 'Quản trị viên' }));
+          await dispatch(loginUser(credentials));
+        }
+      } catch(err) {
+        console.error('Lỗi đăng nhập:', err);
+      }
     }
   };
 

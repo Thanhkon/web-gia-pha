@@ -1,8 +1,8 @@
 import { createSlice, createSelector } from '@reduxjs/toolkit';
 
-const loadFromLocal = (key, defaultData) => {
+const loadFromSessionStorage = (key, defaultData) => {
   try {
-    const saved = localStorage.getItem(key);
+    const saved = sessionStorage.getItem(key);
     return saved ? JSON.parse(saved) : defaultData;
   } catch (e) {
     return defaultData;
@@ -10,7 +10,7 @@ const loadFromLocal = (key, defaultData) => {
 };
 
 const initialState = {
-  items: loadFromLocal('giapha_edit_requests', [])
+  items: loadFromSessionStorage('giapha_edit_requests', [])
 };
 
 const editRequestsSlice = createSlice({

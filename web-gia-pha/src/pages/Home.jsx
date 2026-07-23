@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -6,18 +6,38 @@ import {
   Calendar, BookOpen, Clock, ChevronRight, Edit3
 } from 'lucide-react';
 import MarqueeBanner from '../components/MarqueeBanner';
+import { postService } from '../services/postService';
+import { eventService } from '../services/eventService';
 import '../css/pages/Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   // Lấy cấu hình tuỳ chỉnh (Settings) từ Redux
   const { hero, marqueeItems } = useSelector((state) => state.settings);
 
-  // Lấy Business Data từ Redux
-  const events = useSelector((state) => state.events.data);
-  const posts = useSelector((state) => state.posts.data);
+  // Thư viện ảnh tĩnh từ Redux
   const albums = useSelector((state) => state.albums.data);
+
+  // Dữ liệu động từ API (Services)
+  const [posts, setPosts] = useState([]);
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const postsRes = await postService.getPosts({ sortDirection: 'newest' }, 1, 4);
+        setPosts(postsRes.items);
+
+        const eventsRes = await eventService.getUpcomingEvents(30, {}, isAuthenticated ? user : null);
+        setEvents(eventsRes.items.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to load dashboard data", err);
+      }
+    };
+    fetchData();
+  }, [user, isAuthenticated]);
 
   return (
     <div className="home-page animate-fade-in">
@@ -73,20 +93,25 @@ const Home = () => {
             </div>
             <div className="panel-body">
               {events.length === 0 ? (
-                <p className="panel-empty">Chưa có sự kiện nào được lên lịch.</p>
+                <p className="panel-empty">Chưa có sự kiện nào được lên lịch trong 30 ngày tới.</p>
               ) : (
-                events.map((event) => (
-                  <div key={event.id} className="event-item">
-                    <div className="event-date">
-                      <span>{event.date}</span>
-                      <span>{event.month}</span>
+                events.map((event) => {
+                  const dateObj = new Date(event.startAt);
+                  const day = dateObj.getDate().toString().padStart(2, '0');
+                  const month = `Thg ${dateObj.getMonth() + 1}`;
+                  return (
+                    <div key={event.id} className="event-item">
+                      <div className="event-date">
+                        <span>{day}</span>
+                        <span>{month}</span>
+                      </div>
+                      <div className="event-info">
+                        <h4>{event.title}</h4>
+                        <p>{event.type} • {event.description}</p>
+                      </div>
                     </div>
-                    <div className="event-info">
-                      <h4>{event.title}</h4>
-                      <p>{event.type} • {event.desc}</p>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             <button className="btn btn-outline btn-full-width" onClick={() => navigate('/events')}>
@@ -104,15 +129,18 @@ const Home = () => {
               {posts.length === 0 ? (
                 <p className="panel-empty">Chưa có bài viết nào.</p>
               ) : (
-                posts.map((post) => (
-                  <div key={post.id} className="article-item">
-                    <h4 className="article-title">{post.title}</h4>
-                    <div className="article-meta">
-                      <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                      {post.date}
+                posts.map((post) => {
+                  const dateStr = new Date(post.createdAt).toLocaleDateString('vi-VN');
+                  return (
+                    <div key={post.id} className="article-item" style={{ cursor: 'pointer' }} onClick={() => navigate(`/posts/${post.id}`)}>
+                      <h4 className="article-title">{post.title}</h4>
+                      <div className="article-meta">
+                        <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                        {dateStr}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             <button className="btn btn-outline btn-full-width" onClick={() => navigate('/posts')}>

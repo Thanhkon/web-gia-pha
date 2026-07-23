@@ -54,33 +54,31 @@ export const usePanZoom = (initialScale = 1) => {
   }, []);
 
   const onWheel = useCallback((e) => {
-    // Ngăn chặn trình duyệt cuộn trang (khi cuộn chuột trên cây)
-    e.preventDefault();
-    
+
     const zoomSensitivity = 0.005;
     const delta = -e.deltaY * zoomSensitivity;
-    
+
     const prevScale = scaleRef.current;
     const newScale = Math.min(Math.max(0.2, prevScale + delta), 3);
-    
+
     if (newScale === prevScale) return;
-    
+
     // Lấy tọa độ đồng bộ ngay khi sự kiện xảy ra
     const currentTarget = e.currentTarget;
     if (!currentTarget) return;
-    
+
     const rect = currentTarget.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-    
+
     // Tính toán bù trừ vị trí để zoom vào đúng điểm chuột chỉ
     const scaleRatio = newScale / prevScale;
-    
+
     updatePosition({
       x: mouseX - (mouseX - positionRef.current.x) * scaleRatio,
       y: mouseY - (mouseY - positionRef.current.y) * scaleRatio,
     });
-    
+
     updateScale(newScale);
   }, [updatePosition, updateScale]);
 

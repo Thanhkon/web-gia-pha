@@ -2,7 +2,12 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 import { usePanZoom } from '../hooks/usePanZoom';
 import MemberForm from '../components/Admin/MemberForm/MemberForm';
-import { addMember, addRelationship } from '../store/slices/membersSlice';
+import { 
+  fetchFamilyTree, 
+  addMemberToFamily, 
+  addParentChildRelation, 
+  addMarriageRelation 
+} from '../store/slices/membersSlice';
 import { buildAdjacencyLists } from '../utils/familyTreeUtils';
 import TreeToolbar from '../components/FamilyTree/TreeToolbar';
 import TreeGraph from '../components/FamilyTree/TreeGraph';
@@ -39,6 +44,15 @@ const FamilyTree = () => {
   const dispatch = useDispatch();
   const persons = useSelector(state => state.members.persons);
   const relationships = useSelector(state => state.members.relationships);
+  const loading = useSelector(state => state.members.loading);
+  const familyInfo = useSelector(state => state.members.familyInfo);
+  
+  // Mặc định gọi ID 1 tạm thời
+  const CURRENT_FAMILY_ID = 1;
+
+  useEffect(() => {
+    dispatch(fetchFamilyTree(CURRENT_FAMILY_ID));
+  }, [dispatch]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newMember, setNewMember] = useState(EMPTY_MEMBER);
@@ -84,26 +98,56 @@ const FamilyTree = () => {
   }, [isKinshipMode, kinshipNodeA, kinshipNodeB]);
 
   const handleAddSubmit = useCallback(async (submittedData) => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const newId = crypto.randomUUID();
-        dispatch(addMember({ ...submittedData, id: newId }));
+    try {
+      // Gọi API thêm member
+      const newMember = await dispatch(addMemberToFamily({
+        familyId: CURRENT_FAMILY_ID,
+        memberData: {
+          fullName: submittedData.fullName,
+          otherName: submittedData.otherName,
+          gender: submittedData.gender,
+          generation: submittedData.generation,
+          dateOfBirth: submittedData.birthDate || null,
+          dateOfDeath: submittedData.deathDate || null,
+          placeOfBirth: submittedData.birthPlace || null,
+          currentAddress: submittedData.address || null,
+          education: submittedData.education || null,
+          occupation: submittedData.occupation || null,
+          biography: submittedData.biography || null,
+          note: submittedData.notes || null,
+        }
+      })).unwrap();
 
-        if (submittedData.fatherId) {
-          dispatch(addRelationship({ type: 'biological_child', person_a: submittedData.fatherId, person_b: newId }));
-        }
-        if (submittedData.motherId) {
-          dispatch(addRelationship({ type: 'biological_child', person_a: submittedData.motherId, person_b: newId }));
-        }
-        if (submittedData.spouseId) {
-          dispatch(addRelationship({ type: 'marriage', person_a: submittedData.spouseId, person_b: newId }));
-        }
+      const newId = newMember.id;
 
-        setIsModalOpen(false);
-        setNewMember(EMPTY_MEMBER);
-        resolve();
-      }, 300);
-    });
+      // Xử lý quan hệ
+      if (submittedData.fatherId) {
+        await dispatch(addParentChildRelation({
+          parentId: submittedData.fatherId,
+          childId: newId,
+          relationType: 'biological_child'
+        })).unwrap();
+      }
+      if (submittedData.motherId) {
+        await dispatch(addParentChildRelation({
+          parentId: submittedData.motherId,
+          childId: newId,
+          relationType: 'biological_child'
+        })).unwrap();
+      }
+      if (submittedData.spouseId) {
+        await dispatch(addMarriageRelation({
+          memberAId: submittedData.spouseId,
+          memberBId: newId
+        })).unwrap();
+      }
+
+      setIsModalOpen(false);
+      setNewMember(EMPTY_MEMBER);
+    } catch (err) {
+      console.error('Lỗi khi thêm thành viên:', err);
+      alert('Có lỗi xảy ra khi thêm thành viên!');
+    }
   }, [dispatch]);
 
   const {
