@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectPendingRequests, selectProcessedRequests, approveRequest, rejectRequest, deleteRequest } from '../../store/slices/editRequestsSlice';
-import { updateMember } from '../../store/slices/membersSlice';
+import { selectAllRequests, fetchRequests, approveRequestThunk, rejectRequestThunk, deleteRequestThunk } from '../../store/slices/editRequestsSlice';
+import { fetchFamilyTree } from '../../store/slices/membersSlice';
 import RequestCard from '../../components/EditRequests/RequestCard';
 import RequestDetailModal from '../../components/EditRequests/RequestDetailModal';
 import ConfirmModal from '../../components/common/ConfirmModal';
@@ -14,59 +14,67 @@ const AdminEditRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   
-  const pendingRequests = useSelector(selectPendingRequests);
-  const processedRequests = useSelector(selectProcessedRequests);
+  
+  const allRequests = useSelector(selectAllRequests);
+  const pendingRequests = allRequests.filter(r => r.status === 'PENDING');
+  const processedRequests = allRequests.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED');
   
   const currentUser = useSelector(state => state.auth.user);
   const persons = useSelector(state => state.members.persons);
 
-  const handleApprove = (requestId, adminNote) => {
-    const request = pendingRequests.find(r => r.id === requestId);
-    if (!request) return;
+  useEffect(() => {
+    const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
+    dispatch(fetchRequests(CURRENT_FAMILY_ID));
+    dispatch(fetchFamilyTree(CURRENT_FAMILY_ID));
+  }, [dispatch]);
 
-    // 1. Tìm member thật trong store để lấy object nguyên bản
-    const targetMember = persons.find(p => p.id === request.targetMemberId);
-    if (!targetMember) {
-      alert('Lỗi: Thành viên này không còn tồn tại trong hệ thống (có thể đã bị xoá).');
-      return;
+  const handleApprove = async (requestId, adminNote) => {
+    try {
+      await dispatch(approveRequestThunk({ 
+        id: requestId, 
+        adminNote, 
+        reviewerName: currentUser?.name || 'Admin' 
+      })).unwrap();
+      
+      // Reload family tree to get updated member data
+      dispatch(fetchFamilyTree(1));
+
+      setSelectedRequest(null);
+      alert('Đã duyệt và áp dụng thay đổi thành công!');
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi khi duyệt yêu cầu!');
     }
-
-    // 2. Tạo object member mới áp dụng các thay đổi
-    const updatedMember = { ...targetMember };
-    Object.entries(request.changes).forEach(([field, vals]) => {
-      updatedMember[field] = vals.new;
-    });
-
-    // 3. Dispatch updateMember
-    dispatch(updateMember(updatedMember));
-
-    // 4. Dispatch approveRequest
-    dispatch(approveRequest({ 
-      id: requestId, 
-      adminNote, 
-      reviewerName: currentUser?.name || 'Admin' 
-    }));
-    
-    setSelectedRequest(null);
-    alert('Đã duyệt và áp dụng thay đổi thành công!');
   };
 
-  const handleReject = (requestId, adminNote) => {
-    dispatch(rejectRequest({ 
-      id: requestId, 
-      adminNote, 
-      reviewerName: currentUser?.name || 'Admin' 
-    }));
-    setSelectedRequest(null);
+  const handleReject = async (requestId, adminNote) => {
+    try {
+      await dispatch(rejectRequestThunk({ 
+        id: requestId, 
+        adminNote, 
+        reviewerName: currentUser?.name || 'Admin' 
+      })).unwrap();
+      
+      setSelectedRequest(null);
+      alert('Đã từ chối yêu cầu thành công!');
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi khi từ chối yêu cầu!');
+    }
   };
 
   const handleDelete = (requestId) => {
     setDeleteConfirmId(requestId);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirmId) {
-      dispatch(deleteRequest(deleteConfirmId));
+      try {
+        await dispatch(deleteRequestThunk(deleteConfirmId)).unwrap();
+      } catch(err) {
+        console.error(err);
+        alert('Lỗi khi xóa yêu cầu!');
+      }
     }
     setDeleteConfirmId(null);
   };
@@ -86,7 +94,7 @@ const AdminEditRequests = () => {
           <div key={req.id} className="admin-request-wrapper">
             <RequestCard request={req} />
             <div className="admin-request-actions">
-              {req.status === 'pending' ? (
+              {req.status?.toLowerCase() === 'pending' ? (
                 <button className="btn btn-primary btn-full" onClick={() => setSelectedRequest(req)}>
                   Xem chi tiết & Xử lý
                 </button>

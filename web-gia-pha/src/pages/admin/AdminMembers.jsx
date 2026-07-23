@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as XLSX from 'xlsx';
 import MemberForm from '../../components/Admin/MemberForm/MemberForm';
@@ -7,13 +7,25 @@ import MembersFilterBar from '../../components/Admin/MembersFilterBar';
 import MembersTable from '../../components/Admin/MembersTable';
 import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import { addMember, updateMember, deleteMember, addRelationship, addMembersBulk } from '../../store/slices/membersSlice';
+import { 
+  fetchFamilyTree,
+  addMemberToFamily,
+  addParentChildRelation,
+  addMarriageRelation,
+  updateMemberToFamily,
+  deleteMemberFromFamily
+} from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
 import '../../css/pages/AdminMembers.css';
 
 const AdminMembers = () => {
   const dispatch = useDispatch();
-  const persons = useSelector(state => state.members.persons);
+
+  useEffect(() => {
+    dispatch(fetchFamilyTree(1)); // Tạm thời hardcode familyId = 1
+  }, [dispatch]);
+
+  const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const relationships = useSelector(state => state.members.relationships);
   
   const [viewMode, setViewMode] = useState('table');
@@ -33,12 +45,13 @@ const AdminMembers = () => {
 
   const emptyMember = {
     fullName: '', otherName: '', gender: 'male', 
-    generation: 1, birthOrder: 1, branch: '', isInLaw: false, 
+    generation: 1, role: '', isInLaw: false, 
     fatherId: '', motherId: '', spouseId: '',
-    birthDate: '', 
-    isDeceased: false, deathDate: '', deathLunarDate: '',
-    birthPlace: '', address: '', 
-    education: '', occupation: '', biography: '', notes: ''
+    dateOfBirth: '', 
+    isDeceased: false, dateOfDeath: '', deathLunarDate: '',
+    placeOfBirth: '', currentAddress: '', 
+    education: '', occupation: '', biography: '', note: '',
+    avatarUrl: ''
   };
 
   const [newMember, setNewMember] = useState(emptyMember);
@@ -66,27 +79,74 @@ const AdminMembers = () => {
     currentPage * itemsPerPage
   );
 
-  const handleAddSubmit = (submittedData) => {
-    if (editingId) {
-      dispatch(updateMember({ ...submittedData }));
-    } else {
-      const newId = Date.now().toString();
-      dispatch(addMember({ ...submittedData, id: newId }));
+  const handleAddSubmit = async (submittedData) => {
+    try {
+      if (editingId) {
+        await dispatch(updateMemberToFamily({ 
+          memberId: editingId, 
+          memberData: {
+            fullName: submittedData.fullName,
+            otherName: submittedData.otherName,
+            gender: submittedData.gender,
+            generation: submittedData.generation,
+            role: submittedData.role || null,
+            isInLaw: submittedData.isInLaw || false,
+            dateOfBirth: submittedData.dateOfBirth || null,
+            isDeceased: submittedData.isDeceased || false,
+            dateOfDeath: submittedData.dateOfDeath || null,
+            placeOfBirth: submittedData.placeOfBirth || null,
+            currentAddress: submittedData.currentAddress || null,
+            education: submittedData.education || null,
+            occupation: submittedData.occupation || null,
+            biography: submittedData.biography || null,
+            note: submittedData.note || null,
+            avatarUrl: submittedData.avatarUrl || null,
+          }
+        })).unwrap();
+      } else {
+        const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
+        const newMember = await dispatch(addMemberToFamily({
+          familyId: CURRENT_FAMILY_ID,
+          memberData: {
+            fullName: submittedData.fullName,
+            otherName: submittedData.otherName,
+            gender: submittedData.gender,
+            generation: submittedData.generation,
+            role: submittedData.role || null,
+            isInLaw: submittedData.isInLaw || false,
+            dateOfBirth: submittedData.dateOfBirth || null,
+            isDeceased: submittedData.isDeceased || false,
+            dateOfDeath: submittedData.dateOfDeath || null,
+            placeOfBirth: submittedData.placeOfBirth || null,
+            currentAddress: submittedData.currentAddress || null,
+            education: submittedData.education || null,
+            occupation: submittedData.occupation || null,
+            biography: submittedData.biography || null,
+            note: submittedData.note || null,
+            avatarUrl: submittedData.avatarUrl || null,
+          }
+        })).unwrap();
+        
+        const newId = newMember.id;
+        
+        if (submittedData.fatherId) {
+          await dispatch(addParentChildRelation({ parentId: submittedData.fatherId, childId: newId, relationType: 'biological_child' })).unwrap();
+        }
+        if (submittedData.motherId) {
+          await dispatch(addParentChildRelation({ parentId: submittedData.motherId, childId: newId, relationType: 'biological_child' })).unwrap();
+        }
+        if (submittedData.spouseId) {
+          await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: newId })).unwrap();
+        }
+      }
       
-      if (submittedData.fatherId) {
-        dispatch(addRelationship({ type: 'biological_child', person_a: submittedData.fatherId, person_b: newId }));
-      }
-      if (submittedData.motherId) {
-        dispatch(addRelationship({ type: 'biological_child', person_a: submittedData.motherId, person_b: newId }));
-      }
-      if (submittedData.spouseId) {
-        dispatch(addRelationship({ type: 'marriage', person_a: submittedData.spouseId, person_b: newId }));
-      }
+      setIsModalOpen(false);
+      setEditingId(null);
+      setNewMember(emptyMember);
+    } catch (err) {
+      console.error('Lỗi khi thêm:', err);
+      alert('Có lỗi xảy ra!');
     }
-    
-    setIsModalOpen(false);
-    setEditingId(null);
-    setNewMember(emptyMember);
   };
 
   const openAddModal = () => {
@@ -105,9 +165,14 @@ const AdminMembers = () => {
     setDeleteConfirm({ isOpen: true, id });
   };
 
-  const confirmDelete = (isHardDelete) => {
+  const confirmDelete = async (isHardDelete) => {
     if (deleteConfirm.id) {
-      dispatch(deleteMember({ id: deleteConfirm.id, hardDelete: isHardDelete }));
+      try {
+        await dispatch(deleteMemberFromFamily(deleteConfirm.id)).unwrap();
+      } catch (err) {
+        console.error('Lỗi khi xóa:', err);
+        alert('Có lỗi xảy ra khi xóa!');
+      }
     }
     setDeleteConfirm({ isOpen: false, id: null });
   };
@@ -139,8 +204,8 @@ const AdminMembers = () => {
             gender: row.GioiTinh === 'Nu' || row.GioiTinh === 'Nữ' ? 'female' : 'male',
             generation: Number(row.DoiThu) || 1,
             isInLaw: row.LaDauRe == 1,
-            birthDate: row.NgaySinh ? String(row.NgaySinh) : '',
-            deathDate: row.NgayMat ? String(row.NgayMat) : '',
+            dateOfBirth: row.NgaySinh ? String(row.NgaySinh) : '',
+            dateOfDeath: row.NgayMat ? String(row.NgayMat) : '',
             isDeceased: row.ConSong == 0 || !!row.NgayMat,
             fatherId: row.MaCha ? String(row.MaCha) : '',
             motherId: row.MaMe ? String(row.MaMe) : '',
@@ -161,7 +226,8 @@ const AdminMembers = () => {
           count++;
         });
 
-        dispatch(addMembersBulk({ newPersons, newRelationships }));
+        console.log('Chức năng nhập file hàng loạt tạm thời bị vô hiệu hóa vì Backend chưa hỗ trợ');
+        // TODO: Cập nhật API hàng loạt sau
         alert(`Đã Import thành công ${count} thành viên!`);
       } catch (err) {
         alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng!');

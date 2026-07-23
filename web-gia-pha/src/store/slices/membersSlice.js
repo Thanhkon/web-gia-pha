@@ -1,73 +1,183 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { MOCK_PERSONS, MOCK_RELATIONSHIPS } from '../../data/mockFamily';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import apiClient from '../../utils/apiClient';
 
-// Try to load from localStorage first
-const loadFromLocal = (key, defaultData) => {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultData;
-  } catch (e) {
-    return defaultData;
+// Thunks
+export const fetchFamilyTree = createAsyncThunk(
+  'members/fetchFamilyTree',
+  async (familyId, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get(`/families/${familyId}/members`);
+      const { family, members, parentChildRelations, marriages } = response.data;
+      
+      // Convert backend relations to frontend unified format
+      const relationships = [];
+      
+      if (parentChildRelations) {
+        parentChildRelations.forEach(rel => {
+          relationships.push({
+            id: `pc_${rel.id}`,
+            type: rel.relationType || 'biological_child',
+            person_a: rel.parentId,
+            person_b: rel.childId
+          });
+        });
+      }
+
+      if (marriages) {
+        marriages.forEach(m => {
+          relationships.push({
+            id: `m_${m.id}`,
+            type: 'marriage',
+            person_a: m.memberAId,
+            person_b: m.memberBId
+          });
+        });
+      }
+
+      return { family, members, relationships };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch family tree');
+    }
   }
-};
+);
+
+export const addMemberToFamily = createAsyncThunk(
+  'members/addMember',
+  async ({ familyId, memberData }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post(`/families/${familyId}/members`, memberData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to add member');
+    }
+  }
+);
+
+export const updateMemberToFamily = createAsyncThunk(
+  'members/updateMember',
+  async ({ memberId, memberData }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.patch(`/members/${memberId}`, memberData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update member');
+    }
+  }
+);
+
+export const deleteMemberFromFamily = createAsyncThunk(
+  'members/deleteMember',
+  async (memberId, { rejectWithValue }) => {
+    try {
+      await apiClient.delete(`/members/${memberId}`);
+      return memberId;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete member');
+    }
+  }
+);
+
+export const addParentChildRelation = createAsyncThunk(
+  'members/addParentChild',
+  async (relationData, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post(`/parent-child-relations`, relationData);
+      return {
+        id: `pc_${response.data.id}`,
+        type: response.data.relationType || 'biological_child',
+        person_a: response.data.parentId,
+        person_b: response.data.childId
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to add relation');
+    }
+  }
+);
+
+export const addMarriageRelation = createAsyncThunk(
+  'members/addMarriage',
+  async (marriageData, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post(`/marriages`, marriageData);
+      return {
+        id: `m_${response.data.id}`,
+        type: 'marriage',
+        person_a: response.data.memberAId,
+        person_b: response.data.memberBId
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to add marriage');
+    }
+  }
+);
 
 const initialState = {
-  persons: loadFromLocal('giapha_mock_persons', MOCK_PERSONS),
-  relationships: loadFromLocal('giapha_mock_relationships', MOCK_RELATIONSHIPS),
+  familyInfo: null,
+  persons: [],
+  relationships: [],
   ui: {
-    collapsedNodes: {} // Dạng object: { "id_nguoi_dung": true }
-  }
+    collapsedNodes: {}
+  },
+  loading: false,
+  error: null
 };
 
 const membersSlice = createSlice({
   name: 'members',
   initialState,
   reducers: {
-    addMember: (state, action) => {
-      state.persons.push(action.payload);
-      // localStorage được xử lý bởi store subscriber ở store.js
-    },
-    addMembersBulk: (state, action) => {
-      const { newPersons, newRelationships } = action.payload;
-      if (newPersons && newPersons.length > 0) {
-        state.persons.push(...newPersons);
-      }
-      if (newRelationships && newRelationships.length > 0) {
-        state.relationships.push(...newRelationships);
-      }
-    },
-    updateMember: (state, action) => {
-      const index = state.persons.findIndex(p => p.id === action.payload.id);
-      if (index !== -1) {
-        state.persons[index] = action.payload;
-      }
-    },
-    deleteMember: (state, action) => {
-      const payload = action.payload;
-      const id = typeof payload === 'object' ? payload.id : payload;
-      const hardDelete = typeof payload === 'object' ? payload.hardDelete : false;
-
-      if (hardDelete) {
-        state.persons = state.persons.filter(p => p.id !== id);
-        state.relationships = state.relationships.filter(r => r.person_a !== id && r.person_b !== id);
-      } else {
-        // Soft delete
-        const index = state.persons.findIndex(p => p.id === id);
-        if (index !== -1) {
-          state.persons[index].isDeleted = true;
-        }
-      }
-    },
-    addRelationship: (state, action) => {
-      state.relationships.push(action.payload);
-    },
     setNodeCollapse: (state, action) => {
       const { personId, isCollapsed } = action.payload;
       state.ui.collapsedNodes[personId] = isCollapsed;
+    },
+    // Keep these synchronous reducers for offline/mock support or optimistic updates if needed
+    updateMemberSync: (state, action) => {
+      const index = state.persons.findIndex(p => p.id === action.payload.id);
+      if (index !== -1) state.persons[index] = action.payload;
+    },
+    deleteMemberSync: (state, action) => {
+      const id = typeof action.payload === 'object' ? action.payload.id : action.payload;
+      state.persons = state.persons.filter(p => p.id !== id);
+      state.relationships = state.relationships.filter(r => r.person_a !== id && r.person_b !== id);
     }
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchFamilyTree.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchFamilyTree.fulfilled, (state, action) => {
+        state.loading = false;
+        state.familyInfo = action.payload.family;
+        state.persons = action.payload.members;
+        state.relationships = action.payload.relationships;
+      })
+      .addCase(fetchFamilyTree.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(addMemberToFamily.fulfilled, (state, action) => {
+        state.persons.push(action.payload);
+      })
+      .addCase(addParentChildRelation.fulfilled, (state, action) => {
+        state.relationships.push(action.payload);
+      })
+      .addCase(addMarriageRelation.fulfilled, (state, action) => {
+        state.relationships.push(action.payload);
+      })
+      .addCase(updateMemberToFamily.fulfilled, (state, action) => {
+        const index = state.persons.findIndex(p => p.id === action.payload.id);
+        if (index !== -1) {
+          state.persons[index] = action.payload;
+        }
+      })
+      .addCase(deleteMemberFromFamily.fulfilled, (state, action) => {
+        const id = action.payload;
+        state.persons = state.persons.filter(p => p.id !== id);
+        state.relationships = state.relationships.filter(r => r.person_a !== id && r.person_b !== id);
+      });
+  }
 });
 
-export const { addMember, addMembersBulk, updateMember, deleteMember, addRelationship, setNodeCollapse } = membersSlice.actions;
-
+export const { setNodeCollapse, updateMemberSync, deleteMemberSync } = membersSlice.actions;
 export default membersSlice.reducer;

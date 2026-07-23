@@ -36,7 +36,7 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        onChange('imageUrl', reader.result);
+        onChange('avatarUrl', reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -63,7 +63,7 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
       <div className="form-row" style={{ alignItems: 'center', marginBottom: '15px' }}>
         <div style={{ marginRight: '20px', textAlign: 'center' }}>
           <img 
-            src={formData.imageUrl || (formData.gender === 'male' ? 'https://ui-avatars.com/api/?name=User&background=FAF5F0&color=9B2C2C' : 'https://ui-avatars.com/api/?name=User&background=FCE7F3&color=C53030')} 
+            src={formData.avatarUrl || (formData.gender === 'male' ? 'https://ui-avatars.com/api/?name=User&background=FAF5F0&color=9B2C2C' : 'https://ui-avatars.com/api/?name=User&background=FCE7F3&color=C53030')} 
             alt="Avatar preview" 
             style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb', marginBottom: '8px' }} 
           />
@@ -133,12 +133,8 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
           <input type="number" required min="1" className="form-control" value={formData.generation} onChange={e => onChange('generation', e.target.value)} />
         </div>
         <div className="form-group">
-          <label>Con thứ *</label>
-          <input type="number" required min="1" className="form-control" value={formData.birthOrder || ''} onChange={e => onChange('birthOrder', e.target.value)} title="Thứ tự sinh trong gia đình (1 = Con cả, 2 = Con thứ 2...)" placeholder="VD: 1" />
-        </div>
-        <div className="form-group">
-          <label>Chi / Nhánh</label>
-          <input type="text" className="form-control" value={formData.branch} onChange={e => onChange('branch', e.target.value)} placeholder="VD: Trưởng chi 1" />
+          <label>Vai trò</label>
+          <input type="text" className="form-control" value={formData.role || ''} onChange={e => onChange('role', e.target.value)} placeholder="VD: Trưởng họ, Trưởng chi, Thành viên..." />
         </div>
         <div className="form-group form-group-checkbox">
           <label className="checkbox-label checkbox-label-padded">

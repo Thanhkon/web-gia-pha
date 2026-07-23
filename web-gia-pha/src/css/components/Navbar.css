@@ -43,6 +43,25 @@
   transition: all 0.2s;
 }
 
+.register-btn {
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.register-btn:hover {
+  background-color: white;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .nav-link:hover, .nav-link.active {
   color: var(--primary);
   background-color: var(--bg-hover);

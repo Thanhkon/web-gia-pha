@@ -2,7 +2,12 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 import { usePanZoom } from '../hooks/usePanZoom';
 import MemberForm from '../components/Admin/MemberForm/MemberForm';
-import { addMember, addRelationship } from '../store/slices/membersSlice';
+import { 
+  fetchFamilyTree, 
+  addMemberToFamily, 
+  addParentChildRelation, 
+  addMarriageRelation 
+} from '../store/slices/membersSlice';
 import { buildAdjacencyLists } from '../utils/familyTreeUtils';
 import TreeToolbar from '../components/FamilyTree/TreeToolbar';
 import TreeGraph from '../components/FamilyTree/TreeGraph';
@@ -15,20 +20,40 @@ import '../css/pages/FamilyTree.css';
 // Hằng số ngoài component — không bao giờ bị tạo lại, tránh stale closure trong useCallback
 const EMPTY_MEMBER = {
   fullName: '', otherName: '', gender: 'male',
-  generation: 1, birthOrder: 1, branch: '', isInLaw: false,
+  generation: 1, role: '', isInLaw: false,
   fatherId: '', motherId: '', spouseId: '',
-  birthDate: '',
-  isDeceased: false, deathDate: '', deathLunarDate: '',
-  birthPlace: '', address: '',
-  education: '', occupation: '', biography: '', notes: ''
+  dateOfBirth: '',
+  isDeceased: false, dateOfDeath: '', deathLunarDate: '',
+  placeOfBirth: '', currentAddress: '',
+  education: '', occupation: '', biography: '', note: '',
+  avatarUrl: ''
 };
 
 const FamilyTree = () => {
   const containerRef = useRef(null);
 
+  // Ngăn chặn cuộn trang mặc định (vì onWheel của React bị giới hạn passive event)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const preventScroll = (e) => e.preventDefault();
+    el.addEventListener('wheel', preventScroll, { passive: false });
+    return () => el.removeEventListener('wheel', preventScroll);
+  }, []);
+
+
   const dispatch = useDispatch();
   const persons = useSelector(state => state.members.persons);
   const relationships = useSelector(state => state.members.relationships);
+  const loading = useSelector(state => state.members.loading);
+  const familyInfo = useSelector(state => state.members.familyInfo);
+  
+  // Mặc định gọi ID 1 tạm thời
+  const CURRENT_FAMILY_ID = 1;
+
+  useEffect(() => {
+    dispatch(fetchFamilyTree(CURRENT_FAMILY_ID));
+  }, [dispatch]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newMember, setNewMember] = useState(EMPTY_MEMBER);
@@ -74,40 +99,81 @@ const FamilyTree = () => {
   }, [isKinshipMode, kinshipNodeA, kinshipNodeB]);
 
   const handleAddSubmit = useCallback(async (submittedData) => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const newId = crypto.randomUUID();
-        dispatch(addMember({ ...submittedData, id: newId }));
+    try {
+      // Gọi API thêm member
+      const newMember = await dispatch(addMemberToFamily({
+        familyId: CURRENT_FAMILY_ID,
+        memberData: {
+          fullName: submittedData.fullName,
+          otherName: submittedData.otherName,
+          gender: submittedData.gender,
+          generation: submittedData.generation,
+          role: submittedData.role || null,
+          isInLaw: submittedData.isInLaw || false,
+          dateOfBirth: submittedData.dateOfBirth || null,
+          isDeceased: submittedData.isDeceased || false,
+          dateOfDeath: submittedData.dateOfDeath || null,
+          placeOfBirth: submittedData.placeOfBirth || null,
+          currentAddress: submittedData.currentAddress || null,
+          education: submittedData.education || null,
+          occupation: submittedData.occupation || null,
+          biography: submittedData.biography || null,
+          note: submittedData.note || null,
+          avatarUrl: submittedData.avatarUrl || null,
+        }
+      })).unwrap();
 
-        if (submittedData.fatherId) {
-          dispatch(addRelationship({ type: 'biological_child', person_a: submittedData.fatherId, person_b: newId }));
-        }
-        if (submittedData.motherId) {
-          dispatch(addRelationship({ type: 'biological_child', person_a: submittedData.motherId, person_b: newId }));
-        }
-        if (submittedData.spouseId) {
-          dispatch(addRelationship({ type: 'marriage', person_a: submittedData.spouseId, person_b: newId }));
-        }
+      const newId = newMember.id;
 
-        setIsModalOpen(false);
-        setNewMember(EMPTY_MEMBER);
-        resolve();
-      }, 300);
-    });
+      // Xử lý quan hệ
+      if (submittedData.fatherId) {
+        await dispatch(addParentChildRelation({
+          parentId: submittedData.fatherId,
+          childId: newId,
+          relationType: 'biological_child'
+        })).unwrap();
+      }
+      if (submittedData.motherId) {
+        await dispatch(addParentChildRelation({
+          parentId: submittedData.motherId,
+          childId: newId,
+          relationType: 'biological_child'
+        })).unwrap();
+      }
+      if (submittedData.spouseId) {
+        await dispatch(addMarriageRelation({
+          memberAId: submittedData.spouseId,
+          memberBId: newId
+        })).unwrap();
+      }
+
+      setIsModalOpen(false);
+      setNewMember(EMPTY_MEMBER);
+    } catch (err) {
+      console.error('Lỗi khi thêm thành viên:', err);
+      alert('Có lỗi xảy ra khi thêm thành viên!');
+    }
   }, [dispatch]);
 
   const {
     scale, position, isDragging,
     onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onWheel,
-    resetView, zoomIn, zoomOut
+    resetView, zoomIn, zoomOut, updatePosition, updateScale
   } = usePanZoom(0.85);
 
   const centerTree = useCallback(() => {
     if (!containerRef.current) return;
-    const el = containerRef.current;
-    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-    resetView();
-  }, [resetView]);
+
+    const defaultScale = 0.85;
+    const width = containerRef.current.clientWidth;
+
+    // Do transform-origin là 0 0, khi scale xuống 0.85, khung vẽ sẽ bị thu nhỏ còn 85% chiều rộng.
+    // Khoảng trống hụt đi chia đôi sẽ là phần bù (offset) để đẩy khung vẽ ra chính giữa.
+    const centerX = (width - (width * defaultScale)) / 2;
+
+    updateScale(defaultScale);
+    updatePosition({ x: centerX, y: 0 });
+  }, [updateScale, updatePosition]);
 
   const [filters, setFilters] = useState({
     hideDaughtersInLaw: false,
@@ -125,9 +191,28 @@ const FamilyTree = () => {
 
     const adjacency = buildAdjacencyLists(relationships, pMap);
 
-    const rootNodes = currentPersons.filter(p => {
+    // Xử lý tìm roots: 
+    // Những người không có cha mẹ sẽ là root. 
+    // Tuy nhiên, nếu vợ chồng đều không có cha mẹ, ta chỉ lấy 1 người làm root (ưu tiên nam) để tránh trùng lặp khung.
+    const rootNodes = [];
+    const seenAsSpouse = new Set();
+    
+    // Ưu tiên xử lý nam trước để làm root chính
+    const sortedForRoots = [...currentPersons].sort((a, b) => {
+      if (a.gender === 'male' && b.gender !== 'male') return -1;
+      if (a.gender !== 'male' && b.gender === 'male') return 1;
+      return 0;
+    });
+
+    sortedForRoots.forEach(p => {
       const parents = adjacency[p.id]?.parents || [];
-      return parents.length === 0 && !p.isInLaw;
+      const isActuallyInLaw = p.isInLaw; // Vẫn giữ fallback nếu frontend có truyền
+      
+      if (parents.length === 0 && !isActuallyInLaw && !seenAsSpouse.has(p.id)) {
+        rootNodes.push(p);
+        const spouses = adjacency[p.id]?.spouses || [];
+        spouses.forEach(sId => seenAsSpouse.add(sId));
+      }
     });
 
     return { personsMap: pMap, adj: adjacency, roots: rootNodes };
@@ -237,7 +322,7 @@ const FamilyTree = () => {
         />
       )}
 
-      <KinshipModal 
+      <KinshipModal
         isOpen={isKinshipModalOpen}
         onClose={handleCloseKinshipModal}
         kinshipResult={kinshipResult}

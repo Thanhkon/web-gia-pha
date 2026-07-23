@@ -34,10 +34,10 @@ const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
 
         <div className="modal-body request-detail-body">
           <div className="request-info-header">
-            <h3>Mục tiêu: <strong>{request.targetMemberName}</strong></h3>
+            <h3>Mục tiêu: <strong>{request.targetMember?.fullName || request.targetMemberName || 'Không rõ'}</strong></h3>
             <div className="meta">
-              <span>Người gửi: <strong>{request.submittedBy.name}</strong></span>
-              {request.submittedBy.phone && <span> (SĐT: {request.submittedBy.phone})</span>}
+              <span>Người gửi: <strong>{request.submittedByName || request.submittedBy?.name || 'Ẩn danh'}</strong></span>
+              {(request.submittedByPhone || request.submittedBy?.phone) && <span> (SĐT: {request.submittedByPhone || request.submittedBy?.phone})</span>}
             </div>
           </div>
 

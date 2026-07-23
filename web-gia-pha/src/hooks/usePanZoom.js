@@ -5,8 +5,7 @@ export const usePanZoom = (initialScale = 1) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
-  // Dùng ref thay vì đọc state trong callback để tránh re-create hàm mỗi khi position đổi.
-  // Trước đây onMouseDown có dep [position] → tạo hàm mới mỗi pixel drag → lag.
+  const scaleRef = useRef(initialScale);
   const positionRef = useRef({ x: 0, y: 0 });
   const dragStartInfo = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
   const isDraggingRef = useRef(false);
@@ -15,6 +14,11 @@ export const usePanZoom = (initialScale = 1) => {
   const updatePosition = useCallback((newPos) => {
     positionRef.current = newPos;
     setPosition(newPos);
+  }, []);
+
+  const updateScale = useCallback((newScale) => {
+    scaleRef.current = newScale;
+    setScale(newScale);
   }, []);
 
   const onMouseDown = useCallback((e) => {
@@ -50,26 +54,41 @@ export const usePanZoom = (initialScale = 1) => {
   }, []);
 
   const onWheel = useCallback((e) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const zoomSensitivity = 0.005;
-      const delta = -e.deltaY * zoomSensitivity;
-      setScale((prev) => Math.min(Math.max(0.2, prev + delta), 3));
-    } else {
-      updatePosition({
-        x: positionRef.current.x,
-        y: positionRef.current.y - e.deltaY,
-      });
-    }
-  }, [updatePosition]);
+
+    const zoomSensitivity = 0.005;
+    const delta = -e.deltaY * zoomSensitivity;
+
+    const prevScale = scaleRef.current;
+    const newScale = Math.min(Math.max(0.2, prevScale + delta), 3);
+
+    if (newScale === prevScale) return;
+
+    // Lấy tọa độ đồng bộ ngay khi sự kiện xảy ra
+    const currentTarget = e.currentTarget;
+    if (!currentTarget) return;
+
+    const rect = currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Tính toán bù trừ vị trí để zoom vào đúng điểm chuột chỉ
+    const scaleRatio = newScale / prevScale;
+
+    updatePosition({
+      x: mouseX - (mouseX - positionRef.current.x) * scaleRatio,
+      y: mouseY - (mouseY - positionRef.current.y) * scaleRatio,
+    });
+
+    updateScale(newScale);
+  }, [updatePosition, updateScale]);
 
   const resetView = useCallback(() => {
-    setScale(initialScale);
+    updateScale(initialScale);
     updatePosition({ x: 0, y: 0 });
-  }, [initialScale, updatePosition]);
+  }, [initialScale, updatePosition, updateScale]);
 
-  const zoomIn = useCallback(() => setScale(s => Math.min(s + 0.1, 3)), []);
-  const zoomOut = useCallback(() => setScale(s => Math.max(s - 0.1, 0.2)), []);
+  const zoomIn = useCallback(() => updateScale(Math.min(scaleRef.current + 0.1, 3)), [updateScale]);
+  const zoomOut = useCallback(() => updateScale(Math.max(scaleRef.current - 0.1, 0.2)), [updateScale]);
 
   return {
     scale,
@@ -83,5 +102,7 @@ export const usePanZoom = (initialScale = 1) => {
     resetView,
     zoomIn,
     zoomOut,
+    updatePosition,
+    updateScale,
   };
 };

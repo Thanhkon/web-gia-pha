@@ -3,8 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: calc(100vh - 4rem);
-  background-color: var(--bg-main);
-  background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23d69e2e" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+  background-color: var(--bg-hover);
   overflow: hidden;
   position: relative;
 }
@@ -74,6 +73,14 @@
   overflow: hidden;
   position: relative;
   cursor: grab;
+  /* Khung bao quanh để giới hạn vùng zoom chuột */
+  margin: 1.5rem;
+  margin-top: 4.5rem; /* Chừa chỗ cho toolbar */
+  background-color: var(--bg-main);
+  background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23d69e2e" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .tree-container.dragging {
@@ -274,6 +281,16 @@
   margin: 0 auto 0.5rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   transition: transform 0.2s;
+}
+
+/* HIỂU THỊ ĐÃ KHUẤT */
+.node-card.node-deceased {
+  opacity: 0.85;
+  filter: grayscale(100%);
+}
+
+.node-card.node-deceased .node-avatar {
+  border-color: #666;
 }
 
 /* HIỂU THỊ ĐÃ XÓA (Soft Delete) */

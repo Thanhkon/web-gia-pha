@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { login, logout } from '../store/slices/authSlice';
-import { mockCurrentUser, mockRoleLabels } from '../data/mockAuth';
+import { logout } from '../store/slices/authSlice';
+import { mockRoleLabels } from '../data/mockAuth';
 import '../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -14,7 +14,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  
+
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -54,11 +54,12 @@ const Navbar = () => {
     }
   ];
 
-  const handleAuthClick = () => {
+  const handleAuthClick = async () => {
     if (isAuthenticated) {
       setIsUserMenuOpen(!isUserMenuOpen);
     } else {
-      dispatch(login(mockCurrentUser));
+      setIsMobileMenuOpen(false);
+      navigate('/login');
     }
   };
 
@@ -134,6 +135,14 @@ const Navbar = () => {
               </div>
             </div>
           ))}
+
+          {/* Direct link for Kinship Lookup placed after dropdowns */}
+          <button
+            className={`nav-link direct-link ${location.pathname === '/kinship-lookup' ? 'active' : ''}`}
+            onClick={() => handleNavClick('/kinship-lookup')}
+          >
+            Tra cứu xưng hô
+          </button>
         </div>
 
         <div className="nav-actions">
@@ -141,6 +150,19 @@ const Navbar = () => {
             <Bell size={20} />
             <span className="notification-dot"></span>
           </button>
+
+          {!isAuthenticated && (
+            <button
+              type="button"
+              className="register-btn"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                navigate('/register');
+              }}
+            >
+              Đăng ký
+            </button>
+          )}
 
           <div className="user-menu-container" ref={userMenuRef}>
             <button className="avatar-btn" aria-label="Tài khoản" onClick={handleAuthClick}>

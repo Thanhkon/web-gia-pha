@@ -6,20 +6,20 @@ export const FIELD_DICT = {
   fullName: 'Họ và tên',
   otherName: 'Tên gọi khác',
   gender: 'Giới tính',
-  birthDate: 'Ngày sinh (Dương lịch)',
+  dateOfBirth: 'Ngày sinh (Dương lịch)',
   birthLunarDate: 'Ngày sinh (Âm lịch)',
   birthYear: 'Năm sinh',
   isDeceased: 'Đã khuất (true/false)',
-  deathDate: 'Ngày mất (Dương lịch)',
+  dateOfDeath: 'Ngày mất (Dương lịch)',
   deathLunarDate: 'Ngày mất (Âm lịch)',
+  placeOfBirth: 'Nơi sinh',
   occupation: 'Nghề nghiệp',
-  address: 'Quê quán/Địa chỉ',
+  currentAddress: 'Quê quán/Địa chỉ',
   phone: 'Số điện thoại',
   email: 'Email',
-  notes: 'Ghi chú',
-  branch: 'Chi / Nhánh',
-  generation: 'Đời thứ mấy',
-  birthOrder: 'Con thứ (Thứ tự sinh)'
+  note: 'Ghi chú',
+  role: 'Vai trò',
+  generation: 'Đời thứ mấy'
 };
 
 const RequestForm = ({ persons, onSubmit, pendingCount }) => {

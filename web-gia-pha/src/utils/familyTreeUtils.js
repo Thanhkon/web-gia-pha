@@ -32,7 +32,11 @@ export const getTreeData = (personId, personsMap, adj, filters = {}) => {
   let children = [...new Set(lists.children)]
     .map(id => personsMap.get(id))
     .filter(Boolean)
-    .sort((a, b) => (a.birthOrder || 99) - (b.birthOrder || 99));
+    .sort((a, b) => {
+      const yearA = a.birthYear || (a.dateOfBirth ? new Date(a.dateOfBirth).getFullYear() : 9999);
+      const yearB = b.birthYear || (b.dateOfBirth ? new Date(b.dateOfBirth).getFullYear() : 9999);
+      return yearA - yearB;
+    });
 
   // Áp dụng bộ lọc
   if (filters.hideDaughtersInLaw) spouses = spouses.filter(s => !(s.gender === 'female' && s.isInLaw));

@@ -8,11 +8,11 @@ const ContactInfo = ({ formData, onChange }) => {
         <div className="form-row">
           <div className="form-group">
             <label>Nơi sinh</label>
-            <input type="text" className="form-control" value={formData.birthPlace} onChange={e => onChange('birthPlace', e.target.value)} />
+            <input type="text" className="form-control" value={formData.placeOfBirth || ''} onChange={e => onChange('placeOfBirth', e.target.value)} />
           </div>
           <div className="form-group">
             <label>Nơi ở hiện tại</label>
-            <input type="text" className="form-control" value={formData.address} onChange={e => onChange('address', e.target.value)} />
+            <input type="text" className="form-control" value={formData.currentAddress || ''} onChange={e => onChange('currentAddress', e.target.value)} />
           </div>
         </div>
       </div>
@@ -39,7 +39,7 @@ const ContactInfo = ({ formData, onChange }) => {
         </div>
         <div className="form-group">
           <label>Ghi chú thêm</label>
-          <textarea className="form-control" rows="2" value={formData.notes} onChange={e => onChange('notes', e.target.value)} />
+          <textarea className="form-control" rows="2" value={formData.note || ''} onChange={e => onChange('note', e.target.value)} />
         </div>
       </div>
     </>

@@ -9,6 +9,7 @@ import './App.css';
 
 // Lazy load các trang nặng để giảm initial bundle size
 const Home = lazy(() => import('./pages/Home'));
+const PublicHome = lazy(() => import('./pages/PublicHome'));
 const FamilyTree = lazy(() => import('./pages/FamilyTree'));
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const EditRequests = lazy(() => import('./pages/EditRequests'));
@@ -20,6 +21,9 @@ const PostEditor = lazy(() => import('./pages/PostEditor'));
 const Events = lazy(() => import('./pages/Events'));
 const Gallery = lazy(() => import('./pages/Gallery'));
 const GalleryDetail = lazy(() => import('./pages/GalleryDetail'));
+const KinshipLookup = lazy(() => import('./pages/KinshipLookup'));
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -39,9 +43,20 @@ const App = () => {
               <Route path="/" element={
                 <>
                   <Navbar />
-                  <main className="main-content"><Home /></main>
+                  <main className="main-content"><PublicHome /></main>
                 </>
               } />
+              <Route path="/home" element={<ProtectedRoute />}>
+                <Route
+                  index
+                  element={
+                    <>
+                      <Navbar />
+                      <main className="main-content"><Home /></main>
+                    </>
+                  }
+                />
+              </Route>
               <Route path="/family-tree" element={
                 <>
                   <Navbar />
@@ -103,6 +118,24 @@ const App = () => {
                 </>
               } />
               <Route path="/albums" element={<Navigate to="/gallery" replace />} />
+              <Route path="/kinship-lookup" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><KinshipLookup /></main>
+                </>
+              } />
+              <Route path="/login" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Login /></main>
+                </>
+              } />
+              <Route path="/register" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Register /></main>
+                </>
+              } />
 
               {/* Admin Protected Routes */}
               <Route path="/admin" element={<ProtectedRoute />}>
@@ -111,7 +144,7 @@ const App = () => {
                   <Route path="members" element={<AdminMembers />} />
                   <Route path="tree" element={<FamilyTree />} />
                   <Route path="requests" element={<AdminEditRequests />} />
-                  <Route path="content" element={<NotFoundPage />} />
+                  <Route path="events" element={<Events />} />
                   <Route path="settings" element={<NotFoundPage />} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>

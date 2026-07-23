@@ -6,6 +6,10 @@ import { AppService } from './app.service';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MembersModule } from './modules/members/members.module';
+import { RequestsModule } from './modules/requests/requests.module';
+import { PostsModule } from './modules/posts/posts.module';
+import { EventsModule } from './modules/events/events.module';
+import { HonorsModule } from './modules/honors/honors.module';
 
 @Module({
   imports: [
@@ -31,6 +35,10 @@ import { MembersModule } from './modules/members/members.module';
     UsersModule,
     AuthModule,
     MembersModule,
+    RequestsModule,
+    PostsModule,
+    EventsModule,
+    HonorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
