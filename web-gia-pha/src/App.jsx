@@ -18,6 +18,7 @@ const PublicMembers = lazy(() => import('./pages/PublicMembers'));
 const Events = lazy(() => import('./pages/Events'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
+const ProfilePage = lazy(() => import('./pages/Profile'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PageLoader = () => (
@@ -87,6 +88,17 @@ const App = () => {
                   <main className="main-content"><Register /></main>
                 </>
               } />
+              <Route path="/pages/profile/:profileId" element={<ProtectedRoute />}>
+                <Route
+                  index
+                  element={
+                    <>
+                      <Navbar />
+                      <main className="main-content"><ProfilePage /></main>
+                    </>
+                  }
+                />
+              </Route>
 
               {/* Admin Protected Routes */}
               <Route path="/admin" element={<ProtectedRoute />}>
