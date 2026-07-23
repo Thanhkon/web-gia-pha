@@ -1,0 +1,32 @@
+.public-home-page {
+  min-height: calc(100vh - 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, rgba(155, 44, 44, 0.15), transparent 38%),
+    linear-gradient(180deg, #f8f2ef 0%, #efe6e2 100%);
+}
+
+.public-hero {
+  width: min(900px, 100%);
+  padding: 3rem 2rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.public-home-content h1 {
+  margin-bottom: 1rem;
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  color: var(--primary-dark);
+}
+
+.public-home-content p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 46rem;
+  margin: 0 auto;
+  line-height: 1.75;
+}
