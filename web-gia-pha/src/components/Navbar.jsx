@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid } from 'lucide-react';
+import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import { mockRoleLabels } from '../data/mockAuth';
+import defaultAvatar from '../assets/avatar-female.svg';
 import '../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -14,7 +15,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -66,6 +67,7 @@ const Navbar = () => {
   const handleLogout = () => {
     dispatch(logout());
     setIsUserMenuOpen(false);
+    setShowLogoutConfirm(false);
     navigate('/');
     setIsMobileMenuOpen(false);
   };
@@ -152,32 +154,37 @@ const Navbar = () => {
           </button>
 
           {!isAuthenticated && (
-            <button
-              type="button"
-              className="register-btn"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                navigate('/register');
-              }}
-            >
-              Đăng ký
-            </button>
+            <div className="auth-btn-group">
+              <button
+                type="button"
+                className="login-btn"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  navigate('/login');
+                }}
+              >
+                Đăng nhập
+              </button>
+              <button
+                type="button"
+                className="register-btn"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  navigate('/register');
+                }}
+              >
+                Đăng ký
+              </button>
+            </div>
           )}
 
           <div className="user-menu-container" ref={userMenuRef}>
             <button className="avatar-btn" aria-label="Tài khoản" onClick={handleAuthClick}>
-              {isAuthenticated ? (
-                <>
-                  <User size={18} />
-                  <span className="hide-mobile" style={{ fontSize: '0.875rem', fontWeight: 500 }}>{user?.name}</span>
-                  <ChevronDown size={14} className="hide-mobile" style={{ marginLeft: '4px' }} />
-                </>
-              ) : (
-                <>
-                  <User size={18} />
-                  <span className="hide-mobile" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Đăng nhập</span>
-                </>
-              )}
+              <img
+                src={user?.avatar || defaultAvatar}
+                alt={user?.name || 'Avatar người dùng'}
+                className="avatar-img"
+              />
             </button>
 
             {/* User Dropdown Menu */}
@@ -190,8 +197,14 @@ const Navbar = () => {
                 <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin'); }}>
                   <LayoutGrid size={16} /> Bảng điều khiển
                 </button>
+                <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/pages/profile/me'); }}>
+                  <Users size={16} /> Thông tin cá nhân
+                </button>
                 <div className="user-dropdown-divider"></div>
-                <button className="user-dropdown-item text-danger" onClick={handleLogout}>
+                <button className="user-dropdown-item text-danger" onClick={() => {
+                  setIsUserMenuOpen(false);
+                  setShowLogoutConfirm(true);
+                }}>
                   <LogOut size={16} /> Đăng xuất
                 </button>
               </div>
@@ -199,6 +212,22 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {showLogoutConfirm && (
+        <div className="logout-confirm-backdrop" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="logout-confirm-modal" onClick={(event) => event.stopPropagation()}>
+            <p className="logout-confirm-text">Bạn có chắc chắn muốn đăng xuất?</p>
+            <div className="logout-confirm-actions">
+              <button type="button" className="logout-cancel-btn" onClick={() => setShowLogoutConfirm(false)}>
+                Quay lại
+              </button>
+              <button type="button" className="logout-confirm-btn" onClick={handleLogout}>
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
