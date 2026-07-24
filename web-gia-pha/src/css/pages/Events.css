@@ -188,6 +188,29 @@
   color: var(--text-muted);
 }
 
+.events-day-cell.is-outside-month .events-day-number strong {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.events-day-cell.is-outside-month .events-day-number span {
+  color: #a0aec0;
+}
+
+.events-day-cell.is-outside-month .events-day-items {
+  opacity: 0.58;
+}
+
+.events-day-cell.is-outside-month .events-day-event {
+  background: #f1f5f9;
+  border-left-color: #cbd5e1;
+  color: #64748b;
+}
+
+.events-day-cell.is-outside-month .events-day-event:hover {
+  background: #e2e8f0;
+}
+
 .events-day-cell.is-today {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
