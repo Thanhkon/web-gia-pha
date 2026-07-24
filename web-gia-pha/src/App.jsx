@@ -19,6 +19,8 @@ const Posts = lazy(() => import('./pages/Posts'));
 const PostDetail = lazy(() => import('./pages/PostDetail'));
 const PostEditor = lazy(() => import('./pages/PostEditor'));
 const Events = lazy(() => import('./pages/Events'));
+const Gallery = lazy(() => import('./pages/Gallery'));
+const GalleryDetail = lazy(() => import('./pages/GalleryDetail'));
 const KinshipLookup = lazy(() => import('./pages/KinshipLookup'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
@@ -103,6 +105,19 @@ const App = () => {
                   <main className="main-content"><Events /></main>
                 </>
               } />
+              <Route path="/gallery" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><Gallery /></main>
+                </>
+              } />
+              <Route path="/albums/:albumId" element={
+                <>
+                  <Navbar />
+                  <main className="main-content"><GalleryDetail /></main>
+                </>
+              } />
+              <Route path="/albums" element={<Navigate to="/gallery" replace />} />
               <Route path="/kinship-lookup" element={
                 <>
                   <Navbar />
