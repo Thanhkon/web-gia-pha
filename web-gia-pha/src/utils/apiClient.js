@@ -17,7 +17,7 @@ apiClient.interceptors.request.use(
 
     // TODO: Xoá dòng này khi tính năng Đăng nhập được nối API thật
     if (!token) {
-      token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImVtYWlsIjoidGVzdDU1QGV4YW1wbGUuY29tIiwiaWF0IjoxNzg0Nzk1NzM2LCJleHAiOjE3ODQ4ODIxMzZ9.6r7Hi6zw2bdCO9BR7fnw4BFySNhwH-VlhiAoxuZCuOc';
+      token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiYWRtaW5fMTc4NDc4MTg0NDU4M0BnaWFwaGEuY29tIiwiaWF0IjoxNzg0ODg2MDYwLCJleHAiOjQ5Mzg0ODYwNjB9.pfL2GoHoHDvfKybHz7BkEJk42hyKNYDn62TddcgEE74';
     }
 
     if (token) {

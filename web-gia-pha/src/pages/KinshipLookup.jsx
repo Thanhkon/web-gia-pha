@@ -91,7 +91,7 @@ const KinshipLookup = () => {
                 <div className="kinship-person-card">
                   <span className="person-role">Người hỏi</span>
                   <span className="person-name">{result.personA.fullName}</span>
-                  <span className="person-call">Xưng là: <strong>{result.aCallsB}</strong></span>
+                  <span className="person-call">Xưng là: <strong>{result.bCallsA}</strong></span>
                 </div>
 
                 <div className="kinship-exchange-icon">
@@ -101,7 +101,7 @@ const KinshipLookup = () => {
                 <div className="kinship-person-card">
                   <span className="person-role">Người đối diện</span>
                   <span className="person-name">{result.personB.fullName}</span>
-                  <span className="person-call">Gọi là: <strong>{result.bCallsA}</strong></span>
+                  <span className="person-call">Gọi là: <strong>{result.aCallsB}</strong></span>
                 </div>
               </div>
 
