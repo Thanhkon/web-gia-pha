@@ -179,16 +179,16 @@ export class AuthService {
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const token = resetPasswordDto.token?.trim();
+    const resetToken = resetPasswordDto.resetToken?.trim();
     const newPassword = this.normalizePassword(resetPasswordDto.newPassword);
 
-    if (!token) {
+    if (!resetToken) {
       throw new BadRequestException('Reset token is required');
     }
 
     this.validateNewPassword(newPassword);
 
-    const resetTokenEntity = await this.findResetPasswordToken(token);
+    const resetTokenEntity = await this.findResetPasswordToken(resetToken);
 
     if (
       !resetTokenEntity ||
@@ -356,9 +356,9 @@ export class AuthService {
     });
   }
 
-  private findResetPasswordToken(token: string) {
+  private findResetPasswordToken(resetToken: string) {
     return this.passwordResetTokenRepository.findOne({
-      where: { tokenHash: this.hashToken(token) },
+      where: { tokenHash: this.hashToken(resetToken) },
     });
   }
 

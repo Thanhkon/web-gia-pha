@@ -55,9 +55,10 @@ export class PostsController {
   @Patch('posts/:id')
   update(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
     @Body() updatePostDto: UpdatePostDto,
   ) {
-    return this.postsService.update(id, updatePostDto);
+    return this.postsService.update(id, request.user!.id, updatePostDto);
   }
 
   @Delete('posts/:id')

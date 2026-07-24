@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -85,13 +86,17 @@ export class PostsService {
     return post;
   }
 
-  async update(id: number, updatePostDto: UpdatePostDto) {
+  async update(id: number, authorId: number, updatePostDto: UpdatePostDto) {
     const post = await this.postsRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
 
     if (!post) {
       throw new NotFoundException(`Post ${id} not found`);
+    }
+
+    if (post.authorId !== authorId) {
+      throw new ForbiddenException('You are not allowed to update this post');
     }
 
     const nextStatus = updatePostDto.status
@@ -173,8 +178,12 @@ export class PostsService {
   }
 
   private normalizePostInput(dto: CreatePostDto | UpdatePostDto) {
-    const { publishedAt, slug, status, visibility, ...rest } = dto;
+    const { coverImage, publishedAt, slug, status, visibility, ...rest } = dto;
     const data: Partial<Post> = { ...rest };
+
+    if (data.thumbnailUrl === undefined && coverImage !== undefined) {
+      data.thumbnailUrl = coverImage;
+    }
 
     if (typeof data.title === 'string') {
       data.title = data.title.trim();
@@ -188,6 +197,18 @@ export class PostsService {
       if (!data.content) {
         throw new BadRequestException('content cannot be empty');
       }
+    }
+
+    if (typeof data.summary === 'string') {
+      data.summary = data.summary.trim() || null;
+    }
+
+    if (typeof data.category === 'string') {
+      data.category = data.category.trim() || null;
+    }
+
+    if (typeof data.thumbnailUrl === 'string') {
+      data.thumbnailUrl = data.thumbnailUrl.trim() || null;
     }
 
     return data;
@@ -204,6 +225,10 @@ export class PostsService {
 
   private normalizeVisibility(visibility: string): PostVisibility {
     const normalizedVisibility = visibility.trim().toUpperCase();
+    if (normalizedVisibility === 'INTERNAL') {
+      return 'FAMILY';
+    }
+
     if (!POST_VISIBILITIES.includes(normalizedVisibility as PostVisibility)) {
       throw new BadRequestException(`Invalid post visibility: ${visibility}`);
     }
