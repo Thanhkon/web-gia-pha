@@ -9,5 +9,6 @@ export class CreatePostDto {
   status?: PostStatus;
   visibility?: PostVisibility;
   thumbnailUrl?: string | null;
+  coverImage?: string | null;
   publishedAt?: string | Date | null;
 }

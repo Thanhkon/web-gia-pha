@@ -10,6 +10,7 @@ import { RequestsModule } from './modules/requests/requests.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { EventsModule } from './modules/events/events.module';
 import { HonorsModule } from './modules/honors/honors.module';
+import { AlbumsModule } from './modules/albums/albums.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { HonorsModule } from './modules/honors/honors.module';
     PostsModule,
     EventsModule,
     HonorsModule,
+    AlbumsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
