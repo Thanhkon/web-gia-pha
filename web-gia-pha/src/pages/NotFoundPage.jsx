@@ -9,7 +9,6 @@ const NotFoundPage = () => {
 
   // If path includes 'admin' but isn't explicitly 404, we can say it's under construction
   const isUnderConstruction = location.pathname.includes('/admin/content') || 
-                              location.pathname.includes('/admin/settings') ||
                               location.pathname.includes('/posts') ||
                               location.pathname.includes('/events') ||
                               location.pathname.includes('/gallery') ||

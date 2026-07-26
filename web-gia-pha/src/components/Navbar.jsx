@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Bell, LogOut, Menu, X, ChevronDown, LayoutGrid, Users } from 'lucide-react';
+import { BookOpen, Bell, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import defaultAvatar from '../assets/avatar-female.svg';
@@ -10,7 +10,8 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -55,15 +56,6 @@ const Navbar = () => {
     }
   ];
 
-  const handleAuthClick = () => {
-    if (isAuthenticated) {
-      setIsUserMenuOpen(!isUserMenuOpen);
-    } else {
-      setIsMobileMenuOpen(false);
-      navigate('/login');
-    }
-  };
-
   const handleLogout = () => {
     dispatch(logout());
     setIsUserMenuOpen(false);
@@ -98,10 +90,14 @@ const Navbar = () => {
         </Link>
 
         {/* Lớp phủ mờ khi mở Sidebar Mobile */}
-        {isMobileMenuOpen && <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
+        {isMobileMenuOpen && (
+          <div 
+            className="sidebar-overlay" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+        )}
 
         <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-          {/* Nút đóng cho Sidebar */}
           <div className="sidebar-header">
             <h3>Menu</h3>
             <button className="icon-btn" onClick={() => setIsMobileMenuOpen(false)}>
@@ -123,7 +119,6 @@ const Navbar = () => {
                 {group.name} <ChevronDown size={16} className={`chevron ${openDropdown === index ? 'open' : ''}`} />
               </button>
 
-              {/* Dropdown Menu */}
               <div className={`dropdown-menu ${openDropdown === index ? 'show' : ''}`}>
                 {group.items.map((item, idx) => (
                   <button
@@ -145,33 +140,8 @@ const Navbar = () => {
             <span className="notification-dot"></span>
           </button>
 
-          {!isAuthenticated && (
-            <div className="auth-btn-group">
-              <button
-                type="button"
-                className="login-btn"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  navigate('/login');
-                }}
-              >
-                Đăng nhập
-              </button>
-              <button
-                type="button"
-                className="register-btn"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  navigate('/register');
-                }}
-              >
-                Đăng ký
-              </button>
-            </div>
-          )}
-
           <div className="user-menu-container" ref={userMenuRef}>
-            <button className="avatar-btn" aria-label="Tài khoản" onClick={handleAuthClick}>
+            <button className="avatar-btn" aria-label="Tài khoản" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
               <img
                 src={user?.avatar || defaultAvatar}
                 alt={user?.name || 'Avatar người dùng'}
@@ -179,20 +149,45 @@ const Navbar = () => {
               />
             </button>
 
-            {/* User Dropdown Menu */}
-            {isAuthenticated && isUserMenuOpen && (
+            {isUserMenuOpen && (
               <div className="user-dropdown-menu">
                 <div className="user-dropdown-header">
-                  <strong>{user?.name}</strong>
-                  <span>Quản trị viên</span>
+                  <strong>{`${user?.lastName || ''} ${user?.firstName || ''}`}</strong>
+                  <span>{user?.role}</span>
                 </div>
-                <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin'); }}>
-                  <LayoutGrid size={16} /> Bảng điều khiển
-                </button>
-                <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/pages/profile/me'); }}>
+
+                {user?.role === "ADMIN" && (
+                  <button 
+                    className="user-dropdown-item" 
+                    onClick={() => { 
+                      setIsUserMenuOpen(false); 
+                      navigate('/admin'); 
+                    }}
+                  >
+                    <LayoutGrid size={16} /> Bảng điều khiển
+                  </button>
+                )}
+
+                <button 
+                  className="user-dropdown-item" 
+                  onClick={() => { 
+                    setIsUserMenuOpen(false); 
+                    navigate('/pages/profile/me'); 
+                  }}
+                >
                   <Users size={16} /> Thông tin cá nhân
                 </button>
-                <div className="user-dropdown-divider"></div>
+
+                <button 
+                  className="user-dropdown-item" 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate('/admin/settings');
+                  }}
+                >
+                  <Settings size={17} /> Cài đặt chung
+                </button>
+
                 <button className="user-dropdown-item text-danger" onClick={() => {
                   setIsUserMenuOpen(false);
                   setShowLogoutConfirm(true);

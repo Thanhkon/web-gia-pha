@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState, useRef, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { Pencil } from 'lucide-react';
+import { Pencil, Image } from 'lucide-react';
 import defaultAvatar from '../assets/avatar-female.svg';
 import '../css/pages/Profile.css';
 
+
+// Các ô nhập liệu
 const ProfileField = ({
   label,
   value,
@@ -18,6 +20,7 @@ const ProfileField = ({
   const fieldClassName = `profile-field ${fullWidth ? 'full-width' : ''}`;
   const isReadOnly = !editable;
 
+  // Ô chọn dạng Dropdown
   if (type === 'select') {
     return (
       <div className={fieldClassName}>
@@ -39,6 +42,7 @@ const ProfileField = ({
     );
   }
 
+  // Ô nhập văn bản description/note
   if (type === 'textarea') {
     return (
       <div className={fieldClassName}>
@@ -63,6 +67,7 @@ const ProfileField = ({
     );
   }
 
+  // Ô nhập văn bản/ngày/số cơ bản (Text, Date, Tel, Email)
   return (
     <div className={fieldClassName}>
       <span className="profile-label">{label}</span>
@@ -78,11 +83,33 @@ const ProfileField = ({
   );
 };
 
+// MAIN COMPONENT
 const ProfilePage = () => {
+  const [showAvatarPreview, setShowAvatarPreview] = useState(false);
+
+  useEffect(() => {
+    document.title = "My Profile";
+    
+    if (showAvatarPreview) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showAvatarPreview]);
+  
+  const dispatch = useDispatch();
   const { profileId } = useParams();
   const { user } = useSelector((state) => state.auth);
+  
+  // Trạng thái cho phép chỉnh sửa & hiển thị 
   const [isEditing, setIsEditing] = useState(false);
-  const [showAvatarPreview, setShowAvatarPreview] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  // State lưu trữ dữ liệu form
   const [formData, setFormData] = useState(() => ({
     firstName: user?.firstName || 'An',
     lastName: user?.lastName || 'Nguyễn Văn',
@@ -100,6 +127,7 @@ const ProfilePage = () => {
 
   const isSelfProfile = profileId === 'me';
 
+  // Cập nhật giá trị các trường trong formData khi gõ input
   const handleFieldChange = (field) => (event) => {
     setFormData((prev) => ({
       ...prev,
@@ -107,10 +135,59 @@ const ProfilePage = () => {
     }));
   };
 
+  // Hàm xử lý chọn ảnh đại diện
+  const handleAvatarChange = (e) => {
+    e.preventDefault();
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setFormData((prev) => ({
+        ...prev,
+        avatar: previewUrl,
+      }));
+      setShowAvatarPreview(false);
+    }
+  }
+
+  // Xử lý khi nhấn nút EDIT / SAVE (Gọi API lưu profile)
+  const handleSaveProfile = async () => {
+    if (isEditing) {
+      try {
+        if(!user?.token) return;
+
+        // Gửi dữ liệu cập nhật tới API Backend
+        const apiBaseUrl = import.meta.env.VITE_API_URL;
+        const response = await fetch(`${apiBaseUrl}/users/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(user?.token && { 'Authorization': `Bearer ${user.token}` }),
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          const updatedUser = await response.json();
+          setIsEditing(false);
+        } else {
+          console.warn("Cập nhật dữ liệu tạm thời trên giao diện.");
+          setIsEditing(false);
+        }
+      } catch (error) {
+        console.error("Lỗi khi cập nhật profile:", error);
+        setIsEditing(false);
+      }
+    } else {
+      setIsEditing(true); // Chuyển sang chế độ chỉnh sửa
+    }
+  };
+
   return (
     <div className="profile-page animate-fade-in">
       <div className="container profile-page-container">
         <div className="profile-card">
+          
+          {/* Avatar, Tiêu đề & Nút Edit/Save */}
           <div className="profile-header-row">
             <div className="profile-header-left">
               <div className="profile-avatar-wrap">
@@ -124,31 +201,54 @@ const ProfilePage = () => {
                 </button>
               </div>
               <div>
-                <h1 className="profile-title">{isSelfProfile ? 'Thông tin cá nhân' : 'Thông tin thành viên'}</h1>
-                <p className="profile-subtitle">{isSelfProfile ? 'Trang cá nhân của bạn' : 'Xem thông tin cơ bản'}</p>
+                <h1 className="profile-title">
+                  {isSelfProfile ? 'Thông tin cá nhân' : 'Thông tin thành viên'}
+                </h1>
+                <p className="profile-subtitle">
+                  {isSelfProfile ? 'Trang cá nhân của bạn' : 'Xem thông tin cơ bản'}
+                </p>
               </div>
             </div>
 
             <button
               type="button"
               className="profile-edit-btn"
-              onClick={() => setIsEditing((prev) => !prev)}
+              onClick={handleSaveProfile}
             >
               <Pencil size={16} />
               {isEditing ? 'SAVE' : 'EDIT'}
             </button>
           </div>
 
+          {/* Zoom ảnh đại diện */}
           {showAvatarPreview && (
             <div className="profile-avatar-modal-backdrop" onClick={() => setShowAvatarPreview(false)}>
               <div className="profile-avatar-modal" onClick={(event) => event.stopPropagation()}>
-                <div className="profile-avatar-modal-image-wrap">
-                  <img src={formData.avatar} alt="Avatar preview" className="profile-avatar-modal-image" />
-                </div>
+                <img src={formData.avatar} alt="Avatar preview" className="profile-avatar-modal-image" />
+                
+                {/* Nút chọn ảnh */}
+                <button 
+                  type="button" 
+                  className="profile-avatar-change-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Image size={18} />
+                  <span>Chọn ảnh đại diện</span>
+                </button>
+
+                {/* Input file */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                />
               </div>
             </div>
           )}
 
+          {/* Các ô nhập liệu */}
           <div className="profile-grid-wrap">
             {!isEditing && <div className="profile-grid-overlay" aria-hidden="true"></div>}
             <div className="profile-grid">
@@ -233,6 +333,7 @@ const ProfilePage = () => {
               />
             </div>
           </div>
+
         </div>
       </div>
     </div>

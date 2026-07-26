@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -9,6 +9,10 @@ import MarqueeBanner from '../components/MarqueeBanner';
 import '../css/pages/Home.css';
 
 const Home = () => {
+  useEffect(() => {
+    document.title = "Dashboard";
+  }, []);
+
   const navigate = useNavigate();
 
   // Lấy cấu hình tuỳ chỉnh (Settings) từ Redux
