@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useFamily } from '../hooks/useFamily';
 import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
+import { fetchFamilies } from '../store/slices/familiesSlice';
 import { mockRoleLabels } from '../data/mockAuth';
 import defaultAvatar from '../assets/avatar-female.svg';
 import '../css/components/Navbar.css';
@@ -31,28 +33,34 @@ const Navbar = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchFamilies());
+    }
+  }, [dispatch, isAuthenticated]);
+
+  const currentFamilyId = useFamily();
+
   const handleNavClick = (path) => {
     setIsMobileMenuOpen(false);
     navigate(path);
   };
 
+  const { list: userFamilies } = useSelector((state) => state.families);
+
   const navGroups = [
     {
-      name: 'Gia Phả',
-      items: [
-        { name: 'Sơ đồ gia phả', path: '/family-tree' },
-        { name: 'Danh sách Thành viên', path: '/members' },
-        { name: 'Gửi yêu cầu sửa', path: '/edit-requests' },
-      ]
+      name: 'Danh sách gia phả',
+      isFamilySelector: true,
     },
-    {
+    ...(currentFamilyId ? [{
       name: 'Hoạt động',
       items: [
-        { name: 'Bài viết', path: '/posts' },
-        { name: 'Sự kiện', path: '/events' },
-        { name: 'Thư viện ảnh', path: '/gallery' },
+        { name: 'Bài viết', path: 'posts' },
+        { name: 'Sự kiện', path: 'events' },
+        { name: 'Thư viện ảnh', path: 'gallery' },
       ]
-    }
+    }] : [])
   ];
 
   const handleAuthClick = async () => {
@@ -68,7 +76,7 @@ const Navbar = () => {
     dispatch(logout());
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
-    navigate('/');
+    navigate('/login');
     setIsMobileMenuOpen(false);
   };
 
@@ -92,7 +100,7 @@ const Navbar = () => {
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
-        <Link to="/" className="nav-logo" onClick={() => setIsMobileMenuOpen(false)}>
+        <Link to={currentFamilyId ? `/${currentFamilyId}/home` : '/admin/families'} className="nav-logo" onClick={() => setIsMobileMenuOpen(false)}>
           <BookOpen size={24} />
           <span>Web Gia Phả</span>
         </Link>
@@ -124,16 +132,41 @@ const Navbar = () => {
               </button>
 
               {/* Dropdown Menu */}
-              <div className={`dropdown-menu ${openDropdown === index ? 'show' : ''}`}>
-                {group.items.map((item, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleNavClick(item.path)}
-                    className={`dropdown-item ${location.pathname === item.path ? 'active' : ''}`}
-                  >
-                    {item.name}
-                  </button>
-                ))}
+              <div className={`dropdown-menu ${openDropdown === index ? 'show' : ''} ${group.isFamilySelector ? 'family-list-dropdown' : ''}`}>
+                {group.isFamilySelector ? (
+                  userFamilies.map(fam => (
+                    <div key={fam.id} className="family-item-group">
+                      <div className="family-item-title">{fam.name}</div>
+                      <div className="family-item-actions">
+                        <button 
+                          className="dropdown-item sub-action"
+                          onClick={() => handleNavClick(`/${fam.id}/family-tree`)}
+                        >
+                          Xem cây
+                        </button>
+                        <button 
+                          className="dropdown-item sub-action"
+                          onClick={() => handleNavClick(`/admin/families/${fam.id}/members`)}
+                        >
+                          Quản lý
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  group.items.map((item, idx) => {
+                    const targetPath = `/${currentFamilyId}/${item.path}`;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleNavClick(targetPath)}
+                        className={`dropdown-item ${location.pathname.includes(item.path) ? 'active' : ''}`}
+                      >
+                        {item.name}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           ))}
@@ -194,7 +227,7 @@ const Navbar = () => {
                   <strong>{user?.name}</strong>
                   <span>{mockRoleLabels[user?.role] || 'Khách'}</span>
                 </div>
-                <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin'); }}>
+                <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin/families'); }}>
                   <LayoutGrid size={16} /> Bảng điều khiển
                 </button>
                 <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/pages/profile/me'); }}>

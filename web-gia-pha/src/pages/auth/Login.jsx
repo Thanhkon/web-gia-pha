@@ -26,10 +26,10 @@ function Login() {
             username: user.username,
             role: user.username === 'admin' ? 'admin' : 'member',
         }));
-        navigate('/home');
+        navigate('/admin');
     };
 
-    const handleSubmit = async(e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
 
@@ -61,7 +61,7 @@ function Login() {
             const data = await response.json();
             if (response.ok) {
                 // Nếu backend OK thì dùng tài khoản backend
-                navigate("/home");
+                navigate("/admin");
                 return;
             }
 
@@ -88,68 +88,68 @@ function Login() {
             <div className="auth-box">
                 <h2>Đăng Nhập</h2>
                 <form className="auth-form" onSubmit={handleSubmit}>
-                {/* Error */}
-                {error && (
-                    <p className="auth-error">
-                        {error}
-                    </p>
-                )}
+                    {/* Error */}
+                    {error && (
+                        <p className="auth-error">
+                            {error}
+                        </p>
+                    )}
 
-                {/* Username */}
-                <div className="input-box">
-                    <label className="label-auth">Username</label>
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        name="username"
-                        value={loginData.username}
-                        autoComplete="off"
-                        onChange={(e) =>
-                            setLoginData({ ...loginData, username: e.target.value })
-                        }
-                        required
-                    />
-                </div>
-
-                {/* Password */}
-                <div className="input-box">
-                    <label className="label-auth">Password</label>
-                    <div className="password-wrapper">
+                    {/* Username */}
+                    <div className="input-box">
+                        <label className="label-auth">Username</label>
                         <input
-                            type={showPass ? "text" : "password"}
-                            placeholder="Password"
-                            name="password"
-                            value={loginData.password}
+                            type="text"
+                            placeholder="Username"
+                            name="username"
+                            value={loginData.username}
                             autoComplete="off"
                             onChange={(e) =>
-                                setLoginData({ ...loginData, password: e.target.value })
+                                setLoginData({ ...loginData, username: e.target.value })
                             }
                             required
                         />
-                        <button
-                            onClick={() => setShowPass(!showPass)}
-                            className="btn-showPass"
-                            type="button"
-                            tabIndex={-1}
-                        >
-                            {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
                     </div>
-                </div>
-                
-                {/* Navigate to Register */}
-                <p>Chưa có tài khoản?{" "}
-                    <span
-                        style={{ color: "blue", cursor: "pointer" }}
-                        onClick={() => navigate("/register")}
-                    >
-                        Đăng ký ngay
-                    </span>
-                </p>
-                <button type="submit" className="btn-auth">Đăng Nhập</button>
-            </form>
+
+                    {/* Password */}
+                    <div className="input-box">
+                        <label className="label-auth">Password</label>
+                        <div className="password-wrapper">
+                            <input
+                                type={showPass ? "text" : "password"}
+                                placeholder="Password"
+                                name="password"
+                                value={loginData.password}
+                                autoComplete="off"
+                                onChange={(e) =>
+                                    setLoginData({ ...loginData, password: e.target.value })
+                                }
+                                required
+                            />
+                            <button
+                                onClick={() => setShowPass(!showPass)}
+                                className="btn-showPass"
+                                type="button"
+                                tabIndex={-1}
+                            >
+                                {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Navigate to Register */}
+                    <p>Chưa có tài khoản?{" "}
+                        <span
+                            style={{ color: "blue", cursor: "pointer" }}
+                            onClick={() => navigate("/register")}
+                        >
+                            Đăng ký ngay
+                        </span>
+                    </p>
+                    <button type="submit" className="btn-auth">Đăng Nhập</button>
+                </form>
+            </div>
         </div>
-    </div>
     );
 }
 export default Login;

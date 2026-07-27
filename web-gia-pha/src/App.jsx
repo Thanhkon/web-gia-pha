@@ -24,6 +24,7 @@ const GalleryDetail = lazy(() => import('./pages/GalleryDetail'));
 const KinshipLookup = lazy(() => import('./pages/KinshipLookup'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
+const FamilyList = lazy(() => import('./pages/FamilyList'));
 const ProfilePage = lazy(() => import('./pages/Profile'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
@@ -47,84 +48,7 @@ const App = () => {
                   <main className="main-content"><PublicHome /></main>
                 </>
               } />
-              <Route path="/home" element={<ProtectedRoute />}>
-                <Route
-                  index
-                  element={
-                    <>
-                      <Navbar />
-                      <main className="main-content"><Home /></main>
-                    </>
-                  }
-                />
-              </Route>
-              <Route path="/family-tree" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><FamilyTree /></main>
-                </>
-              } />
-              <Route path="/edit-requests" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><EditRequests /></main>
-                </>
-              } />
-              <Route path="/members" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><PublicMembers /></main>
-                </>
-              } />
-              <Route path="/posts" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><Posts /></main>
-                </>
-              } />
-              <Route path="/posts/new" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><PostEditor mode="create" /></main>
-                </>
-              } />
-              <Route path="/posts/:id" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><PostDetail /></main>
-                </>
-              } />
-              <Route path="/posts/:id/edit" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><PostEditor mode="edit" /></main>
-                </>
-              } />
-              <Route path="/events" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><Events /></main>
-                </>
-              } />
-              <Route path="/gallery" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><Gallery /></main>
-                </>
-              } />
-              <Route path="/albums/:albumId" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><GalleryDetail /></main>
-                </>
-              } />
-              <Route path="/albums" element={<Navigate to="/gallery" replace />} />
-              <Route path="/kinship-lookup" element={
-                <>
-                  <Navbar />
-                  <main className="main-content"><KinshipLookup /></main>
-                </>
-              } />
+              {/* Global Routes outside of family context */}
               <Route path="/login" element={
                 <>
                   <Navbar />
@@ -137,6 +61,20 @@ const App = () => {
                   <main className="main-content"><Register /></main>
                 </>
               } />
+              <Route path="/admin" element={<ProtectedRoute />}>
+                <Route element={<AdminLayout />}>
+                  <Route index element={<Navigate to="families" replace />} />
+                  <Route path="families" element={<FamilyList />} />
+                  <Route path="families/:familyId">
+                    <Route index element={<Navigate to="members" replace />} />
+                    <Route path="members" element={<AdminMembers />} />
+                    <Route path="tree" element={<FamilyTree />} />
+                    <Route path="requests" element={<AdminEditRequests />} />
+                    <Route path="events" element={<Events />} />
+                    <Route path="settings" element={<NotFoundPage />} />
+                  </Route>
+                </Route>
+              </Route>
               <Route path="/pages/profile/:profileId" element={<ProtectedRoute />}>
                 <Route
                   index
@@ -149,17 +87,89 @@ const App = () => {
                 />
               </Route>
 
-              {/* Admin Protected Routes */}
-              <Route path="/admin" element={<ProtectedRoute />}>
-                <Route element={<AdminLayout />}>
-                  <Route index element={<Navigate to="members" replace />} />
-                  <Route path="members" element={<AdminMembers />} />
-                  <Route path="tree" element={<FamilyTree />} />
-                  <Route path="requests" element={<AdminEditRequests />} />
-                  <Route path="events" element={<Events />} />
-                  <Route path="settings" element={<NotFoundPage />} />
-                  <Route path="*" element={<NotFoundPage />} />
+              {/* Family Context Routes */}
+              <Route path="/:familyId">
+                <Route index element={<Navigate to="home" replace />} />
+                <Route path="home" element={<ProtectedRoute />}>
+                  <Route
+                    index
+                    element={
+                      <>
+                        <Navbar />
+                        <main className="main-content"><Home /></main>
+                      </>
+                    }
+                  />
                 </Route>
+                <Route path="family-tree" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><FamilyTree /></main>
+                  </>
+                } />
+                <Route path="edit-requests" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><EditRequests /></main>
+                  </>
+                } />
+                <Route path="members" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><PublicMembers /></main>
+                  </>
+                } />
+                <Route path="posts" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><Posts /></main>
+                  </>
+                } />
+                <Route path="posts/new" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><PostEditor mode="create" /></main>
+                  </>
+                } />
+                <Route path="posts/:id" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><PostDetail /></main>
+                  </>
+                } />
+                <Route path="posts/:id/edit" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><PostEditor mode="edit" /></main>
+                  </>
+                } />
+                <Route path="events" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><Events /></main>
+                  </>
+                } />
+                <Route path="gallery" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><Gallery /></main>
+                  </>
+                } />
+                <Route path="albums/:albumId" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><GalleryDetail /></main>
+                  </>
+                } />
+                <Route path="albums" element={<Navigate to="../gallery" replace />} />
+                <Route path="kinship-lookup" element={
+                  <>
+                    <Navbar />
+                    <main className="main-content"><KinshipLookup /></main>
+                  </>
+                } />
+
+
               </Route>
 
               <Route path="*" element={

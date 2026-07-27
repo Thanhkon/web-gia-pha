@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams } from 'react-router-dom';
+import { useFamily } from '../hooks/useFamily';
 import { usePanZoom } from '../hooks/usePanZoom';
 import MemberForm from '../components/Admin/MemberForm/MemberForm';
 import { 
@@ -42,18 +44,20 @@ const FamilyTree = () => {
   }, []);
 
 
+  const familyId = useFamily();
   const dispatch = useDispatch();
   const persons = useSelector(state => state.members.persons);
   const relationships = useSelector(state => state.members.relationships);
   const loading = useSelector(state => state.members.loading);
   const familyInfo = useSelector(state => state.members.familyInfo);
   
-  // Mặc định gọi ID 1 tạm thời
-  const CURRENT_FAMILY_ID = 1;
+  // Mặc định gọi ID từ params
 
   useEffect(() => {
-    dispatch(fetchFamilyTree(CURRENT_FAMILY_ID));
-  }, [dispatch]);
+    if (familyId) {
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newMember, setNewMember] = useState(EMPTY_MEMBER);
@@ -102,7 +106,7 @@ const FamilyTree = () => {
     try {
       // Gọi API thêm member
       const newMember = await dispatch(addMemberToFamily({
-        familyId: CURRENT_FAMILY_ID,
+        familyId: familyId,
         memberData: {
           fullName: submittedData.fullName,
           otherName: submittedData.otherName,
@@ -153,7 +157,7 @@ const FamilyTree = () => {
       console.error('Lỗi khi thêm thành viên:', err);
       alert('Có lỗi xảy ra khi thêm thành viên!');
     }
-  }, [dispatch]);
+  }, [dispatch, familyId]);
 
   const {
     scale, position, isDragging,

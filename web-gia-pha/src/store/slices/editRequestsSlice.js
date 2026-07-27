@@ -83,6 +83,7 @@ const editRequestsSlice = createSlice({
       .addCase(fetchRequests.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.items = [];
       })
       .addCase(fetchRequests.fulfilled, (state, action) => {
         state.loading = false;

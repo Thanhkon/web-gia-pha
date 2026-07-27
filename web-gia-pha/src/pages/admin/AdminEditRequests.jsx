@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { selectAllRequests, fetchRequests, approveRequestThunk, rejectRequestThunk, deleteRequestThunk } from '../../store/slices/editRequestsSlice';
 import { fetchFamilyTree } from '../../store/slices/membersSlice';
 import RequestCard from '../../components/EditRequests/RequestCard';
@@ -9,6 +10,7 @@ import { Trash2 } from 'lucide-react';
 import '../../css/pages/AdminEditRequests.css';
 
 const AdminEditRequests = () => {
+  const { familyId } = useParams();
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'processed'
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -23,10 +25,11 @@ const AdminEditRequests = () => {
   const persons = useSelector(state => state.members.persons);
 
   useEffect(() => {
-    const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
-    dispatch(fetchRequests(CURRENT_FAMILY_ID));
-    dispatch(fetchFamilyTree(CURRENT_FAMILY_ID));
-  }, [dispatch]);
+    if (familyId) {
+      dispatch(fetchRequests(familyId));
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const handleApprove = async (requestId, adminNote) => {
     try {
@@ -37,7 +40,7 @@ const AdminEditRequests = () => {
       })).unwrap();
       
       // Reload family tree to get updated member data
-      dispatch(fetchFamilyTree(1));
+      dispatch(fetchFamilyTree(familyId));
 
       setSelectedRequest(null);
       alert('Đã duyệt và áp dụng thay đổi thành công!');

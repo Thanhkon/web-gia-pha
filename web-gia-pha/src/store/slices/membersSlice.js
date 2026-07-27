@@ -145,6 +145,10 @@ const membersSlice = createSlice({
     builder
       .addCase(fetchFamilyTree.pending, (state) => {
         state.loading = true;
+        state.error = null;
+        state.familyInfo = null;
+        state.persons = [];
+        state.relationships = [];
       })
       .addCase(fetchFamilyTree.fulfilled, (state, action) => {
         state.loading = false;

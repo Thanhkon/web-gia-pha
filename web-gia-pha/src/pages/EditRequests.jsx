@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { addRequest, fetchRequests, selectAllRequests } from '../store/slices/editRequestsSlice';
 import RequestForm from '../components/EditRequests/RequestForm';
 import RequestCard from '../components/EditRequests/RequestCard';
 import '../css/pages/EditRequests.css';
 
 const EditRequests = () => {
+  const { familyId } = useParams();
   const dispatch = useDispatch();
   
   // Dùng localStorage để giữ lại danh sách tên người gửi trên máy này
@@ -15,8 +17,10 @@ const EditRequests = () => {
   });
   
   useEffect(() => {
-    dispatch(fetchRequests(1)); // CURRENT_FAMILY_ID = 1
-  }, [dispatch]);
+    if (familyId) {
+      dispatch(fetchRequests(familyId));
+    }
+  }, [dispatch, familyId]);
   
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const allRequests = useSelector(selectAllRequests);
@@ -29,10 +33,8 @@ const EditRequests = () => {
 
   const handleSubmit = async (requestData) => {
     try {
-      const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
-
       await dispatch(addRequest({
-        familyId: CURRENT_FAMILY_ID,
+        familyId: familyId,
         requestData: {
           targetMemberId: requestData.targetMemberId,
           requestType: requestData.type,

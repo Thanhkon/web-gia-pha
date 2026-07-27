@@ -20,12 +20,9 @@ const TreeNode = React.memo(({
   kinshipNodeA,
   kinshipNodeB
 }) => {
-  // Cycle guard với Set: O(1) thay vì O(n) array.includes()
-  if (ancestorSet.has(personId)) return null;
-
-  // Tạo Set mới chỉ khi personId/ancestorSet thực sự thay đổi
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Mọi hook phải được gọi ở top level trước khi early return
   const currentAncestorSet = useMemo(
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     () => new Set([...ancestorSet, personId]),
     [personId, ancestorSet]
   );
@@ -33,6 +30,9 @@ const TreeNode = React.memo(({
   const isCollapsedFromRedux = useSelector(state => state.members.ui.collapsedNodes[personId]);
   const isCollapsed = isCollapsedFromRedux !== undefined ? isCollapsedFromRedux : level >= 2;
   const dispatch = useDispatch();
+
+  // Cycle guard với Set: O(1) thay vì O(n) array.includes()
+  if (ancestorSet.has(personId)) return null;
 
   const handleToggleCollapse = (e) => {
     e.stopPropagation();

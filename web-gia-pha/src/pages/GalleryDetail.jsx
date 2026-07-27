@@ -44,7 +44,7 @@ import {
 import '../css/pages/Gallery.css';
 
 const GalleryDetail = () => {
-  const { albumId } = useParams();
+  const { familyId, albumId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -61,7 +61,7 @@ const GalleryDetail = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const backUrl = location.state?.from || `/gallery${location.search || ''}`;
+  const backUrl = location.state?.from || `/${familyId}/gallery${location.search || ''}`;
   const isManager = canManageAlbum(actor, album);
   const imageItems = useMemo(() => (
     album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE) || []

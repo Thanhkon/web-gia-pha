@@ -4,12 +4,22 @@ import GeneralInfo from './GeneralInfo';
 import DateInfo from './DateInfo';
 import ContactInfo from './ContactInfo';
 import ConfirmModal from '../../common/ConfirmModal';
+import AlertModal from '../../common/AlertModal';
 import '../../../css/components/MemberForm.css';
 
 const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [validationAlert, setValidationAlert] = useState({ isOpen: false, message: '' });
+
+  const handleInvalid = (e) => {
+    e.preventDefault();
+    setValidationAlert({
+      isOpen: true,
+      message: 'Vui lòng điền đầy đủ các trường thông tin bắt buộc có dấu (*) trước khi lưu.'
+    });
+  };
 
   const handleCancelClick = () => {
     const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
@@ -74,8 +84,16 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
     });
   };
 
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!e.target.checkValidity()) {
+      setValidationAlert({
+        isOpen: true,
+        message: 'Vui lòng điền đầy đủ các trường thông tin bắt buộc có dấu (*) trước khi lưu.'
+      });
+      return;
+    }
 
     if (formData.dateOfBirth) {
       const selectedDate = new Date(formData.dateOfBirth);
@@ -114,13 +132,14 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container member-form-container">
+    <>
+      <div className="modal-overlay">
+        <div className="modal-container member-form-container">
         <div className="modal-header">
           <h2>{isEditing ? 'Cập nhật Thành viên' : 'Thêm Thành viên mới'}</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="member-form">
+        <form onSubmit={handleSubmit} noValidate className="member-form">
           <div className="member-form-scrollable">
             <GeneralInfo formData={formData} onChange={handleChange} persons={persons} />
             <DateInfo formData={formData} onChange={handleChange} />
@@ -139,6 +158,7 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
           </div>
         </form>
       </div>
+      </div>
 
       <ConfirmModal
         isOpen={showCancelConfirm}
@@ -150,7 +170,14 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
         cancelText="Tiếp tục chỉnh sửa"
         isDanger={true}
       />
-    </div>
+      
+      <AlertModal
+        isOpen={validationAlert.isOpen}
+        title="Lỗi nhập liệu"
+        message={validationAlert.message}
+        onClose={() => setValidationAlert({ isOpen: false, message: '' })}
+      />
+    </>
   );
 };
 

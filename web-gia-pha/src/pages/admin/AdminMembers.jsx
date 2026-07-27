@@ -16,14 +16,18 @@ import {
   deleteMemberFromFamily
 } from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
+import { useFamily } from '../../hooks/useFamily';
 import '../../css/pages/AdminMembers.css';
 
 const AdminMembers = () => {
+  const familyId = useFamily();
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(fetchFamilyTree(1)); // Tạm thời hardcode familyId = 1
-  }, [dispatch]);
+    if (familyId) {
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const relationships = useSelector(state => state.members.relationships);
@@ -104,9 +108,8 @@ const AdminMembers = () => {
           }
         })).unwrap();
       } else {
-        const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
         const newMember = await dispatch(addMemberToFamily({
-          familyId: CURRENT_FAMILY_ID,
+          familyId: familyId,
           memberData: {
             fullName: submittedData.fullName,
             otherName: submittedData.otherName,

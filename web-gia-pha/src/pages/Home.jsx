@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   GitMerge, FileText, Image,
   Calendar, BookOpen, Clock, ChevronRight, Edit3
@@ -12,6 +12,7 @@ import '../css/pages/Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+  const { familyId } = useParams();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   // Lấy cấu hình tuỳ chỉnh (Settings) từ Redux
@@ -61,19 +62,19 @@ const Home = () => {
             {hero.subtitle}
           </p>
           <div className="quick-actions-row">
-            <button className="btn btn-primary" onClick={() => navigate('/family-tree')}>
+            <button className="btn btn-primary" onClick={() => navigate(`/${familyId}/family-tree`)}>
               <GitMerge size={18} /> Phả Đồ
             </button>
-            <button className="btn btn-glass" onClick={() => navigate('/events')}>
+            <button className="btn btn-glass" onClick={() => navigate(`/${familyId}/events`)}>
               <Calendar size={18} /> Sự Kiện
             </button>
-            <button className="btn btn-glass" onClick={() => navigate('/posts')}>
+            <button className="btn btn-glass" onClick={() => navigate(`/${familyId}/posts`)}>
               <FileText size={18} /> Bài Viết
             </button>
-            <button className="btn btn-glass" onClick={() => navigate('/gallery')}>
+            <button className="btn btn-glass" onClick={() => navigate(`/${familyId}/gallery`)}>
               <Image size={18} /> Thư Viện
             </button>
-            <button className="btn btn-glass" onClick={() => navigate('/edit-requests')}>
+            <button className="btn btn-glass" onClick={() => navigate(`/${familyId}/edit-requests`)}>
               <Edit3 size={18} /> Gửi Yêu Cầu
             </button>
           </div>
@@ -114,7 +115,7 @@ const Home = () => {
                 })
               )}
             </div>
-            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/events')}>
+            <button className="btn btn-outline btn-full-width" onClick={() => navigate(`/${familyId}/events`)}>
               Xem tất cả <ChevronRight size={16} />
             </button>
           </div>
@@ -132,7 +133,7 @@ const Home = () => {
                 posts.map((post) => {
                   const dateStr = new Date(post.createdAt).toLocaleDateString('vi-VN');
                   return (
-                    <div key={post.id} className="article-item" style={{ cursor: 'pointer' }} onClick={() => navigate(`/posts/${post.id}`)}>
+                    <div key={post.id} className="article-item" style={{ cursor: 'pointer' }} onClick={() => navigate(`/${familyId}/posts/${post.id}`)}>
                       <h4 className="article-title">{post.title}</h4>
                       <div className="article-meta">
                         <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} />
@@ -143,7 +144,7 @@ const Home = () => {
                 })
               )}
             </div>
-            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/posts')}>
+            <button className="btn btn-outline btn-full-width" onClick={() => navigate(`/${familyId}/posts`)}>
               Đọc thêm <ChevronRight size={16} />
             </button>
           </div>
@@ -166,7 +167,7 @@ const Home = () => {
                 ))
               )}
             </div>
-            <button className="btn btn-outline btn-full-width" onClick={() => navigate('/gallery')}>
+            <button className="btn btn-outline btn-full-width" onClick={() => navigate(`/${familyId}/gallery`)}>
               Mở thư viện <ChevronRight size={16} />
             </button>
           </div>
