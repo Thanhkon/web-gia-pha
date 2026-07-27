@@ -1,9 +1,11 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import PublicNavbar from './components/PublicNavbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './layouts/AdminLayout';
 import ErrorBoundary from './ErrorBoundary';
+import Setting from './pages/Setting';
 import { Loader2 } from 'lucide-react';
 import './App.css';
 
@@ -44,20 +46,20 @@ const App = () => {
               {/* Public Routes */}
               <Route path="/" element={
                 <>
-                  <Navbar />
+                  <PublicNavbar />
                   <main className="main-content"><PublicHome /></main>
                 </>
               } />
               {/* Global Routes outside of family context */}
               <Route path="/login" element={
                 <>
-                  <Navbar />
+                  <PublicNavbar />
                   <main className="main-content"><Login /></main>
                 </>
               } />
               <Route path="/register" element={
                 <>
-                  <Navbar />
+                  <PublicNavbar />
                   <main className="main-content"><Register /></main>
                 </>
               } />
@@ -71,7 +73,7 @@ const App = () => {
                     <Route path="tree" element={<FamilyTree />} />
                     <Route path="requests" element={<AdminEditRequests />} />
                     <Route path="events" element={<Events />} />
-                    <Route path="settings" element={<NotFoundPage />} />
+                    <Route path="settings" element={<Setting />} />
                   </Route>
                 </Route>
               </Route>

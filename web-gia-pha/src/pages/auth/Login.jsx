@@ -22,9 +22,7 @@ function Login() {
 
     const handleLocalLogin = (user) => {
         dispatch(login({
-            id: user.id,
-            username: user.username,
-            role: user.username === 'admin' ? 'admin' : 'member',
+            ...user
         }));
         navigate('/admin');
     };
@@ -49,7 +47,7 @@ function Login() {
 
         try {
             // Gửi dữ liệu đăng nhập đến API
-            const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+            const apiBaseUrl = import.meta.env.VITE_API_URL;
             const response = await fetch(`${apiBaseUrl}/auth/login`, {
                 method: "POST",
                 headers: {
@@ -65,7 +63,6 @@ function Login() {
                 return;
             }
 
-            // Backdoor: nếu API trả về lỗi, vẫn cho phép login hai user sample
             if (localUser) {
                 handleLocalLogin(localUser);
                 return;

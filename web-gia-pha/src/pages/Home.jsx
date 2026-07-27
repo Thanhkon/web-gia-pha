@@ -11,6 +11,10 @@ import { eventService } from '../services/eventService';
 import '../css/pages/Home.css';
 
 const Home = () => {
+  useEffect(() => {
+    document.title = "Dashboard";
+  }, []);
+
   const navigate = useNavigate();
   const { familyId } = useParams();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
