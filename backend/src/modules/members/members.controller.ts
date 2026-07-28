@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import { CreateFamilyDto } from './dto/create-family.dto';
+import { UpdateFamilyDto } from './dto/update-family.dto';
 import { CreateMarriageDto } from './dto/create-marriage.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { CreateParentChildRelationDto } from './dto/create-parent-child-relation.dto';
@@ -25,6 +26,24 @@ export class MembersController {
   @Post('families')
   createFamily(@Body() createFamilyDto: CreateFamilyDto) {
     return this.membersService.createFamily(createFamilyDto);
+  }
+
+  @Get('families/:familyId')
+  findOneFamily(@Param('familyId', ParseIntPipe) familyId: number) {
+    return this.membersService.findOneFamily(familyId);
+  }
+
+  @Patch('families/:familyId')
+  updateFamily(
+    @Param('familyId', ParseIntPipe) familyId: number,
+    @Body() updateFamilyDto: UpdateFamilyDto,
+  ) {
+    return this.membersService.updateFamily(familyId, updateFamilyDto);
+  }
+
+  @Delete('families/:familyId')
+  removeFamily(@Param('familyId', ParseIntPipe) familyId: number) {
+    return this.membersService.removeFamily(familyId);
   }
 
   @Get('families/:familyId/members')

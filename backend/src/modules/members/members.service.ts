@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { CreateFamilyDto } from './dto/create-family.dto';
+import { UpdateFamilyDto } from './dto/update-family.dto';
 import { CreateMarriageDto } from './dto/create-marriage.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { CreateParentChildRelationDto } from './dto/create-parent-child-relation.dto';
@@ -40,6 +41,48 @@ export class MembersService {
     });
 
     return this.familiesRepository.save(family);
+  }
+
+  async findOneFamily(id: number) {
+    const family = await this.familiesRepository.findOne({ where: { id } });
+    if (!family) {
+      throw new NotFoundException(`Family ${id} not found`);
+    }
+    return family;
+  }
+
+  async updateFamily(id: number, updateFamilyDto: UpdateFamilyDto) {
+    const family = await this.findOneFamily(id);
+
+    if (updateFamilyDto.name !== undefined && !updateFamilyDto.name.trim()) {
+      throw new BadRequestException('Family name cannot be empty');
+    }
+
+    this.familiesRepository.merge(family, {
+      ...updateFamilyDto,
+      ...(updateFamilyDto.name !== undefined && {
+        name: updateFamilyDto.name.trim(),
+      }),
+    });
+
+    return this.familiesRepository.save(family);
+  }
+
+  async removeFamily(id: number) {
+    await this.findOneFamily(id);
+
+    const memberCount = await this.membersRepository.count({
+      where: { familyId: id },
+    });
+
+    if (memberCount > 0) {
+      throw new ConflictException(
+        `Cannot delete family ${id} because it still has ${memberCount} member(s). Remove members first.`,
+      );
+    }
+
+    await this.familiesRepository.delete(id);
+    return { deleted: true, id };
   }
 
   async createMember(familyId: number, createMemberDto: CreateMemberDto) {
