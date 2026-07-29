@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Shield, Key, Lock, Bell, Eye, EyeOff, Save, HelpCircle, Construction } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setPrimaryFamily } from '../store/slices/settingsSlice';
+import { Shield, Key, Lock, Bell, Eye, EyeOff, Save, HelpCircle, Construction, BookOpen } from 'lucide-react';
+import toast from 'react-hot-toast';
 import '../css/pages/Setting.css';
 
 const Setting = () => {
+  const dispatch = useDispatch();
+  const { list: userFamilies } = useSelector((state) => state.families);
+  const { primaryFamilyId } = useSelector((state) => state.settings);
   const [activeTab, setActiveTab] = useState('security');
   const [showOldPass, setShowOldPass] = useState(false);
   const [showNewPass1, setShowNewPass1] = useState(false);
@@ -46,7 +52,7 @@ const Setting = () => {
     e.preventDefault();
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('Mật khẩu mới và xác nhận mật khẩu không khớp!');
+      toast.error('Mật khẩu mới và xác nhận mật khẩu không khớp!');
       return;
     }
 
@@ -64,20 +70,20 @@ const Setting = () => {
       });
 
       if (response.ok) {
-        alert('Cập nhật mật khẩu thành công!');
+        toast.success('Cập nhật mật khẩu thành công!');
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
         const errorData = await response.json();
-        alert(errorData.message || 'Đổi mật khẩu thất bại!');
+        toast.error(errorData.message || 'Đổi mật khẩu thất bại!');
       }
     } catch (error) {
       console.error('Error changing password:', error);
-      alert('Lỗi kết nối máy chủ!');
+      toast.error('Lỗi kết nối máy chủ!');
     }
   };
 
   const handleSaveSettings = () => {
-    alert('Đã lưu cấu hình cài đặt!');
+    toast.success('Đã lưu cấu hình cài đặt!');
   };
 
   return (
@@ -94,6 +100,15 @@ const Setting = () => {
           {/* Sidebar Tabs */}
           <div className="setting-sidebar">
             
+            {/* Cài đặt chung */}
+            <button
+              className={`tab-btn ${activeTab === 'general' ? 'active' : ''}`}
+              onClick={() => setActiveTab('general')}
+            >
+              <BookOpen size={18} />
+              <span>Cài đặt chung</span>
+            </button>
+
             {/* Quên mật khẩu */}
             <button
               className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`}
@@ -133,6 +148,38 @@ const Setting = () => {
 
           {/* Main Panel */}
           <div className="setting-panel">
+            {/* CÀI ĐẶT CHUNG */}
+            {activeTab === 'general' && (
+              <div className="tab-pane animate-fade-in">
+                <div className="pane-title">
+                  <BookOpen size={20} />
+                  <h3>Cài đặt chung</h3>
+                </div>
+                <div className="setting-card">
+                  <div className="setting-card-header">
+                    <BookOpen size={20} className="icon-blue" />
+                    <div>
+                      <h3>Gia phả ưu tiên hiển thị</h3>
+                      <p>Chọn gia phả mặc định sẽ hiển thị khi bạn vừa đăng nhập.</p>
+                    </div>
+                  </div>
+                  <div className="setting-card-body" style={{ marginTop: '1rem' }}>
+                    <select 
+                      className="form-control" 
+                      value={primaryFamilyId || ''} 
+                      onChange={(e) => dispatch(setPrimaryFamily(e.target.value ? Number(e.target.value) : null))}
+                      style={{ maxWidth: '400px' }}
+                    >
+                      <option value="">-- Chọn gia phả ưu tiên --</option>
+                      {userFamilies.map(fam => (
+                        <option key={fam.id} value={fam.id}>{fam.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             
             {/* ĐỔI MẬT KHẨU */}
             {activeTab === 'security' && (

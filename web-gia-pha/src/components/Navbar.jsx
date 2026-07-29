@@ -5,6 +5,7 @@ import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, 
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import { fetchFamilies } from '../store/slices/familiesSlice';
+import { selectPendingCount, fetchRequests } from '../store/slices/editRequestsSlice';
 import { mockRoleLabels } from '../data/mockAuth';
 import defaultAvatar from '../assets/avatar-female.svg';
 import '../css/components/Navbar.css';
@@ -13,7 +14,10 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { primaryFamilyId } = useSelector((state) => state.settings);
+  const { list: userFamilies } = useSelector((state) => state.families);
+  const pendingRequestsCount = useSelector(selectPendingCount);
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -34,34 +38,51 @@ const Navbar = () => {
     };
   }, []);
 
+  const currentFamilyId = useFamily();
+
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchFamilies());
     }
-  }, [dispatch, isAuthenticated]);
+    if (currentFamilyId) {
+      dispatch(fetchRequests(currentFamilyId));
+    }
+  }, [dispatch, isAuthenticated, currentFamilyId]);
 
-  const currentFamilyId = useFamily();
+  // Convert to Number for strict equality checks, since useParams returns string
+  const activeFamilyId = currentFamilyId ? Number(currentFamilyId) : (primaryFamilyId || (userFamilies?.length > 0 ? userFamilies[0].id : null));
+  const activeFamily = userFamilies?.find(f => f.id === activeFamilyId);
+
+
+
 
   const handleNavClick = (path) => {
     setIsMobileMenuOpen(false);
     navigate(path);
   };
 
-  const { list: userFamilies } = useSelector((state) => state.families);
-
   const navGroups = [
-    {
-      name: 'Danh sách gia phả',
-      isFamilySelector: true,
-    },
-    ...(currentFamilyId ? [{
-      name: 'Hoạt động',
-      items: [
-        { name: 'Bài viết', path: 'posts' },
-        { name: 'Sự kiện', path: 'events' },
-        { name: 'Thư viện ảnh', path: 'gallery' },
-      ]
-    }] : [])
+    ...(currentFamilyId ? [
+      {
+        name: 'Gia phả',
+        items: [
+          { name: 'Danh sách thành viên', path: `/${currentFamilyId}/members` },
+          { name: 'Sơ đồ cây', path: `/${currentFamilyId}/family-tree` },
+          { 
+            name: pendingRequestsCount > 0 ? `Yêu cầu chỉnh sửa (${pendingRequestsCount})` : 'Yêu cầu chỉnh sửa', 
+            path: `/${currentFamilyId}/edit-requests` 
+          },
+        ]
+      },
+      {
+        name: 'Hoạt động',
+        items: [
+          { name: 'Bài viết', path: `/${currentFamilyId}/posts` },
+          { name: 'Sự kiện', path: `/${currentFamilyId}/events` },
+          { name: 'Thư viện ảnh', path: `/${currentFamilyId}/gallery` },
+        ]
+      }
+    ] : [])
   ];
 
 
@@ -93,10 +114,48 @@ const Navbar = () => {
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
-        <Link to={currentFamilyId ? `/${currentFamilyId}/home` : '/admin/families'} className="nav-logo" onClick={() => setIsMobileMenuOpen(false)}>
+        <div className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px' }}>
           <BookOpen size={24} />
-          <span>Web Gia Phả</span>
-        </Link>
+          {userFamilies?.length > 1 ? (
+            <div 
+              className="nav-dropdown" 
+              onMouseEnter={() => window.innerWidth > 768 && setOpenDropdown('switcher')}
+              onMouseLeave={() => window.innerWidth > 768 && setOpenDropdown(null)}
+              style={{ margin: 0 }}
+            >
+              <button
+                className={`nav-link dropdown-toggle ${openDropdown === 'switcher' ? 'active' : ''}`}
+                onClick={() => toggleDropdown('switcher')}
+                style={{ fontSize: '1.25rem', fontWeight: '700', padding: 0, color: 'inherit', display: 'flex', alignItems: 'center' }}
+              >
+                <span style={{ maxWidth: '220px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activeFamily ? activeFamily.name : 'Web Gia Phả'}
+                </span>
+                <ChevronDown size={16} className={`chevron ${openDropdown === 'switcher' ? 'open' : ''}`} style={{ marginLeft: '4px', flexShrink: 0 }} />
+              </button>
+
+              <div className={`dropdown-menu ${openDropdown === 'switcher' ? 'show' : ''}`} style={{ left: 0, right: 'auto', minWidth: '200px' }}>
+                {userFamilies.map(fam => (
+                  <button
+                    key={fam.id}
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      navigate(`/${fam.id}/home`);
+                    }}
+                    className={`dropdown-item ${activeFamilyId === fam.id ? 'active' : ''}`}
+                    style={{ textAlign: 'left', fontWeight: 'normal' }}
+                  >
+                    {fam.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <Link to={activeFamilyId ? `/${activeFamilyId}/home` : '/admin/families'} onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none' }}>
+              <span>{activeFamily ? activeFamily.name : 'Web Gia Phả'}</span>
+            </Link>
+          )}
+        </div>
 
         {/* Lớp phủ mờ khi mở Sidebar Mobile */}
         {isMobileMenuOpen && (
@@ -129,58 +188,35 @@ const Navbar = () => {
               </button>
 
               {/* Dropdown Menu */}
-              <div className={`dropdown-menu ${openDropdown === index ? 'show' : ''} ${group.isFamilySelector ? 'family-list-dropdown' : ''}`}>
-                {group.isFamilySelector ? (
-                  userFamilies.map(fam => (
-                    <div key={fam.id} className="family-item-group">
-                      <div className="family-item-title">{fam.name}</div>
-                      <div className="family-item-actions">
-                        <button 
-                          className="dropdown-item sub-action"
-                          onClick={() => handleNavClick(`/${fam.id}/family-tree`)}
-                        >
-                          Xem cây
-                        </button>
-                        <button 
-                          className="dropdown-item sub-action"
-                          onClick={() => handleNavClick(`/admin/families/${fam.id}/members`)}
-                        >
-                          Quản lý
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  group.items.map((item, idx) => {
-                    const targetPath = `/${currentFamilyId}/${item.path}`;
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => handleNavClick(targetPath)}
-                        className={`dropdown-item ${location.pathname.includes(item.path) ? 'active' : ''}`}
-                      >
-                        {item.name}
-                      </button>
-                    );
-                  })
-                )}
+              <div className={`dropdown-menu ${openDropdown === index ? 'show' : ''}`}>
+                {group.items.map((item, idx) => {
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleNavClick(item.path)}
+                      className={`dropdown-item ${location.pathname === item.path ? 'active' : ''}`}
+                    >
+                      {item.name}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
 
           {/* Direct link for Kinship Lookup placed after dropdowns */}
           <button
-            className={`nav-link direct-link ${location.pathname === '/kinship-lookup' ? 'active' : ''}`}
-            onClick={() => handleNavClick('/kinship-lookup')}
+            className={`nav-link direct-link ${location.pathname.includes('/kinship-lookup') ? 'active' : ''}`}
+            onClick={() => handleNavClick(`/${currentFamilyId}/kinship-lookup`)}
           >
             Tra cứu xưng hô
           </button>
         </div>
 
-        <div className="nav-actions">
-          <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => navigate('/notifications')}>
+        <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '280px', justifyContent: 'flex-end' }}>
+          <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => navigate(`/${currentFamilyId}/edit-requests`)}>
             <Bell size={20} />
-            <span className="notification-dot"></span>
+            {pendingRequestsCount > 0 && <span className="notification-dot"></span>}
           </button>
 
           <div className="user-menu-container" ref={userMenuRef}>

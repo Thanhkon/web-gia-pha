@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as XLSX from 'xlsx';
+import toast from 'react-hot-toast';
 import MemberForm from '../../components/Admin/MemberForm/MemberForm';
 import MemberProfileModal from '../../components/MemberProfileModal';
 import MembersFilterBar from '../../components/Admin/MembersFilterBar';
@@ -13,7 +13,8 @@ import {
   addParentChildRelation,
   addMarriageRelation,
   updateMemberToFamily,
-  deleteMemberFromFamily
+  deleteMemberFromFamily,
+  softDeleteMember
 } from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
 import { useFamily } from '../../hooks/useFamily';
@@ -148,7 +149,7 @@ const AdminMembers = () => {
       setNewMember(emptyMember);
     } catch (err) {
       console.error('Lỗi khi thêm:', err);
-      alert('Có lỗi xảy ra!');
+      toast.error('Có lỗi xảy ra!');
     }
   };
 
@@ -171,72 +172,23 @@ const AdminMembers = () => {
   const confirmDelete = async (isHardDelete) => {
     if (deleteConfirm.id) {
       try {
-        await dispatch(deleteMemberFromFamily(deleteConfirm.id)).unwrap();
+        if (isHardDelete) {
+          await dispatch(deleteMemberFromFamily(deleteConfirm.id)).unwrap();
+          toast.success('Xóa vĩnh viễn thành công!');
+        } else {
+          await dispatch(softDeleteMember(deleteConfirm.id)).unwrap();
+          toast.success('Đã chuyển thành viên vào thùng rác (Xóa tạm)!');
+        }
       } catch (err) {
         console.error('Lỗi khi xóa:', err);
-        alert('Có lỗi xảy ra khi xóa!');
+        toast.error('Có lỗi xảy ra khi xóa!');
       }
     }
     setDeleteConfirm({ isOpen: false, id: null });
   };
 
   const handleImportExcel = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
-        
-        const newPersons = [];
-        const newRelationships = [];
-        let count = 0;
-
-        data.forEach(row => {
-          if (!row.HoTen) return; 
-          const newId = row.ID ? String(row.ID) : Date.now().toString() + Math.random();
-          
-          const member = {
-            id: newId,
-            fullName: row.HoTen,
-            gender: row.GioiTinh === 'Nu' || row.GioiTinh === 'Nữ' ? 'female' : 'male',
-            generation: Number(row.DoiThu) || 1,
-            isInLaw: row.LaDauRe == 1,
-            dateOfBirth: row.NgaySinh ? String(row.NgaySinh) : '',
-            dateOfDeath: row.NgayMat ? String(row.NgayMat) : '',
-            isDeceased: row.ConSong == 0 || !!row.NgayMat,
-            fatherId: row.MaCha ? String(row.MaCha) : '',
-            motherId: row.MaMe ? String(row.MaMe) : '',
-            spouseId: row.MaVoChong ? String(row.MaVoChong) : ''
-          };
-          
-          newPersons.push(member);
-          
-          if (member.fatherId) {
-            newRelationships.push({ type: 'biological_child', person_a: member.fatherId, person_b: newId });
-          }
-          if (member.motherId) {
-            newRelationships.push({ type: 'biological_child', person_a: member.motherId, person_b: newId });
-          }
-          if (member.spouseId && member.isInLaw) {
-            newRelationships.push({ type: 'marriage', person_a: member.spouseId, person_b: newId });
-          }
-          count++;
-        });
-
-        console.log('Chức năng nhập file hàng loạt tạm thời bị vô hiệu hóa vì Backend chưa hỗ trợ');
-        // TODO: Cập nhật API hàng loạt sau
-        alert(`Đã Import thành công ${count} thành viên!`);
-      } catch (err) {
-        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng!');
-      }
-    };
-    reader.readAsBinaryString(file);
+    toast.error('Chức năng Import file hàng loạt đang được nâng cấp ở phía Backend. Vui lòng thử lại sau!');
     e.target.value = null; 
   };
 

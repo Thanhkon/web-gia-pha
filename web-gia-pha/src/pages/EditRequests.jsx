@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { addRequest, fetchRequests, selectAllRequests } from '../store/slices/editRequestsSlice';
 import RequestForm from '../components/EditRequests/RequestForm';
 import RequestCard from '../components/EditRequests/RequestCard';
+import toast from 'react-hot-toast';
 import '../css/pages/EditRequests.css';
 
 const EditRequests = () => {
@@ -49,10 +50,10 @@ const EditRequests = () => {
       setCurrentUserNames(newNames);
       localStorage.setItem('family_tree_requester_names', JSON.stringify([...newNames]));
       
-      alert('Yêu cầu đã được gửi thành công! Vui lòng chờ Admin phê duyệt.');
+      toast.success('Yêu cầu đã được gửi thành công! Vui lòng chờ Admin phê duyệt.');
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi gửi yêu cầu.');
+      toast.error('Có lỗi xảy ra khi gửi yêu cầu.');
     }
   };
 

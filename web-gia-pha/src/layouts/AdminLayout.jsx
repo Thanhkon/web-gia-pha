@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useFamily } from '../hooks/useFamily';
 import { useDispatch, useSelector } from 'react-redux';
-import { Users, FileText, Settings, LogOut, Menu, GitMerge, Home, Edit3 } from 'lucide-react';
+import { Users, FileText, Settings, LogOut, Menu, GitMerge, Home, Edit3, BookOpen } from 'lucide-react';
 import { logout } from '../store/slices/authSlice';
-import { selectPendingCount } from '../store/slices/editRequestsSlice';
+import { selectPendingCount, fetchRequests } from '../store/slices/editRequestsSlice';
 import '../css/layouts/AdminLayout.css';
 
 const AdminLayout = () => {
@@ -15,6 +15,12 @@ const AdminLayout = () => {
   const pendingRequestsCount = useSelector(selectPendingCount);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  React.useEffect(() => {
+    if (familyId) {
+      dispatch(fetchRequests(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -62,13 +68,16 @@ const AdminLayout = () => {
                 )}
               </NavLink>
               <NavLink to={`/admin/families/${familyId}/events`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Bài viết & Sự kiện">
-                <FileText size={18} /> {!isCollapsed && <span>Bài viết & Sự kiện</span>}
+                <BookOpen size={18} /> {!isCollapsed && <span>Bài viết & Sự kiện</span>}
               </NavLink>
-              <NavLink to={`/admin/families/${familyId}/settings`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Cài đặt chung">
-                <Settings size={18} /> {!isCollapsed && <span>Cài đặt chung</span>}
+              <NavLink to={`/admin/families/${familyId}/dashboard-settings`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Cấu hình Trang chủ">
+                <Settings size={18} /> {!isCollapsed && <span>Cấu hình Trang chủ</span>}
               </NavLink>
             </>
           )}
+          <NavLink to="/admin/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Cài đặt chung">
+            <Settings size={18} /> {!isCollapsed && <span>Cài đặt chung</span>}
+          </NavLink>
         </nav>
 
         <div className="sidebar-footer">

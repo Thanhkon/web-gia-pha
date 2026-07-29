@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { X, Plus, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Save, AlertCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
-import { createFamily } from '../../store/slices/familiesSlice';
-import '../../css/components/ConfirmModal.css'; // Reuse existing styles if possible or create new
+import { updateFamily } from '../../store/slices/familiesSlice';
 
-const CreateFamilyModal = ({ isOpen, onClose, onSuccess }) => {
+const EditFamilyModal = ({ isOpen, onClose, family, onSuccess }) => {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     name: '',
@@ -15,7 +14,18 @@ const CreateFamilyModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (family) {
+      setFormData({
+        name: family.name || '',
+        originPlace: family.originPlace || '',
+        description: family.description || '',
+        coverImg: family.coverImg || ''
+      });
+    }
+  }, [family]);
+
+  if (!isOpen || !family) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,12 +54,11 @@ const CreateFamilyModal = ({ isOpen, onClose, onSuccess }) => {
 
     setLoading(true);
     try {
-      await dispatch(createFamily(formData)).unwrap();
+      await dispatch(updateFamily({ id: family.id, data: formData })).unwrap();
       onSuccess?.();
       onClose();
-      setFormData({ name: '', originPlace: '', description: '', coverImg: '' });
     } catch (err) {
-      setError(err || 'Đã xảy ra lỗi khi tạo gia phả');
+      setError(err || 'Đã xảy ra lỗi khi cập nhật gia phả');
     } finally {
       setLoading(false);
     }
@@ -59,7 +68,7 @@ const CreateFamilyModal = ({ isOpen, onClose, onSuccess }) => {
     <div className="modal-overlay">
       <div className="modal-container">
         <div className="modal-header">
-          <h2>Tạo gia phả mới</h2>
+          <h2>Chỉnh sửa gia phả</h2>
           <button className="btn btn-outline" style={{ border: 'none', padding: '0.25rem' }} onClick={onClose}><X size={20} /></button>
         </div>
         
@@ -132,7 +141,7 @@ const CreateFamilyModal = ({ isOpen, onClose, onSuccess }) => {
               Hủy
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Đang tạo...' : <><Plus size={18} /> Tạo mới</>}
+              {loading ? 'Đang lưu...' : <><Save size={18} /> Lưu thay đổi</>}
             </button>
           </div>
         </form>
@@ -141,4 +150,4 @@ const CreateFamilyModal = ({ isOpen, onClose, onSuccess }) => {
   );
 };
 
-export default CreateFamilyModal;
+export default EditFamilyModal;

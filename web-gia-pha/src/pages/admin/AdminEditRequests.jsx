@@ -7,6 +7,7 @@ import RequestCard from '../../components/EditRequests/RequestCard';
 import RequestDetailModal from '../../components/EditRequests/RequestDetailModal';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import '../../css/pages/AdminEditRequests.css';
 
 const AdminEditRequests = () => {
@@ -43,10 +44,10 @@ const AdminEditRequests = () => {
       dispatch(fetchFamilyTree(familyId));
 
       setSelectedRequest(null);
-      alert('Đã duyệt và áp dụng thay đổi thành công!');
+      toast.success('Đã duyệt và áp dụng thay đổi thành công!');
     } catch (err) {
       console.error(err);
-      alert('Lỗi khi duyệt yêu cầu!');
+      toast.error('Lỗi khi duyệt yêu cầu!');
     }
   };
 
@@ -59,10 +60,10 @@ const AdminEditRequests = () => {
       })).unwrap();
       
       setSelectedRequest(null);
-      alert('Đã từ chối yêu cầu thành công!');
+      toast.success('Đã từ chối yêu cầu thành công!');
     } catch (err) {
       console.error(err);
-      alert('Lỗi khi từ chối yêu cầu!');
+      toast.error('Lỗi khi từ chối yêu cầu!');
     }
   };
 
@@ -76,7 +77,7 @@ const AdminEditRequests = () => {
         await dispatch(deleteRequestThunk(deleteConfirmId)).unwrap();
       } catch(err) {
         console.error(err);
-        alert('Lỗi khi xóa yêu cầu!');
+        toast.error('Lỗi khi xóa yêu cầu!');
       }
     }
     setDeleteConfirmId(null);

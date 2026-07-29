@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './layouts/AdminLayout';
 import ErrorBoundary from './ErrorBoundary';
 import Setting from './pages/Setting';
+import { Toaster } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import './App.css';
 
@@ -16,6 +17,7 @@ const FamilyTree = lazy(() => import('./pages/FamilyTree'));
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
 const EditRequests = lazy(() => import('./pages/EditRequests'));
 const AdminEditRequests = lazy(() => import('./pages/admin/AdminEditRequests'));
+const AdminDashboardSettings = lazy(() => import('./pages/admin/AdminDashboardSettings'));
 const PublicMembers = lazy(() => import('./pages/PublicMembers'));
 const Posts = lazy(() => import('./pages/Posts'));
 const PostDetail = lazy(() => import('./pages/PostDetail'));
@@ -39,6 +41,7 @@ const PageLoader = () => (
 const App = () => {
   return (
     <ErrorBoundary>
+      <Toaster position="top-right" />
       <Router>
         <Suspense fallback={<PageLoader />}>
           <div className="app-container">
@@ -73,8 +76,9 @@ const App = () => {
                     <Route path="tree" element={<FamilyTree />} />
                     <Route path="requests" element={<AdminEditRequests />} />
                     <Route path="events" element={<Events />} />
-                    <Route path="settings" element={<Setting />} />
+                    <Route path="dashboard-settings" element={<AdminDashboardSettings />} />
                   </Route>
+                  <Route path="settings" element={<Setting />} />
                 </Route>
               </Route>
               <Route path="/pages/profile/:profileId" element={<ProtectedRoute />}>

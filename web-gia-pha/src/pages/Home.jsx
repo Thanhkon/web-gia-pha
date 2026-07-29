@@ -6,6 +6,7 @@ import {
   Calendar, BookOpen, Clock, ChevronRight, Edit3
 } from 'lucide-react';
 import MarqueeBanner from '../components/MarqueeBanner';
+import Skeleton from '../components/common/Skeleton';
 import { postService } from '../services/postService';
 import { eventService } from '../services/eventService';
 import '../css/pages/Home.css';
@@ -20,7 +21,19 @@ const Home = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   // Lấy cấu hình tuỳ chỉnh (Settings) từ Redux
-  const { hero, marqueeItems } = useSelector((state) => state.settings);
+  const { familiesSettings, hero: defaultHero, marqueeItems } = useSelector((state) => state.settings);
+  const { list: userFamilies } = useSelector((state) => state.families);
+
+  // Find current family to display dynamic name
+  const activeFamily = userFamilies?.find(f => f.id === Number(familyId));
+
+  // Custom hero for this family, or default
+  const familyHeroSettings = familiesSettings[familyId]?.hero;
+  const hero = {
+    title: familyHeroSettings?.title || (activeFamily ? `Gia Phả ${activeFamily.name}` : defaultHero.title),
+    subtitle: familyHeroSettings?.subtitle || defaultHero.subtitle,
+    bgImage: familyHeroSettings?.bgImage || defaultHero.bgImage,
+  };
 
   // Thư viện ảnh tĩnh từ Redux
   const albums = useSelector((state) => state.albums.data);
@@ -28,9 +41,11 @@ const Home = () => {
   // Dữ liệu động từ API (Services)
   const [posts, setPosts] = useState([]);
   const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const postsRes = await postService.getPosts({ sortDirection: 'newest' }, 1, 4);
         setPosts(postsRes.items);
@@ -39,6 +54,8 @@ const Home = () => {
         setEvents(eventsRes.items.slice(0, 3));
       } catch (err) {
         console.error("Failed to load dashboard data", err);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
@@ -55,7 +72,7 @@ const Home = () => {
       {/* Hero Section */}
       <section
         className="hero-section"
-        style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.6)), url('${hero.bgImage}')` }}
+        style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${hero.bgImage}')` }}
       >
         <div className="container hero-content">
           <div className="hero-logo">
@@ -97,7 +114,17 @@ const Home = () => {
               <h2 className="panel-title">Sự kiện & Ngày giỗ</h2>
             </div>
             <div className="panel-body">
-              {events.length === 0 ? (
+              {isLoading ? (
+                Array(3).fill().map((_, idx) => (
+                  <div key={idx} className="event-item" style={{ gap: '16px' }}>
+                    <Skeleton width="60px" height="60px" borderRadius="8px" />
+                    <div style={{ flex: 1 }}>
+                      <Skeleton width="80%" height="20px" style={{ marginBottom: '8px' }} />
+                      <Skeleton width="60%" height="16px" />
+                    </div>
+                  </div>
+                ))
+              ) : events.length === 0 ? (
                 <p className="panel-empty">Chưa có sự kiện nào được lên lịch trong 30 ngày tới.</p>
               ) : (
                 events.map((event) => {
@@ -131,7 +158,14 @@ const Home = () => {
               <h2 className="panel-title">Bài viết mới nhất</h2>
             </div>
             <div className="panel-body">
-              {posts.length === 0 ? (
+              {isLoading ? (
+                Array(3).fill().map((_, idx) => (
+                  <div key={idx} className="post-item" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <Skeleton width="100%" height="24px" />
+                    <Skeleton width="40%" height="16px" />
+                  </div>
+                ))
+              ) : posts.length === 0 ? (
                 <p className="panel-empty">Chưa có bài viết nào.</p>
               ) : (
                 posts.map((post) => {

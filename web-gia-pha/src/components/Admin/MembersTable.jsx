@@ -41,7 +41,7 @@ const MembersTable = ({
                   <th>Năm sinh</th>
                   <th>Đời</th>
                   <th>Vai trò / Trạng thái</th>
-                  {(handleEdit || handleDelete) && <th className="text-right">Thao tác</th>}
+                  {(handleEdit || handleDelete) && <th className="text-center">Thao tác</th>}
                 </tr>
               </thead>
               <tbody>
@@ -69,7 +69,7 @@ const MembersTable = ({
                       </div>
                     </td>
                     {(handleEdit || handleDelete) && (
-                      <td className="text-right">
+                      <td className="text-center">
                         <div className="action-buttons">
                           <button className="btn-icon text-primary" onClick={() => setViewingMember(p)} title="Xem hồ sơ"><Eye size={16} /></button>
                           {handleEdit && <button className="btn-icon text-blue" onClick={() => handleEdit(p)} title="Chỉnh sửa"><Edit2 size={16} /></button>}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { login } from '../../store/slices/authSlice';
 import users from '../../assets/users.json';
 import "../../css/pages/Auth.css";
@@ -19,12 +19,21 @@ function Login() {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const primaryFamilyId = useSelector(state => state.settings.primaryFamilyId);
+
+    const handleSuccessLogin = () => {
+        if (primaryFamilyId) {
+            navigate(`/${primaryFamilyId}/home`);
+        } else {
+            navigate('/admin/families');
+        }
+    };
 
     const handleLocalLogin = (user) => {
         dispatch(login({
             ...user
         }));
-        navigate('/admin');
+        handleSuccessLogin();
     };
 
     const handleSubmit = async (e) => {
@@ -59,7 +68,8 @@ function Login() {
             const data = await response.json();
             if (response.ok) {
                 // Nếu backend OK thì dùng tài khoản backend
-                navigate("/admin");
+                // TODO: dispatch login with backend data if needed
+                handleSuccessLogin();
                 return;
             }
 

@@ -5,6 +5,7 @@ import { fetchFamilies, deleteFamily } from '../store/slices/familiesSlice';
 import { Plus, Users, GitMerge, Edit3, Trash2, ArrowRight, Loader2 } from 'lucide-react';
 import ConfirmModal from '../components/common/ConfirmModal';
 import CreateFamilyModal from '../components/Admin/CreateFamilyModal';
+import EditFamilyModal from '../components/Admin/EditFamilyModal';
 import '../css/pages/FamilyList.css';
 
 const FamilyList = () => {
@@ -13,6 +14,7 @@ const FamilyList = () => {
   const { list: families, loading } = useSelector((state) => state.families);
   const [deleteConfirmId, setDeleteConfirmId] = React.useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const [editFamilyData, setEditFamilyData] = React.useState(null);
 
   useEffect(() => {
     // Fetch families on component mount
@@ -31,9 +33,9 @@ const FamilyList = () => {
     setDeleteConfirmId(null);
   };
 
-  const handleEdit = (e, id) => {
+  const handleEdit = (e, family) => {
     e.stopPropagation();
-    alert(`Chức năng chỉnh sửa thông tin gia phả ${id} (Mock)`);
+    setEditFamilyData(family);
   };
 
   const handleCreate = () => {
@@ -92,22 +94,18 @@ const FamilyList = () => {
               </div>
 
               <div className="family-card-actions">
-                <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button className="action-link manage" onClick={() => navigate(`/admin/families/${family.id}/members`)}>
                     <Edit3 size={16} />
-                    Chỉnh sửa Phả đồ
-                  </button>
-                  <button className="action-link" onClick={() => navigate(`/${family.id}/home`)}>
-                    Dashboard <ArrowRight size={16} />
+                    Quản lý
                   </button>
                 </div>
-
                 {family.role === 'admin' && (
-                  <div className="action-buttons">
-                    <button className="icon-action-btn edit" onClick={(e) => handleEdit(e, family.id)} title="Sửa thông tin">
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="action-link" title="Sửa thông tin" onClick={(e) => handleEdit(e, family)}>
                       <Edit3 size={16} />
                     </button>
-                    <button className="icon-action-btn delete" onClick={(e) => handleDelete(e, family.id)} title="Xóa gia phả">
+                    <button className="action-link danger" title="Xóa gia phả" onClick={(e) => handleDelete(e, family.id)}>
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -149,6 +147,15 @@ const FamilyList = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
           // Bất kỳ hành động nào muốn thực hiện sau khi tạo thành công (vd hiển thị toast)
+        }}
+      />
+
+      <EditFamilyModal
+        isOpen={!!editFamilyData}
+        onClose={() => setEditFamilyData(null)}
+        family={editFamilyData}
+        onSuccess={() => {
+          // Redux state updates automatically
         }}
       />
     </div>

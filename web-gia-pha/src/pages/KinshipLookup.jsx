@@ -1,14 +1,27 @@
-import React, { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Users, ArrowRight, UserCheck } from 'lucide-react';
 import SearchableSelect from '../components/common/SearchableSelect';
 import { computeKinship } from '../utils/kinshipHelpers';
 
+import { useParams } from 'react-router-dom';
+import { fetchFamilyTree } from '../store/slices/membersSlice';
+
 import '../css/pages/KinshipLookup.css';
 
 const KinshipLookup = () => {
+  const { familyId } = useParams();
+  const dispatch = useDispatch();
+  
   const persons = useSelector((state) => state.members.persons);
   const relationships = useSelector((state) => state.members.relationships);
+  const { status } = useSelector((state) => state.members);
+
+  useEffect(() => {
+    if (familyId) {
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const [personAId, setPersonAId] = useState('');
   const [personBId, setPersonBId] = useState('');

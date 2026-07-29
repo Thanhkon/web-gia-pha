@@ -32,6 +32,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
   
   const [selectedFieldToAdd, setSelectedFieldToAdd] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationAlert, setValidationAlert] = useState({ isOpen: false, message: '' });
 
   const selectedPerson = persons.find(p => p.id === selectedPersonId);
@@ -90,25 +91,33 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
     setShowPreview(true);
   };
 
-  const handleConfirmSubmit = () => {
-    onSubmit({
-      type: 'edit_member',
-      targetMemberId: selectedPersonId,
-      targetMemberName: selectedPerson.fullName,
-      changes,
-      reason,
-      submittedBy: {
-        name: submitterName,
-        phone: submitterPhone
-      }
-    });
+  const handleConfirmSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        type: 'edit_member',
+        targetMemberId: selectedPersonId,
+        targetMemberName: selectedPerson.fullName,
+        changes,
+        reason,
+        submittedBy: {
+          name: submitterName,
+          phone: submitterPhone
+        }
+      });
 
-    setSelectedPersonId('');
-    setChanges({});
-    setReason('');
-    setSubmitterName('');
-    setSubmitterPhone('');
-    setShowPreview(false);
+      setSelectedPersonId('');
+      setChanges({});
+      setReason('');
+      setSubmitterName('');
+      setSubmitterPhone('');
+      setShowPreview(false);
+    } catch (err) {
+      console.error('Lỗi khi gửi yêu cầu:', err);
+      // Toast error is handled in parent component where onSubmit is defined
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const personOptions = persons.map(p => ({
@@ -289,8 +298,8 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-outline" onClick={() => setShowPreview(false)}>Quay lại sửa</button>
-              <button type="button" className="btn btn-primary" onClick={handleConfirmSubmit}>
-                <Send size={16} className="icon-mr-8" /> Xác nhận gửi
+              <button type="button" className="btn btn-primary" onClick={handleConfirmSubmit} disabled={isSubmitting}>
+                {isSubmitting ? 'Đang gửi...' : <><Send size={16} className="icon-mr-8" /> Xác nhận gửi</>}
               </button>
             </div>
           </div>
