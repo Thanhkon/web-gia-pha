@@ -26,6 +26,9 @@ import { MembersModule } from './modules/members/members.module';
         retryAttempts: Number(
           configService.getOrThrow<string>('DB_RETRY_ATTEMPTS'),
         ),
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
     }),
     UsersModule,

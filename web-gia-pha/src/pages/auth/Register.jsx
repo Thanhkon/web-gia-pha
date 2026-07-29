@@ -26,7 +26,7 @@ function Register(){
 
         // Xác thực
         if(!registerData.username || !registerData.password || !registerData.confirmPassword){
-            setError("Mật khẩu không được để trống!");
+            setError("Vui lòng điền đầy đủ thông tin!");
             return;
         }
         if(registerData.password !== registerData.confirmPassword){
@@ -40,13 +40,13 @@ function Register(){
 
         //User
         const newUser = {
-            username: registerData.username,
+            username: registerData.username.trim(),
             password: registerData.password,
         }
 
         try{
-            // Gửi dữ liệu đăng ký đến API
-            const apiBaseUrl = import.meta.env.VITE_API_URL;
+            // Gửi dữ liệu đăng ký đến API backend
+            const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
             const response = await fetch(`${apiBaseUrl}/auth/register`, {
                 method: "POST",
                 headers: {
@@ -64,7 +64,7 @@ function Register(){
             }
         } catch(error){
             console.error(error);
-            setError("Đã xảy ra lỗi. Vui lòng thử lại.");
+            setError("Lỗi kết nối server");
         }
     }
 

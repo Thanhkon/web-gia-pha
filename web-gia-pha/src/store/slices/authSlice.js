@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  // Dữ liệu mẫu (mock data), có thể đổi null thành object { name: 'Người dùng A' } để test
   user: null,
   isAuthenticated: false,
 };

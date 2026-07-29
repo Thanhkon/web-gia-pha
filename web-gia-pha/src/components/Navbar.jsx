@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookOpen, Bell, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
+import Modal from './Modal';
 import defaultAvatar from '../assets/avatar-female.svg';
 import '../css/components/Navbar.css';
 
@@ -71,6 +72,11 @@ const Navbar = () => {
       setOpenDropdown(index);
     }
   };
+
+  // Xử lý chuẩn hóa đường dẫn ảnh avatar để Navbar luôn hiển thị đúng ảnh mới cập nhật
+  const avatarSrc = user?.avatar 
+    ? (user.avatar.startsWith('blob:') || user.avatar.startsWith('http') || user.avatar.startsWith('/') ? user.avatar : `http://localhost:3000/images/${user.avatar}`) 
+    : defaultAvatar;
 
   return (
     <nav className="navbar">
@@ -143,7 +149,7 @@ const Navbar = () => {
           <div className="user-menu-container" ref={userMenuRef}>
             <button className="avatar-btn" aria-label="Tài khoản" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
               <img
-                src={user?.avatar || defaultAvatar}
+                src={avatarSrc}
                 alt={user?.name || 'Avatar người dùng'}
                 className="avatar-img"
               />
@@ -201,19 +207,29 @@ const Navbar = () => {
       </div>
 
       {showLogoutConfirm && (
-        <div className="logout-confirm-backdrop" onClick={() => setShowLogoutConfirm(false)}>
-          <div className="logout-confirm-modal" onClick={(event) => event.stopPropagation()}>
-            <p className="logout-confirm-text">Bạn có chắc chắn muốn đăng xuất?</p>
-            <div className="logout-confirm-actions">
-              <button type="button" className="logout-cancel-btn" onClick={() => setShowLogoutConfirm(false)}>
-                Quay lại
-              </button>
-              <button type="button" className="logout-confirm-btn" onClick={handleLogout}>
-                Đăng xuất
-              </button>
-            </div>
+        <Modal 
+          isOpen={showLogoutConfirm} 
+          message="Bạn có chắc chắn muốn đăng xuất?" 
+          onClose={() => setShowLogoutConfirm(false)}
+        >
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', width: '100%' }}>
+            <button 
+              type="button" 
+              className="modal-btn" 
+              style={{ backgroundColor: '#6c757d' }}
+              onClick={() => setShowLogoutConfirm(false)}
+            >
+              Quay lại
+            </button>
+            <button 
+              type="button" 
+              className="modal-btn" 
+              onClick={handleLogout}
+            >
+              Đăng xuất
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </nav>
   );

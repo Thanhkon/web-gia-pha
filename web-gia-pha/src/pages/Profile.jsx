@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { Pencil, Image } from 'lucide-react';
 import defaultAvatar from '../assets/avatar-female.svg';
+import { updateProfileApi } from '../../api/profileApi'; 
+import { login } from '../store/slices/authSlice';
 import '../css/pages/Profile.css';
 
-
-// Các ô nhập liệu
 const ProfileField = ({
   label,
   value,
@@ -20,7 +20,6 @@ const ProfileField = ({
   const fieldClassName = `profile-field ${fullWidth ? 'full-width' : ''}`;
   const isReadOnly = !editable;
 
-  // Ô chọn dạng Dropdown
   if (type === 'select') {
     return (
       <div className={fieldClassName}>
@@ -42,7 +41,6 @@ const ProfileField = ({
     );
   }
 
-  // Ô nhập văn bản description/note
   if (type === 'textarea') {
     return (
       <div className={fieldClassName}>
@@ -61,13 +59,12 @@ const ProfileField = ({
             rows={4}
             maxLength={maxLength}
           />
-          <div className="profile-char-counter">{value.length}/{maxLength}</div>
+          <div className="profile-char-counter">{value ? value.length : 0}/{maxLength}</div>
         </div>
       </div>
     );
   }
 
-  // Ô nhập văn bản/ngày/số cơ bản (Text, Date, Tel, Email)
   return (
     <div className={fieldClassName}>
       <span className="profile-label">{label}</span>
@@ -83,51 +80,36 @@ const ProfileField = ({
   );
 };
 
-// MAIN COMPONENT
 const ProfilePage = () => {
   const [showAvatarPreview, setShowAvatarPreview] = useState(false);
-
-  useEffect(() => {
-    document.title = "My Profile";
-    
-    if (showAvatarPreview) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [showAvatarPreview]);
-  
   const dispatch = useDispatch();
   const { profileId } = useParams();
   const { user } = useSelector((state) => state.auth);
   
-  // Trạng thái cho phép chỉnh sửa & hiển thị 
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef(null);
   
-  // State lưu trữ dữ liệu form
-  const [formData, setFormData] = useState(() => ({
-    firstName: user?.firstName || 'An',
-    lastName: user?.lastName || 'Nguyễn Văn',
-    otherName: user?.otherName || 'An đẹp zai',
-    gender: user?.gender || 'male',
-    birthday: user?.birthday || '1990-01-01',
-    address: user?.address || 'Hà Nội',
-    education: user?.education || 'Đại học',
-    occupation: user?.occupation || 'Kỹ sư phần mềm',
-    email: user?.email || 'example@email.com',
-    phone: user?.phone || '0900000000',
-    note: user?.note || 'An đẹp zai, nhà mặt phố, bố làm to!',
-    avatar: user?.avatar || defaultAvatar,
-  }));
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    otherName: user?.otherName || '',
+    gender: user?.gender || '',
+    birthday: user?.birthday || '',
+    address: user?.address || '',
+    education: user?.education || '',
+    occupation: user?.occupation || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    note: user?.note || '',
+    avatar: user?.avatar 
+      ? (user.avatar.startsWith('blob:') || user.avatar.startsWith('http') || user.avatar.startsWith('/') ? user.avatar : `http://localhost:3000/images/${user.avatar}`) 
+      : defaultAvatar,
+  });
+
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const isSelfProfile = profileId === 'me';
 
-  // Cập nhật giá trị các trường trong formData khi gõ input
   const handleFieldChange = (field) => (event) => {
     setFormData((prev) => ({
       ...prev,
@@ -135,11 +117,11 @@ const ProfilePage = () => {
     }));
   };
 
-  // Hàm xử lý chọn ảnh đại diện
   const handleAvatarChange = (e) => {
     e.preventDefault();
     const file = e.target.files && e.target.files[0];
     if (file) {
+      setSelectedFile(file);
       const previewUrl = URL.createObjectURL(file);
       setFormData((prev) => ({
         ...prev,
@@ -147,38 +129,38 @@ const ProfilePage = () => {
       }));
       setShowAvatarPreview(false);
     }
-  }
+  };
 
-  // Xử lý khi nhấn nút EDIT / SAVE (Gọi API lưu profile)
   const handleSaveProfile = async () => {
     if (isEditing) {
       try {
-        if(!user?.token) return;
+        const dataToSend = new FormData();
 
-        // Gửi dữ liệu cập nhật tới API Backend
-        const apiBaseUrl = import.meta.env.VITE_API_URL;
-        const response = await fetch(`${apiBaseUrl}/users/profile`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(user?.token && { 'Authorization': `Bearer ${user.token}` }),
-          },
-          body: JSON.stringify(formData),
+        if (user?.id) {
+          dataToSend.append('id', user.id);
+        }
+        
+        Object.keys(formData).forEach((key) => {
+          if (key !== 'avatar') {
+            dataToSend.append(key, formData[key]);
+          }
         });
 
-        if (response.ok) {
-          const updatedUser = await response.json();
-          setIsEditing(false);
-        } else {
-          console.warn("Cập nhật dữ liệu tạm thời trên giao diện.");
-          setIsEditing(false);
+        if (selectedFile) {
+          dataToSend.append('avatar', selectedFile);
         }
+
+        const response = await updateProfileApi(dataToSend);
+        const updatedUser = response.data || response;
+
+        dispatch(login({ ...user, ...updatedUser }));
+        setIsEditing(false);
       } catch (error) {
         console.error("Lỗi khi cập nhật profile:", error);
         setIsEditing(false);
       }
     } else {
-      setIsEditing(true); // Chuyển sang chế độ chỉnh sửa
+      setIsEditing(true);
     }
   };
 
@@ -186,8 +168,6 @@ const ProfilePage = () => {
     <div className="profile-page animate-fade-in">
       <div className="container profile-page-container">
         <div className="profile-card">
-          
-          {/* Avatar, Tiêu đề & Nút Edit/Save */}
           <div className="profile-header-row">
             <div className="profile-header-left">
               <div className="profile-avatar-wrap">
@@ -220,13 +200,10 @@ const ProfilePage = () => {
             </button>
           </div>
 
-          {/* Zoom ảnh đại diện */}
           {showAvatarPreview && (
             <div className="profile-avatar-modal-backdrop" onClick={() => setShowAvatarPreview(false)}>
               <div className="profile-avatar-modal" onClick={(event) => event.stopPropagation()}>
                 <img src={formData.avatar} alt="Avatar preview" className="profile-avatar-modal-image" />
-                
-                {/* Nút chọn ảnh */}
                 <button 
                   type="button" 
                   className="profile-avatar-change-btn"
@@ -235,8 +212,6 @@ const ProfilePage = () => {
                   <Image size={18} />
                   <span>Chọn ảnh đại diện</span>
                 </button>
-
-                {/* Input file */}
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -248,92 +223,88 @@ const ProfilePage = () => {
             </div>
           )}
 
-          {/* Các ô nhập liệu */}
           <div className="profile-grid-wrap">
             {!isEditing && <div className="profile-grid-overlay" aria-hidden="true"></div>}
             <div className="profile-grid">
-              <ProfileField
-                label="lastName"
-                value={formData.lastName}
-                editable={isEditing}
-                onChange={handleFieldChange('lastName')}
+              <ProfileField 
+                label="lastName" 
+                value={formData.lastName} 
+                editable={isEditing} 
+                onChange={handleFieldChange('lastName')} 
               />
-              <ProfileField
-                label="firstName"
-                value={formData.firstName}
-                editable={isEditing}
+              <ProfileField 
+                label="firstName" 
+                value={formData.firstName} 
+                editable={isEditing} 
                 onChange={handleFieldChange('firstName')}
               />
-              <ProfileField
-                label="NickName"
-                value={formData.otherName}
-                editable={isEditing}
-                onChange={handleFieldChange('otherName')}
+              <ProfileField 
+                label="NickName" 
+                value={formData.otherName} 
+                editable={isEditing} 
+                onChange={handleFieldChange('otherName')} 
               />
-              <ProfileField
-                label="Gender"
-                value={formData.gender}
-                editable={isEditing}
-                onChange={handleFieldChange('gender')}
-                type="select"
+              <ProfileField 
+                label="Gender" 
+                value={formData.gender} 
+                editable={isEditing} 
+                onChange={handleFieldChange('gender')} 
+                type="select" 
                 options={[
-                  { value: 'female', label: 'Nữ' },
-                  { value: 'male', label: 'Nam' },
-                  { value: 'other', label: 'Khác' },
-                  { value: 'none', label: 'Không muốn trả lời'}
-                ]}
+                  { value: 'female', label: 'Nữ' }, 
+                  { value: 'male', label: 'Nam' }, 
+                  { value: 'other', label: 'Khác' }, 
+                  { value: 'none', label: 'Không muốn trả lời' }
+                  ]} 
+                />
+              <ProfileField 
+                label="Birthday" 
+                value={formData.birthday} 
+                editable={isEditing} 
+                onChange={handleFieldChange('birthday')} 
+                type="date" 
               />
-              <ProfileField
-                label="Birthday"
-                value={formData.birthday}
-                editable={isEditing}
-                onChange={handleFieldChange('birthday')}
-                type="date"
-              />
-              <ProfileField
-                label="Address"
-                value={formData.address}
-                editable={isEditing}
+              <ProfileField 
+                label="Address" 
+                value={formData.address} 
+                editable={isEditing} 
                 onChange={handleFieldChange('address')}
               />
-              <ProfileField
-                label="Education"
-                value={formData.education}
-                editable={isEditing}
+              <ProfileField 
+                label="Education" 
+                value={formData.education} 
+                editable={isEditing} 
                 onChange={handleFieldChange('education')}
               />
-              <ProfileField
-                label="Occupation"
-                value={formData.occupation}
-                editable={isEditing}
+              <ProfileField 
+                label="Occupation" 
+                value={formData.occupation} 
+                editable={isEditing} 
                 onChange={handleFieldChange('occupation')}
               />
-              <ProfileField
-                label="Email"
-                value={formData.email}
-                editable={isEditing}
+              <ProfileField 
+                label="Email" 
+                value={formData.email} 
+                editable={isEditing} 
                 onChange={handleFieldChange('email')}
-                type="email"
+                type="email" 
               />
-              <ProfileField
-                label="Phone"
-                value={formData.phone}
-                editable={isEditing}
-                onChange={handleFieldChange('phone')}
-                type="tel"
+              <ProfileField 
+                label="Phone" 
+                value={formData.phone} 
+                editable={isEditing} 
+                onChange={handleFieldChange('phone')} 
+                type="tel" 
               />
-              <ProfileField
-                label="Note"
-                value={formData.note}
-                editable={isEditing}
-                onChange={handleFieldChange('note')}
-                type="textarea"
-                fullWidth
-                maxLength={500}
+              <ProfileField 
+                label="Note" 
+                value={formData.note} 
+                editable={isEditing} 
+                onChange={handleFieldChange('note')} 
+                type="textarea" fullWidth maxLength={500} 
               />
             </div>
           </div>
-
         </div>
       </div>
     </div>

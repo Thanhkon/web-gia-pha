@@ -5,7 +5,11 @@ import PublicNavbar from './components/PublicNavbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './layouts/AdminLayout';
 import ErrorBoundary from './ErrorBoundary';
-import Setting from './pages/Setting';
+import Setting from './pages/setting/Setting';
+import ChangePassword from './pages/setting/ChangePassword';
+import ForgotPassword from './pages/setting/ForgotPassword';
+import Privacy from './pages/setting/Privacy';
+import Notifications from './pages/setting/Notifications';
 import { Loader2 } from 'lucide-react';
 import './App.css';
 
@@ -110,7 +114,16 @@ const App = () => {
                   <Route path="tree" element={<FamilyTree />} />
                   <Route path="requests" element={<AdminEditRequests />} />
                   <Route path="content" element={<NotFoundPage />} />
-                  <Route path="settings" element={<Setting />} />
+                  
+                  {/* Route cho Setting.jsx */}
+                  <Route path="settings" element={<Setting />}>
+                    <Route index element={<Navigate to="security" replace />} />
+                    <Route path="security" element={<ChangePassword />} />
+                    <Route path="forgot" element={<ForgotPassword />} />
+                    <Route path="privacy" element={<Privacy />} />
+                    <Route path="notifications" element={<Notifications />} />
+                  </Route>
+
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Route>

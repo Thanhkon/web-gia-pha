@@ -10,6 +10,8 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import * as fs from 'fs';
+import * as path from 'path';
 
 type SafeUser = Omit<User, 'passwordHash'>;
 
@@ -27,15 +29,14 @@ export class UsersService {
   }
 
   async createEntity(createUserDto: CreateUserDto): Promise<User> {
-    const existingUser = await this.findByEmail(createUserDto.email);
+    const existingUser = await this.findByUsername(createUserDto.username);
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Username already exists');
     }
 
     const user = this.usersRepository.create({
-      email: createUserDto.email,
-      name: createUserDto.name,
+      username: createUserDto.username,
       passwordHash: await this.hashPassword(createUserDto.password),
     });
 
@@ -66,14 +67,14 @@ export class UsersService {
     });
   }
 
-  findByEmail(email: string): Promise<User | null> {
+  findByUsername(username: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: { email },
+      where: { username },
     });
   }
 
-  async getUserByEmail(email: string): Promise<SafeUser> {
-    const user = await this.findByEmail(email);
+  async getUserByUsername(username: string): Promise<SafeUser> {
+    const user = await this.findByUsername(username);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -85,17 +86,46 @@ export class UsersService {
   async update(id: number, updateUserDto: UpdateUserDto): Promise<SafeUser> {
     const user = await this.findByIdOrThrow(id);
 
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existingUser = await this.findByEmail(updateUserDto.email);
+    if (updateUserDto.username && updateUserDto.username !== user.username) {
+      const existingUser = await this.findByUsername(updateUserDto.username);
 
       if (existingUser) {
-        throw new ConflictException('Email already exists');
+        throw new ConflictException('Username already exists');
       }
     }
 
     Object.assign(user, updateUserDto);
 
     return this.toPublicUser(await this.usersRepository.save(user));
+  }
+
+  async updateProfileData(id: number, updateData: any): Promise<SafeUser> {
+    const user = await this.findByIdOrThrow(id);
+
+    if (updateData.username && updateData.username !== user.username) {
+      const existingUser = await this.findByUsername(updateData.username);
+      if (existingUser) {
+        throw new ConflictException('Username already exists');
+      }
+    }
+
+    // Nếu có cập nhật avatar mới và user đã có avatar cũ trên server
+    if (updateData.avatar && user.avatar) {
+      // Kiểm tra nếu avatar cũ là tên file lưu trên server (không phải link ngoài hay blob)
+      const oldAvatarPath = path.join('./src/images', user.avatar);
+      if (fs.existsSync(oldAvatarPath)) {
+        try {
+          fs.unlinkSync(oldAvatarPath); // Xóa file ảnh cũ
+        } catch (err) {
+          console.error('Không thể xóa ảnh cũ:', err);
+        }
+      }
+    }
+
+    await this.usersRepository.update(id, updateData);
+
+    const updatedUser = await this.findByIdOrThrow(id);
+    return this.toPublicUser(updatedUser);
   }
 
   async remove(id: number): Promise<SafeUser> {

@@ -42,26 +42,26 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const email = this.normalizeEmail(registerDto.email);
+    const username = this.normalizeUsername(registerDto.username);
     const password = registerDto.password?.trim();
 
-    if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
+    if (!username || !password) {
+      throw new BadRequestException('Username and password are required');
     }
 
     if (password.length < 6) {
       throw new BadRequestException('Password must be at least 6 characters');
     }
 
-    const existingUser = await this.usersService.findByEmail(email);
+    const existingUser = await this.usersService.findByUsername(username);
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Username already exists');
     }
 
     const name = registerDto.name?.trim();
     const user = await this.usersService.createEntity({
-      email,
+      username,
       password,
       ...(name ? { name } : {}),
     });
@@ -70,12 +70,12 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const email = this.normalizeEmail(loginDto.email);
+    const username = this.normalizeUsername(loginDto.username);
     const password = loginDto.password ?? '';
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByUsername(username);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid username or password');
     }
 
     const isPasswordValid = await this.verifyPassword(
@@ -84,7 +84,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid username or password');
     }
 
     return this.buildAuthResponse(user);
@@ -142,16 +142,16 @@ export class AuthService {
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    const email = this.normalizeEmail(forgotPasswordDto.email);
+    const username = this.normalizeUsername(forgotPasswordDto.username);
 
-    if (!email) {
-      throw new BadRequestException('Valid email is required');
+    if (!username) {
+      throw new BadRequestException('Valid username is required');
     }
 
     const response = {
-      message: 'If the email exists, a password reset token has been created',
+      message: 'If the username exists, a password reset token has been created',
     };
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByUsername(username);
 
     if (!user) {
       return response;
@@ -221,21 +221,16 @@ export class AuthService {
     };
   }
 
-  async changePassword(changePasswordDto: ChangePasswordDto) {
-    const email = this.normalizeEmail(changePasswordDto.email);
+  async changePassword(userId: number, changePasswordDto: ChangePasswordDto) {
     const currentPassword = changePasswordDto.currentPassword ?? '';
     const newPassword = this.normalizePassword(changePasswordDto.newPassword);
 
-    if (!email) {
-      throw new BadRequestException('Valid email is required');
-    }
-
     this.validateNewPassword(newPassword);
 
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findById(userId);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('User not found');
     }
 
     const isPasswordValid = await this.verifyPassword(
@@ -244,7 +239,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid current password');
     }
 
     await this.usersService.updatePasswordHash(
@@ -273,7 +268,7 @@ export class AuthService {
     return {
       accessToken: this.signJwt({
         sub: user.id,
-        email: user.email,
+        username: user.username,
       }),
       refreshToken,
       refreshTokenExpiresAt,
@@ -394,13 +389,7 @@ export class AuthService {
     return refreshToken.expiresAt.getTime() <= Date.now();
   }
 
-  private normalizeEmail(email?: string) {
-    const normalizedEmail = email?.trim().toLowerCase() ?? '';
-
-    if (!normalizedEmail.includes('@')) {
-      return '';
-    }
-
-    return normalizedEmail;
+  private normalizeUsername(username?: string) {
+    return username?.trim() ?? '';
   }
 }
