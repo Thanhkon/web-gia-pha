@@ -1,4 +1,4 @@
 export class ResetPasswordDto {
-  token!: string;
+  resetToken!: string;
   newPassword!: string;
 }

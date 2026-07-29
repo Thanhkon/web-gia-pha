@@ -22,6 +22,15 @@ export class Family {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
+  @Column({ type: 'int', default: 1 })
+  generations: number;
+
+  @Column({ name: 'membersCount', type: 'int', default: 0 })
+  membersCount: number;
+
+  @Column({ name: 'coverImageUrl', type: 'varchar', nullable: true })
+  coverImageUrl: string | null;
+
   @CreateDateColumn({ name: 'createdAt', type: 'timestamp' })
   createdAt: Date;
 
