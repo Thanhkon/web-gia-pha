@@ -9,8 +9,21 @@ const MemberProfileModal = ({ member, persons = [], relationships = [], onClose,
 
   // Find relationships
   const findPerson = (id) => persons.find(p => p.id === id);
-  const father = findPerson(member.fatherId);
-  const mother = findPerson(member.motherId);
+  
+  const parentIds = relationships
+    .filter(r => r.type === 'biological_child' && r.person_b === member.id)
+    .map(r => r.person_a);
+
+  let father = null;
+  let mother = null;
+
+  parentIds.forEach(id => {
+    const parent = findPerson(id);
+    if (parent) {
+      if (parent.gender === 'male') father = parent;
+      else mother = parent;
+    }
+  });
   
   const spouseIds = relationships
     .filter(r => r.type === 'marriage' && (r.person_a === member.id || r.person_b === member.id))

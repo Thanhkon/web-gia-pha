@@ -223,7 +223,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
             ></textarea>
           </div>
 
-          <div className="form-row">
+          <div className="edit-request-form-row">
             <div className="form-group">
               <label>Họ và tên người gửi <span className="required">*</span></label>
               <input

@@ -75,13 +75,31 @@ const FamilyTree = () => {
   const [isKinshipModalOpen, setIsKinshipModalOpen] = useState(false);
 
   const onAddChild = useCallback((person) => {
-    setNewMember({
+    // Tìm người phối ngẫu (spouse) trong mảng relationships
+    const marriage = relationships.find(r => 
+      r.type === 'marriage' && (r.person_a === person.id || r.person_b === person.id)
+    );
+    let spouseId = null;
+    if (marriage) {
+      spouseId = marriage.person_a === person.id ? marriage.person_b : marriage.person_a;
+    }
+
+    const initial = {
       ...EMPTY_MEMBER,
-      [person.gender === 'male' ? 'fatherId' : 'motherId']: person.id,
       generation: Number(person.generation) + 1
-    });
+    };
+
+    if (person.gender === 'male') {
+      initial.fatherId = person.id;
+      if (spouseId) initial.motherId = spouseId;
+    } else {
+      initial.motherId = person.id;
+      if (spouseId) initial.fatherId = spouseId;
+    }
+
+    setNewMember(initial);
     setIsModalOpen(true);
-  }, []); // dep rỗng vì EMPTY_MEMBER là hằng số ổn định
+  }, [relationships]);
 
   const onAddSpouse = useCallback((person) => {
     setNewMember({

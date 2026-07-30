@@ -45,6 +45,9 @@ export class Post {
   @Column()
   title: string;
 
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  slug: string | null;
+
   @Column({ type: 'text', nullable: true })
   summary: string | null;
 

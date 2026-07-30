@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: calc(100vh - 4rem);
+  height: calc(100vh - 4rem);
   background-color: var(--bg-hover);
   overflow: hidden;
   position: relative;
@@ -75,7 +75,8 @@
   cursor: grab;
   /* Khung bao quanh để giới hạn vùng zoom chuột */
   margin: 1.5rem;
-  margin-top: 4.5rem; /* Chừa chỗ cho toolbar */
+  margin-top: 4.5rem;
+  /* Chừa chỗ cho toolbar */
   background-color: var(--bg-main);
   background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23d69e2e" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
   border: 2px solid var(--border-color);
@@ -121,7 +122,8 @@
 }
 
 /* We will use ::before and ::after to draw the connectors */
-.css-tree li::before, .css-tree li::after {
+.css-tree li::before,
+.css-tree li::after {
   content: '';
   position: absolute;
   top: 0;
@@ -138,7 +140,8 @@
 }
 
 /* We need to remove left-right connectors from elements without any siblings */
-.css-tree li:only-child::after, .css-tree li:only-child::before {
+.css-tree li:only-child::after,
+.css-tree li:only-child::before {
   display: none;
 }
 
@@ -148,7 +151,8 @@
 }
 
 /* Remove left connector from first child and right connector from last child */
-.css-tree li:first-child::before, .css-tree li:last-child::after {
+.css-tree li:first-child::before,
+.css-tree li:last-child::after {
   border: 0 none;
 }
 
@@ -218,16 +222,15 @@
 
 /* Node styling */
 .node-card {
-  border: 1px solid var(--border-color);
-  padding: 12px;
+  border: 15px solid transparent;
+  padding: 8px;
   text-decoration: none;
   color: var(--text-main);
   font-family: inherit;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  border-radius: var(--radius-lg);
-  background-color: white;
+  background-color: #fffdf8;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 160px;
   word-wrap: break-word;
@@ -237,11 +240,11 @@
 }
 
 .node-card.female {
-  border-top: 4px solid #f472b6;
+  border-image: url('../../assets/khung1.svg') 10% stretch;
 }
 
 .node-card.male {
-  border-top: 4px solid #3b82f6;
+  border-image: url('../../assets/khung2.svg') 10% stretch;
 }
 
 .node-card.in-law {
@@ -263,12 +266,12 @@
   right: 0;
   bottom: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(243,244,246,0.5) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(243, 244, 246, 0.5) 100%);
   z-index: 0;
   pointer-events: none;
 }
 
-.node-card > * {
+.node-card>* {
   z-index: 1;
 }
 
@@ -279,7 +282,7 @@
   object-fit: cover;
   border: 2px solid white;
   margin: 0 auto 0.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
@@ -351,7 +354,8 @@
 .couple-node {
   position: relative;
   z-index: 2;
-  margin-bottom: 20px; /* Space for the ul::before line to travel through */
+  margin-bottom: 20px;
+  /* Space for the ul::before line to travel through */
 }
 
 .couple-collapse-btn {
@@ -364,14 +368,15 @@
 }
 
 /* Ensure child UL lines up perfectly under the couple-node */
-.spouse-group-branch > ul {
+.spouse-group-branch>ul {
   position: relative;
 }
 
-.spouse-group-branch > ul::before {
+.spouse-group-branch>ul::before {
   content: '';
   position: absolute;
-  top: -20px; /* Connects up to the bottom of the couple-node */
+  top: -20px;
+  /* Connects up to the bottom of the couple-node */
   left: 50%;
   border-left: 2px solid var(--accent);
   width: 0;
@@ -423,7 +428,6 @@
 .couple-frame .node-card {
   box-shadow: none;
   border-radius: 0;
-  border: none;
   margin: 0;
   min-width: 150px;
   flex: 1;
@@ -434,10 +438,11 @@
   width: 100%;
 }
 
-/* Keep the colored top border for gender */
-.couple-frame .node-card.female { border-top: 4px solid #f472b6; }
-.couple-frame .node-card.male { border-top: 4px solid #3b82f6; }
-.couple-frame .node-card.in-law { border-top-style: dashed; }
+/* Inherit SVG border from node-card */
+
+.couple-frame .node-card.in-law {
+  border-top-style: dashed;
+}
 
 .couple-frame .node-card:first-child {
   border-top-left-radius: var(--radius-lg);
@@ -469,7 +474,7 @@
   z-index: 10;
   border: 1px solid var(--border-color);
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* --- NODE ADD MENU STYLES --- */
@@ -493,7 +498,8 @@
   transition: all 0.2s;
 }
 
-.node-add-btn:hover, .node-add-btn-wrapper:hover .node-add-btn {
+.node-add-btn:hover,
+.node-add-btn-wrapper:hover .node-add-btn {
   background-color: var(--primary-light);
   color: var(--primary);
 }
@@ -561,12 +567,14 @@
 /* --- KINSHIP MODE STYLES --- */
 .kinship-mode-hover:hover {
   cursor: pointer;
-  border-color: #f59e0b; /* Amber */
+  border-color: #f59e0b;
+  /* Amber */
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
 }
 
 .kinship-selected {
-  border-color: #ef4444 !important; /* Red */
+  border-color: #ef4444 !important;
+  /* Red */
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3) !important;
   position: relative;
 }
@@ -585,7 +593,8 @@
 }
 
 .kinship-target {
-  border-color: #ef4444 !important; /* Red */
+  border-color: #ef4444 !important;
+  /* Red */
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3) !important;
   position: relative;
 }

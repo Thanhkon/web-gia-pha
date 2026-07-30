@@ -108,6 +108,29 @@ const AdminMembers = () => {
             avatarUrl: submittedData.avatarUrl || null,
           }
         })).unwrap();
+
+        // Frontend patch: Thêm quan hệ cha mẹ/vợ chồng nếu có thay đổi (chỉ thêm mới vì backend không có API xoá)
+        const currentParents = relationships
+          .filter(r => r.type === 'biological_child' && r.person_b === editingId)
+          .map(r => r.person_a);
+        
+        if (submittedData.fatherId && !currentParents.includes(submittedData.fatherId)) {
+          try { await dispatch(addParentChildRelation({ parentId: submittedData.fatherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch(e) { console.error(e); }
+        }
+        if (submittedData.motherId && !currentParents.includes(submittedData.motherId)) {
+          try { await dispatch(addParentChildRelation({ parentId: submittedData.motherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch(e) { console.error(e); }
+        }
+        
+        const currentSpouses = relationships
+          .filter(r => r.type === 'marriage' && (r.person_a === editingId || r.person_b === editingId))
+          .flatMap(r => [r.person_a, r.person_b])
+          .filter(id => id !== editingId);
+
+        if (submittedData.spouseId && !currentSpouses.includes(submittedData.spouseId)) {
+          try { await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: editingId })).unwrap(); } catch(e) { console.error(e); }
+        }
+
+        toast.success('Cập nhật thành công!');
       } else {
         const newMember = await dispatch(addMemberToFamily({
           familyId: familyId,
@@ -160,7 +183,38 @@ const AdminMembers = () => {
   };
 
   const handleEdit = (person) => {
-    setNewMember({ ...person });
+    // Tìm cha mẹ từ relationships
+    const personParents = relationships
+      .filter(r => r.type === 'biological_child' && r.person_b === person.id)
+      .map(r => r.person_a);
+
+    let fatherId = '';
+    let motherId = '';
+
+    if (personParents.length > 0) {
+      personParents.forEach(parentId => {
+        const parent = persons.find(p => p.id === parentId);
+        if (parent) {
+          if (parent.gender === 'male') fatherId = parent.id;
+          else motherId = parent.id;
+        }
+      });
+    }
+
+    // Tìm vợ/chồng từ relationships
+    const marriage = relationships.find(r => r.type === 'marriage' && (r.person_a === person.id || r.person_b === person.id));
+    let spouseId = '';
+    if (marriage) {
+      spouseId = marriage.person_a === person.id ? marriage.person_b : marriage.person_a;
+    }
+
+    setNewMember({ 
+      ...emptyMember, // để đảm bảo có đủ các trường rỗng mặc định
+      ...person,
+      fatherId,
+      motherId,
+      spouseId
+    });
     setEditingId(person.id);
     setIsModalOpen(true);
   };
