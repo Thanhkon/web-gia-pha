@@ -18,7 +18,7 @@ export class User {
   passwordHash!: string;
 
   @Column({ nullable: true })
-  username?: string;
+  name?: string;
 
   @CreateDateColumn()
   createdAt!: Date;
