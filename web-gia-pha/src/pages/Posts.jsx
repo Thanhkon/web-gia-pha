@@ -26,7 +26,20 @@ const Posts = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
-  const isManager = useMemo(() => isPostManager(actor), [actor]);
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const viewActor = useMemo(() => {
+    if (isAdminRoute || !actor?.familyId || actor.role === POST_ROLES.GUEST) {
+      return actor;
+    }
+
+    return {
+      ...actor,
+      role: POST_ROLES.MEMBER,
+      canCreatePost: false,
+      canManagePosts: false,
+    };
+  }, [actor, isAdminRoute]);
+  const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
 
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,7 +68,7 @@ const Posts = () => {
 
     try {
       const result = await postService.getPosts({
-        actor,
+        actor: viewActor,
         filters,
         page: currentPage,
         pageSize: PAGE_SIZE,
@@ -73,7 +86,7 @@ const Posts = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [actor, currentPage, filters]);
+  }, [currentPage, filters, viewActor]);
 
   useEffect(() => {
     loadPosts();
@@ -129,7 +142,7 @@ const Posts = () => {
           <p>Lưu giữ tin tức, câu chuyện, thông báo và tư liệu của dòng họ theo từng phạm vi hiển thị rõ ràng.</p>
         </div>
 
-        {canCreatePost(actor) && (
+        {canCreatePost(viewActor) && (
           <Link className="btn btn-primary" to="/posts/new">
             <PlusCircle size={18} /> Tạo bài viết
           </Link>
@@ -138,7 +151,7 @@ const Posts = () => {
 
       <PostFilters
         filters={filters}
-        actor={actor}
+        actor={viewActor}
         onChange={(nextFilters) => updateParams(nextFilters, 1)}
         onReset={() => updateParams(defaultFilters, 1)}
       />
@@ -152,7 +165,7 @@ const Posts = () => {
 
       <div className="posts-results-bar">
         <span>{pagination.total} bài viết phù hợp</span>
-        <span>{actor.role === POST_ROLES.GUEST ? 'Bạn đang xem với quyền khách.' : `Đang xem với quyền ${POST_ROLE_LABELS[actor.role]}.`}</span>
+        <span>{viewActor.role === POST_ROLES.GUEST ? 'Bạn đang xem với quyền khách.' : `Đang xem với quyền ${POST_ROLE_LABELS[viewActor.role]}.`}</span>
       </div>
 
       {isLoading ? (
@@ -179,7 +192,7 @@ const Posts = () => {
             <PostCard
               key={post.id}
               post={post}
-              actor={actor}
+              actor={viewActor}
               onPublish={(item) => setConfirmAction({ post: item, action: 'publish' })}
               onHide={(item) => setConfirmAction({ post: item, action: 'hide' })}
               onDelete={(item) => setConfirmAction({ post: item, action: 'delete' })}

@@ -8,7 +8,35 @@ import {
 import MarqueeBanner from '../components/MarqueeBanner';
 import { getPostActor, postService } from '../services/postService';
 import { eventService, getEventActor } from '../services/eventService';
+import { POST_ROLES } from '../types/posts';
 import '../css/pages/Home.css';
+
+const toMemberPostActor = (actor) => {
+  if (!actor?.familyId || actor.role === POST_ROLES.GUEST) {
+    return actor;
+  }
+
+  return {
+    ...actor,
+    role: POST_ROLES.MEMBER,
+    canCreatePost: false,
+    canManagePosts: false,
+  };
+};
+
+const toMemberEventActor = (actor) => {
+  if (!actor || actor.role === 'GUEST') {
+    return actor;
+  }
+
+  return {
+    ...actor,
+    role: 'MEMBER',
+    permissions: {},
+    canCreatePost: false,
+    canManagePosts: false,
+  };
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -27,8 +55,8 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const postActor = getPostActor(user, isAuthenticated);
-        const eventActor = getEventActor(user, isAuthenticated);
+        const postActor = toMemberPostActor(getPostActor(user, isAuthenticated));
+        const eventActor = toMemberEventActor(getEventActor(user, isAuthenticated));
         const postsRes = await postService.getPosts({
           actor: postActor,
           filters: { sortDirection: 'newest' },

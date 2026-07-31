@@ -9,6 +9,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import EventActionDialog from '../components/Events/EventActionDialog';
 import EventDetailModal from '../components/Events/EventDetailModal';
 import EventFormModal from '../components/Events/EventFormModal';
@@ -99,7 +100,9 @@ const EventSearchResults = ({ groups, emptyText, onView }) => (
 );
 
 const Events = () => {
+  const location = useLocation();
   const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
+  const isAdminRoute = location.pathname.startsWith('/admin');
   const [currentUser, setCurrentUser] = useState(null);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,6 +128,20 @@ const Events = () => {
   const canManageSelectedEvent = selectedEvent ? canManageEvent(currentUser, selectedEvent) : false;
   const hasOpenModal = Boolean(selectedEvent || isFormOpen || cancelTarget || deleteTarget);
 
+  const getViewUser = useCallback((actor) => {
+    if (isAdminRoute || !actor || actor.role === 'GUEST') {
+      return actor;
+    }
+
+    return {
+      ...actor,
+      role: 'MEMBER',
+      permissions: {},
+      canCreatePost: false,
+      canManagePosts: false,
+    };
+  }, [isAdminRoute]);
+
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
     setError('');
@@ -139,15 +156,16 @@ const Events = () => {
 
       const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated);
       const actor = userResponse.data;
-      const calendarRequest = eventService.getCalendarEvents(params, actor);
+      const viewUser = getViewUser(actor);
+      const calendarRequest = eventService.getCalendarEvents(params, viewUser);
 
       if (isSearching) {
         const [calendarResponse, searchResponse] = await Promise.all([
           calendarRequest,
-          eventService.getEvents({ search: normalizedSearchTerm, type: typeFilter }, actor),
+          eventService.getEvents({ search: normalizedSearchTerm, type: typeFilter }, viewUser),
         ]);
 
-        setCurrentUser(actor);
+        setCurrentUser(viewUser);
         setCalendarEvents(calendarResponse.data);
         setTodayEvents([]);
         setUpcomingEvents([]);
@@ -157,11 +175,11 @@ const Events = () => {
 
       const [calendarResponse, todayResponse, upcomingResponse] = await Promise.all([
         calendarRequest,
-        eventService.getTodayEvents({ type: typeFilter }, actor),
-        eventService.getUpcomingEvents(30, { type: typeFilter }, actor),
+        eventService.getTodayEvents({ type: typeFilter }, viewUser),
+        eventService.getUpcomingEvents(30, { type: typeFilter }, viewUser),
       ]);
 
-      setCurrentUser(actor);
+      setCurrentUser(viewUser);
       setCalendarEvents(calendarResponse.data);
       setTodayEvents(todayResponse.data);
       setUpcomingEvents(upcomingResponse.data);
@@ -175,7 +193,7 @@ const Events = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [authUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter]);
+  }, [authUser, getViewUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter]);
 
   useEffect(() => {
     loadEvents();
