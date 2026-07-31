@@ -27,8 +27,8 @@ export const eventStatusLabels = {
 };
 
 export const eventVisibilityLabels = {
-  [EventVisibility.PUBLIC]: 'PUBLIC',
-  [EventVisibility.INTERNAL]: 'INTERNAL',
+  [EventVisibility.PUBLIC]: 'Công khai',
+  [EventVisibility.INTERNAL]: 'Nội bộ',
 };
 
 export const recurrenceLabels = {

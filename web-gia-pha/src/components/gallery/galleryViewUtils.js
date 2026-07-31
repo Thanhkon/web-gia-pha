@@ -8,6 +8,11 @@ export const formatDate = (value) => new Intl.DateTimeFormat('vi-VN', {
   minute: '2-digit',
 }).format(new Date(value));
 
+export const isImageSource = (value) => (
+  typeof value === 'string'
+    && (value.startsWith('data:image') || /^https?:\/\//i.test(value))
+);
+
 export const getActorText = (actor) => {
   if (!actor) return 'Bạn đang xem với quyền khách.';
   return actor.role === UserRole.FAMILY_HEAD

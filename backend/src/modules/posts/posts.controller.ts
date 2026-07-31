@@ -10,13 +10,23 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
+
+type UploadedPostImage = {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+};
 
 @UseGuards(AccessTokenGuard)
 @Controller()
@@ -30,6 +40,12 @@ export class PostsController {
     @Body() createPostDto: CreatePostDto,
   ) {
     return this.postsService.create(familyId, request.user!.id, createPostDto);
+  }
+
+  @Post('posts/uploads/images')
+  @UseInterceptors(FileInterceptor('image'))
+  uploadImage(@UploadedFile() file?: UploadedPostImage) {
+    return this.postsService.uploadImage(file);
   }
 
   @Get('families/:familyId/posts')

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from 'react-redux';
-import { login } from '../../store/slices/authSlice';
-import users from '../../assets/users.json';
+import { useDispatch } from "react-redux";
+import { login } from "../../store/slices/authSlice";
+import apiClient from "../../utils/apiClient";
+import users from "../../assets/users.json";
 import "../../css/pages/Auth.css";
 
 function Login() {
@@ -24,22 +25,21 @@ function Login() {
         dispatch(login({
             id: user.id,
             username: user.username,
-            role: user.username === 'admin' ? 'admin' : 'member',
+            role: user.username === "admin" ? "FAMILY_HEAD" : "MEMBER",
+            familyId: "1",
+            memberId: user.username === "admin" ? null : String(user.id),
+            canCreatePost: user.username === "admin",
+            canManagePosts: user.username === "admin",
         }));
-        navigate('/home');
+        navigate("/home");
     };
 
-    const handleSubmit = async(e) => {
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
         setError("");
 
-        // Xác thực 
         if (!loginData.username || !loginData.password) {
-            setError("Không được để trống");
-            return;
-        }
-        if (loginData.password.length < 6) {
-            setError("Mật khẩu không được ít hơn 6 kí tự");
+            setError("Khong duoc de trong");
             return;
         }
 
@@ -47,109 +47,95 @@ function Login() {
             (user) => user.username === loginData.username && user.password === loginData.password
         );
 
+        if (loginData.password.length < 6 && !localUser) {
+            setError("Mat khau khong duoc it hon 6 ki tu");
+            return;
+        }
+
         try {
-            // Gửi dữ liệu đăng nhập đến API
-            const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-            const response = await fetch(`${apiBaseUrl}/auth/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(loginData),
+            const response = await apiClient.post("/auth/login", {
+                email: loginData.username,
+                password: loginData.password,
             });
 
-            const data = await response.json();
-            if (response.ok) {
-                // Nếu backend OK thì dùng tài khoản backend
-                navigate("/home");
-                return;
-            }
+            dispatch(login(response.data));
+            navigate("/home");
+        } catch (requestError) {
+            console.error("Login failed:", requestError);
 
-            // Backdoor: nếu API trả về lỗi, vẫn cho phép login hai user sample
             if (localUser) {
                 handleLocalLogin(localUser);
                 return;
             }
 
-            setError(data.message || "Đăng nhập thất bại");
-
-        } catch (error) {
-            console.error("Lỗi khi đăng nhập:", error);
-            if (localUser) {
-                handleLocalLogin(localUser);
-                return;
-            }
-            setError("Đã xảy ra lỗi hệ thống");
+            setError(requestError.response?.data?.message || "Dang nhap that bai");
         }
-    }
+    };
 
     return (
         <div className="auth-page">
             <div className="auth-box">
-                <h2>Đăng Nhập</h2>
+                <h2>Dang Nhap</h2>
                 <form className="auth-form" onSubmit={handleSubmit}>
-                {/* Error */}
-                {error && (
-                    <p className="auth-error">
-                        {error}
-                    </p>
-                )}
+                    {error && (
+                        <p className="auth-error">
+                            {error}
+                        </p>
+                    )}
 
-                {/* Username */}
-                <div className="input-box">
-                    <label className="label-auth">Username</label>
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        name="username"
-                        value={loginData.username}
-                        autoComplete="off"
-                        onChange={(e) =>
-                            setLoginData({ ...loginData, username: e.target.value })
-                        }
-                        required
-                    />
-                </div>
-
-                {/* Password */}
-                <div className="input-box">
-                    <label className="label-auth">Password</label>
-                    <div className="password-wrapper">
+                    <div className="input-box">
+                        <label className="label-auth">Username</label>
                         <input
-                            type={showPass ? "text" : "password"}
-                            placeholder="Password"
-                            name="password"
-                            value={loginData.password}
+                            type="text"
+                            placeholder="Username"
+                            name="username"
+                            value={loginData.username}
                             autoComplete="off"
-                            onChange={(e) =>
-                                setLoginData({ ...loginData, password: e.target.value })
+                            onChange={(inputEvent) =>
+                                setLoginData({ ...loginData, username: inputEvent.target.value })
                             }
                             required
                         />
-                        <button
-                            onClick={() => setShowPass(!showPass)}
-                            className="btn-showPass"
-                            type="button"
-                            tabIndex={-1}
-                        >
-                            {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
                     </div>
-                </div>
-                
-                {/* Navigate to Register */}
-                <p>Chưa có tài khoản?{" "}
-                    <span
-                        style={{ color: "blue", cursor: "pointer" }}
-                        onClick={() => navigate("/register")}
-                    >
-                        Đăng ký ngay
-                    </span>
-                </p>
-                <button type="submit" className="btn-auth">Đăng Nhập</button>
-            </form>
+
+                    <div className="input-box">
+                        <label className="label-auth">Password</label>
+                        <div className="password-wrapper">
+                            <input
+                                type={showPass ? "text" : "password"}
+                                placeholder="Password"
+                                name="password"
+                                value={loginData.password}
+                                autoComplete="off"
+                                onChange={(inputEvent) =>
+                                    setLoginData({ ...loginData, password: inputEvent.target.value })
+                                }
+                                required
+                            />
+                            <button
+                                onClick={() => setShowPass(!showPass)}
+                                className="btn-showPass"
+                                type="button"
+                                tabIndex={-1}
+                            >
+                                {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <p>Chua co tai khoan?{" "}
+                        <span
+                            style={{ color: "blue", cursor: "pointer" }}
+                            onClick={() => navigate("/register")}
+                        >
+                            Dang ky ngay
+                        </span>
+                    </p>
+                    <button type="submit" className="btn-auth">Dang Nhap</button>
+                </form>
+            </div>
         </div>
-    </div>
     );
 }
+
 export default Login;

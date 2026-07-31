@@ -1,102 +1,82 @@
 import { useEffect, useState } from "react";
-import {useNavigate} from "react-router-dom";
-import {Eye, EyeOff} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import apiClient from "../../utils/apiClient";
 import "../../css/pages/Auth.css";
 
-function Register(){
+function Register() {
     useEffect(() => {
         document.title = "Sign Up";
     }, []);
 
-    //User data
     const [registerData, setRegisterData] = useState({
         username: "",
         password: "",
         confirmPassword: "",
     });
-
     const [showPass1, setShowPass1] = useState(false);
     const [showPass2, setShowPass2] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
-    const handleSubmit = async(e) =>{
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
         setError("");
 
-        // Xác thực
-        if(!registerData.username || !registerData.password || !registerData.confirmPassword){
-            setError("Mật khẩu không được để trống!");
-            return;
-        }
-        if(registerData.password !== registerData.confirmPassword){
-            setError("Mật khẩu không trùng khớp!");
-            return;
-        }
-        if(registerData.password.length < 6){
-            setError("Mật khẩu không được ít hơn 6 kí tự!");
+        if (!registerData.username || !registerData.password || !registerData.confirmPassword) {
+            setError("Khong duoc de trong");
             return;
         }
 
-        //User
-        const newUser = {
-            username: registerData.username,
-            password: registerData.password,
+        if (registerData.password !== registerData.confirmPassword) {
+            setError("Mat khau khong trung khop");
+            return;
         }
 
-        try{
-            // Gửi dữ liệu đăng ký đến API
-            const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-            const response = await fetch(`${apiBaseUrl}/auth/register`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(newUser),
-            })
-
-            // Xử lý phản hồi từ API
-            const result = await response.json().catch(() => null);
-            if (response.ok) {
-                navigate("/login");
-            } else {
-                setError(result?.message || "Đăng ký thất bại");
-            }
-        } catch(error){
-            console.error(error);
-            setError("Đã xảy ra lỗi. Vui lòng thử lại.");
+        if (registerData.password.length < 6) {
+            setError("Mat khau khong duoc it hon 6 ki tu");
+            return;
         }
-    }
 
-    return(
+        try {
+            await apiClient.post("/auth/register", {
+                email: registerData.username,
+                password: registerData.password,
+                name: registerData.username,
+            });
+            navigate("/login");
+        } catch (requestError) {
+            console.error(requestError);
+            setError(requestError.response?.data?.message || "Dang ky that bai");
+        }
+    };
+
+    return (
         <div className="auth-page">
             <div className="auth-box">
-                <h2>Đăng Ký</h2>
+                <h2>Dang Ky</h2>
                 <form className="auth-form" onSubmit={handleSubmit}>
-                    {/* Error */}
                     {error && (
                         <p className="auth-error">
                             {error}
                         </p>
                     )}
 
-                    {/* Username */}
                     <div className="input-box">
                         <label className="label-auth">Username</label>
                         <input
                             type="text"
-                            placeholder="Username"
+                            placeholder="Email"
                             name="username"
                             value={registerData.username}
                             autoComplete="off"
-                            onChange={(e) =>
-                                setRegisterData({ ...registerData, username: e.target.value })
+                            onChange={(inputEvent) =>
+                                setRegisterData({ ...registerData, username: inputEvent.target.value })
                             }
                             required
                         />
                     </div>
-                    
-                    {/* Password */}
+
                     <div className="input-box">
                         <label className="label-auth">Password</label>
                         <div className="password-wrapper">
@@ -106,8 +86,8 @@ function Register(){
                                 name="password"
                                 value={registerData.password}
                                 autoComplete="off"
-                                onChange={(e) =>
-                                    setRegisterData({ ...registerData, password: e.target.value })
+                                onChange={(inputEvent) =>
+                                    setRegisterData({ ...registerData, password: inputEvent.target.value })
                                 }
                                 required
                             />
@@ -122,7 +102,6 @@ function Register(){
                         </div>
                     </div>
 
-                    {/* Confirm Password */}
                     <div className="input-box">
                         <label className="label-auth">Confirm Password</label>
                         <div className="password-wrapper">
@@ -132,8 +111,8 @@ function Register(){
                                 name="confirmPassword"
                                 value={registerData.confirmPassword}
                                 autoComplete="off"
-                                onChange={(e) =>
-                                    setRegisterData({ ...registerData, confirmPassword: e.target.value })
+                                onChange={(inputEvent) =>
+                                    setRegisterData({ ...registerData, confirmPassword: inputEvent.target.value })
                                 }
                                 required
                             />
@@ -148,13 +127,12 @@ function Register(){
                         </div>
                     </div>
 
-                    {/* Navigate to Login */}
-                    <p>Đã có tài khoản? <span onClick={() => navigate('/login')}>
-                        Đăng nhập
+                    <p>Da co tai khoan? <span onClick={() => navigate("/login")}>
+                        Dang nhap
                     </span></p>
 
                     <button type="submit" className="btn-auth">
-                        Đăng Ký
+                        Dang Ky
                     </button>
                 </form>
             </div>
