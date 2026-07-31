@@ -53,7 +53,7 @@ const Gallery = () => {
   const { familyId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getGalleryActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const isAdminRoute = location.pathname.startsWith('/admin');
   const viewActor = useMemo(() => {
     if (isAdminRoute || !actor?.familyId) {
@@ -65,7 +65,6 @@ const Gallery = () => {
       role: 'MEMBER',
     };
   }, [actor, isAdminRoute]);
-  const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const filters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
   const [albums, setAlbums] = useState([]);
   const [albumForm, setAlbumForm] = useState(null);
@@ -76,7 +75,6 @@ const Gallery = () => {
   const isManager = canManageAlbum(viewActor);
   const searchText = searchParams.toString();
   const listUrl = `${location.pathname}${searchText ? `?${searchText}` : ''}`;
-  const listUrl = `/${familyId}/gallery${searchText ? `?${searchText}` : ''}`;
 
   const loadAlbums = useCallback(async () => {
     setIsLoading(true);

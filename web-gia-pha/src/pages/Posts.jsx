@@ -26,7 +26,7 @@ const Posts = () => {
   const { familyId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const isAdminRoute = location.pathname.startsWith('/admin');
   const viewActor = useMemo(() => {
     if (isAdminRoute || !actor?.familyId || actor.role === POST_ROLES.GUEST) {
@@ -41,8 +41,6 @@ const Posts = () => {
     };
   }, [actor, isAdminRoute]);
   const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
-  const isManager = useMemo(() => isPostManager(actor), [actor]);
 
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,9 +144,7 @@ const Posts = () => {
         </div>
 
         {canCreatePost(viewActor) && (
-          <Link className="btn btn-primary" to="/posts/new">
-        {canCreatePost(actor) && (
-          <Link className="btn btn-primary" to={`/${familyId}/posts/new`}>
+          <Link className="btn btn-primary" to={familyId ? `/${familyId}/posts/new` : '/posts/new'}>
             <PlusCircle size={18} /> Tạo bài viết
           </Link>
         )}

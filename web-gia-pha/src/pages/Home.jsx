@@ -40,6 +40,17 @@ const toMemberEventActor = (actor) => {
   };
 };
 
+const toMemberGalleryActor = (actor) => {
+  if (!actor?.familyId) {
+    return actor;
+  }
+
+  return {
+    ...actor,
+    role: 'MEMBER',
+  };
+};
+
 const Home = () => {
   useEffect(() => {
     document.title = "Dashboard";
@@ -74,10 +85,8 @@ const Home = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const postActor = toMemberPostActor(getPostActor(user, isAuthenticated));
-        const eventActor = toMemberEventActor(getEventActor(user, isAuthenticated));
-        const postActor = getPostActor(user, isAuthenticated, familyId);
-        const eventActor = getEventActor(user, isAuthenticated, familyId);
+        const postActor = toMemberPostActor(getPostActor(user, isAuthenticated, familyId));
+        const eventActor = toMemberEventActor(getEventActor(user, isAuthenticated, familyId));
         const postsRes = await postService.getPosts({
           actor: postActor,
           filters: { sortDirection: 'newest' },
@@ -89,7 +98,7 @@ const Home = () => {
         const eventsRes = await eventService.getUpcomingEvents(30, {}, eventActor);
         setEvents(eventsRes.data.slice(0, 3));
 
-        const galleryActor = getGalleryActor(user, isAuthenticated, familyId);
+        const galleryActor = toMemberGalleryActor(getGalleryActor(user, isAuthenticated, familyId));
         const albumsRes = await galleryService.getAlbums({ actor: galleryActor });
         setGalleryAlbums(albumsRes.slice(0, 4));
       } catch (err) {
