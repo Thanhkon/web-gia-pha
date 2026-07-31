@@ -35,7 +35,7 @@ export class UsersService {
 
     const user = this.usersRepository.create({
       email: createUserDto.email,
-      name: createUserDto.name,
+      username: createUserDto.username,
       passwordHash: await this.hashPassword(createUserDto.password),
     });
 
@@ -69,6 +69,12 @@ export class UsersService {
   findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { email },
+    });
+  }
+
+  findByUsername(username: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { username },
     });
   }
 
