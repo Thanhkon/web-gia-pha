@@ -19,7 +19,7 @@ export type AuthenticatedRequest = Request & {
   user?: {
     id: number;
     email: string;
-    name?: string;
+    username?: string;
   };
 };
 
