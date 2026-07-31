@@ -196,7 +196,6 @@ const Events = () => {
       setIsLoading(false);
     }
   }, [authUser, getViewUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter]);
-  }, [authUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter, familyId]);
 
   useEffect(() => {
     loadEvents();

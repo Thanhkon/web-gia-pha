@@ -68,7 +68,8 @@ const GalleryDetail = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const backUrl = location.state?.from || `/gallery${location.search || ''}`;
+  const publicGalleryPath = familyId ? `/${familyId}/gallery` : '/gallery';
+  const backUrl = location.state?.from || `${publicGalleryPath}${location.search || ''}`;
   const isAdminContext = String(backUrl).startsWith('/admin');
   const viewActor = useMemo(() => {
     if (isAdminContext || !actor?.familyId) {
@@ -81,8 +82,6 @@ const GalleryDetail = () => {
     };
   }, [actor, isAdminContext]);
   const isManager = canManageAlbum(viewActor, album);
-  const backUrl = location.state?.from || `/${familyId}/gallery${location.search || ''}`;
-  const isManager = canManageAlbum(actor, album);
   const imageItems = useMemo(() => (
     album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE) || []
   ), [album]);
@@ -91,7 +90,7 @@ const GalleryDetail = () => {
   const totalCount = album?.media.length || 0;
   const galleryCrumb = isAdminContext
     ? { label: 'Quản lý thư viện ảnh', to: backUrl }
-    : { label: 'Thư viện ảnh', to: '/gallery' };
+    : { label: 'Thư viện ảnh', to: publicGalleryPath };
 
   const goBackToLibrary = () => {
     navigate(backUrl);

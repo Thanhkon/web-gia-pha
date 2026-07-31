@@ -183,8 +183,10 @@ const PostDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
-  const backTarget = location.state?.fromList || '/posts';
+  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
+  const publicHomePath = familyId ? `/${familyId}/home` : '/';
+  const publicPostsPath = familyId ? `/${familyId}/posts` : '/posts';
+  const backTarget = location.state?.fromList || publicPostsPath;
   const isAdminContext = String(backTarget).startsWith('/admin');
   const viewActor = useMemo(() => {
     if (isAdminContext || !actor?.familyId || actor.role === POST_ROLES.GUEST) {
@@ -199,8 +201,6 @@ const PostDetail = () => {
     };
   }, [actor, isAdminContext]);
   const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
-  const isManager = useMemo(() => isPostManager(actor), [actor]);
 
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -212,8 +212,6 @@ const PostDetail = () => {
   const [listsError, setListsError] = useState('');
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
-
-  const backTarget = location.state?.fromList || `/${familyId}/posts`;
 
   const loadPost = useCallback(async () => {
     setIsLoading(true);
@@ -340,17 +338,14 @@ const PostDetail = () => {
   const readingTime = getReadingTime(post);
   const postsCrumb = isAdminContext
     ? { label: 'Quản lý bài viết', to: backTarget }
-    : { label: 'Bài viết', to: '/posts' };
+    : { label: 'Bài viết', to: publicPostsPath };
 
   return (
     <article className="post-detail-page container animate-fade-in">
       <nav className="post-detail-breadcrumb" aria-label="Breadcrumb">
-        <Link to={isAdminContext ? '/admin' : '/'}>{isAdminContext ? 'Bảng điều khiển' : 'Trang chủ'}</Link>
+        <Link to={isAdminContext ? '/admin' : publicHomePath}>{isAdminContext ? 'Bảng điều khiển' : 'Trang chủ'}</Link>
         <span>/</span>
         <Link to={postsCrumb.to}>{postsCrumb.label}</Link>
-        <Link to={`/${familyId}/home`}>Trang chủ</Link>
-        <span>/</span>
-        <Link to={`/${familyId}/posts`}>Bài viết</Link>
         <span>/</span>
         <span title={post.title}>{truncateText(post.title, 72)}</span>
       </nav>
@@ -393,9 +388,7 @@ const PostDetail = () => {
 
       <div className="post-detail-actions">
         {canUpdatePost(viewActor, post) && (
-          <Link className="btn btn-outline" to={`/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
-        {canUpdatePost(actor, post) && (
-          <Link className="btn btn-outline" to={`/${familyId}/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
+          <Link className="btn btn-outline" to={familyId ? `/${familyId}/posts/${post.id}/edit` : `/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
             <Edit3 size={17} /> Sửa
           </Link>
         )}
