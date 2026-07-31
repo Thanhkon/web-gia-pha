@@ -20,7 +20,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto): Promise<SafeUser> {
     return this.toPublicUser(await this.createEntity(createUserDto));
@@ -130,6 +130,7 @@ export class UsersService {
   }
 
   toPublicUser(user: User): SafeUser {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...safeUser } = user;
 
     return safeUser;

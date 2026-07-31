@@ -46,7 +46,12 @@ const MembersTable = ({
               </thead>
               <tbody>
                 {filteredPersons.map(p => (
-                  <tr key={p.id}>
+                  <tr 
+                    key={p.id} 
+                    onClick={() => setViewingMember(p)}
+                    style={{ cursor: 'pointer' }}
+                    className="clickable-row"
+                  >
                     <td>
                       <div className="person-name-cell">
                         <img
@@ -58,7 +63,7 @@ const MembersTable = ({
                       </div>
                     </td>
                     <td>{p.gender === 'male' ? 'Nam' : 'Nữ'}</td>
-                    <td>{p.birthYear}</td>
+                    <td>{p.birthYear || (p.dateOfBirth ? new Date(p.dateOfBirth).getFullYear() : 'Chưa rõ')}</td>
                     <td>Đời thứ {p.generation}</td>
                     <td>
                       <div className="table-badges">
@@ -71,9 +76,8 @@ const MembersTable = ({
                     {(handleEdit || handleDelete) && (
                       <td className="text-center">
                         <div className="action-buttons">
-                          <button className="btn-icon text-primary" onClick={() => setViewingMember(p)} title="Xem hồ sơ"><Eye size={16} /></button>
-                          {handleEdit && <button className="btn-icon text-blue" onClick={() => handleEdit(p)} title="Chỉnh sửa"><Edit2 size={16} /></button>}
-                          {handleDelete && <button className="btn-icon text-danger" onClick={() => handleDelete(p.id)} title="Xóa"><Trash2 size={16} /></button>}
+                          {handleEdit && <button className="btn-icon text-blue" onClick={(e) => { e.stopPropagation(); handleEdit(p); }} title="Chỉnh sửa"><Edit2 size={16} /></button>}
+                          {handleDelete && <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} title="Xóa"><Trash2 size={16} /></button>}
                         </div>
                       </td>
                     )}
@@ -90,7 +94,12 @@ const MembersTable = ({
         ) : (
           <div className="cards-grid">
             {filteredPersons.map(p => (
-              <div key={p.id} className="member-admin-card">
+              <div 
+                key={p.id} 
+                className="member-admin-card clickable-card" 
+                onClick={() => setViewingMember(p)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="card-header">
                   <img
                     src={p.avatarUrl || (p.gender === 'male' ? avatarMale : avatarFemale)}
@@ -98,14 +107,13 @@ const MembersTable = ({
                     className="card-avatar"
                   />
                   <div className="card-actions">
-                    <button className="btn-icon text-primary" onClick={() => setViewingMember(p)} title="Xem"><Eye size={16} /></button>
-                    {handleEdit && <button className="btn-icon text-blue" onClick={() => handleEdit(p)} title="Sửa"><Edit2 size={16} /></button>}
-                    {handleDelete && <button className="btn-icon text-danger" onClick={() => handleDelete(p.id)} title="Xóa"><Trash2 size={16} /></button>}
+                    {handleEdit && <button className="btn-icon text-blue" onClick={(e) => { e.stopPropagation(); handleEdit(p); }} title="Sửa"><Edit2 size={16} /></button>}
+                    {handleDelete && <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} title="Xóa"><Trash2 size={16} /></button>}
                   </div>
                 </div>
                 <div className="card-body">
                   <h4 className="card-name">{p.fullName}</h4>
-                  <p className="card-meta">Sinh năm: {p.birthYear} | Đời {p.generation}</p>
+                  <p className="card-meta">Sinh năm: {p.birthYear || (p.dateOfBirth ? new Date(p.dateOfBirth).getFullYear() : 'Chưa rõ')} | Đời {p.generation}</p>
                   <div className="card-badges">
                     {p.isDeleted && <span className="badge-sm bg-gray deleted-badge">Đã xóa</span>}
                     {p.isInLaw && <span className="badge-sm bg-purple">Dâu/Rể</span>}
