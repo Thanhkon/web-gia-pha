@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   EyeOff,
   FolderOpen,
@@ -50,9 +50,10 @@ const updateFilterParams = (searchParams, setSearchParams, patch) => {
 const Gallery = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const { familyId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getGalleryActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const filters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
   const [albums, setAlbums] = useState([]);
   const [albumForm, setAlbumForm] = useState(null);
@@ -62,7 +63,7 @@ const Gallery = () => {
 
   const isManager = canManageAlbum(actor);
   const searchText = searchParams.toString();
-  const listUrl = `/gallery${searchText ? `?${searchText}` : ''}`;
+  const listUrl = `/${familyId}/gallery${searchText ? `?${searchText}` : ''}`;
 
   const loadAlbums = useCallback(async () => {
     setIsLoading(true);
@@ -196,7 +197,7 @@ const Gallery = () => {
             <article className="gallery-album-card" key={album.id}>
               <Link
                 className="gallery-album-card-link"
-                to={{ pathname: `/albums/${album.id}`, search: searchText }}
+                to={{ pathname: `/${familyId}/albums/${album.id}`, search: searchText }}
                 state={{ from: listUrl }}
               >
                 <span className="gallery-album-cover">

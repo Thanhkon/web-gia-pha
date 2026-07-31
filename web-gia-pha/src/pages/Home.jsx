@@ -9,6 +9,7 @@ import MarqueeBanner from '../components/MarqueeBanner';
 import Skeleton from '../components/common/Skeleton';
 import { getPostActor, postService } from '../services/postService';
 import { eventService, getEventActor } from '../services/eventService';
+import { galleryService, getGalleryActor } from '../services/galleryService';
 import '../css/pages/Home.css';
 
 const Home = () => {
@@ -35,20 +36,18 @@ const Home = () => {
     bgImage: familyHeroSettings?.bgImage || defaultHero.bgImage,
   };
 
-  // Thư viện ảnh tĩnh từ Redux
-  const albums = useSelector((state) => state.albums.data);
-
   // Dữ liệu động từ API (Services)
   const [posts, setPosts] = useState([]);
   const [events, setEvents] = useState([]);
+  const [galleryAlbums, setGalleryAlbums] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const postActor = getPostActor(user, isAuthenticated);
-        const eventActor = getEventActor(user, isAuthenticated);
+        const postActor = getPostActor(user, isAuthenticated, familyId);
+        const eventActor = getEventActor(user, isAuthenticated, familyId);
         const postsRes = await postService.getPosts({
           actor: postActor,
           filters: { sortDirection: 'newest' },
@@ -59,6 +58,10 @@ const Home = () => {
 
         const eventsRes = await eventService.getUpcomingEvents(30, {}, eventActor);
         setEvents(eventsRes.data.slice(0, 3));
+
+        const galleryActor = getGalleryActor(user, isAuthenticated, familyId);
+        const albumsRes = await galleryService.getAlbums({ actor: galleryActor });
+        setGalleryAlbums(albumsRes.slice(0, 4));
       } catch (err) {
         console.error("Failed to load dashboard data", err);
       } finally {
@@ -66,7 +69,7 @@ const Home = () => {
       }
     };
     fetchData();
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, familyId]);
 
   return (
     <div className="home-page animate-fade-in">
@@ -201,12 +204,24 @@ const Home = () => {
               <h2 className="panel-title">Thư viện ảnh</h2>
             </div>
             <div className="panel-body album-grid">
-              {albums.length === 0 ? (
+              {isLoading ? (
+                Array(4).fill().map((_, idx) => (
+                  <div key={idx} className="album-item" style={{ height: '100px' }}>
+                    <Skeleton width="100%" height="100%" borderRadius="8px" />
+                  </div>
+                ))
+              ) : galleryAlbums.length === 0 ? (
                 <p className="panel-empty">Chưa có ảnh nào trong thư viện.</p>
               ) : (
-                albums.map((album) => (
-                  <div key={album.id} className="album-item">
-                    <img src={album.img} alt={album.title} loading="lazy" />
+                galleryAlbums.map((album) => (
+                  <div key={album.id} className="album-item" onClick={() => navigate(`/${familyId}/albums/${album.id}`)} style={{ cursor: 'pointer' }}>
+                    {album.coverImage ? (
+                      <img src={album.coverImage} alt={album.title} loading="lazy" />
+                    ) : (
+                      <div className="album-item-fallback" style={{ width: '100%', height: '100%', backgroundColor: '#eaeaea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Image size={24} color="#888" />
+                      </div>
+                    )}
                     <div className="album-overlay">{album.title}</div>
                   </div>
                 ))

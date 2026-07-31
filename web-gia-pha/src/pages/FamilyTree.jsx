@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useFamily } from '../hooks/useFamily';
 import { usePanZoom } from '../hooks/usePanZoom';
 import MemberForm from '../components/Admin/MemberForm/MemberForm';
@@ -54,6 +54,8 @@ const FamilyTree = () => {
   const loading = useSelector(state => state.members.loading);
   const error = useSelector(state => state.members.error);
   const familyInfo = useSelector(state => state.members.familyInfo);
+  const location = useLocation();
+  const isAdminView = location.pathname.includes('/admin');
   
   // Mặc định gọi ID từ params
 
@@ -305,6 +307,7 @@ const FamilyTree = () => {
             isKinshipMode={isKinshipMode}
             kinshipNodeA={kinshipNodeA}
             kinshipNodeB={kinshipNodeB}
+            canEdit={isAdminView}
           />
         </div>
       </div>

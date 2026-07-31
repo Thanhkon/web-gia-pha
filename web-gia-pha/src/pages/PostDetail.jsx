@@ -107,7 +107,7 @@ const PostThumb = ({ post, backTarget, variant = 'compact' }) => {
   return (
     <Link
       className={`post-detail-related-link post-detail-related-link-${variant}`}
-      to={`/posts/${post.id}`}
+      to={`/${post.familyId}/posts/${post.id}`}
       state={{ fromList: backTarget }}
     >
       {hasThumb ? (
@@ -179,11 +179,11 @@ const RelatedPosts = ({ isLoading, error, posts, backTarget }) => (
 );
 
 const PostDetail = () => {
-  const { id } = useParams();
+  const { familyId, id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const isManager = useMemo(() => isPostManager(actor), [actor]);
 
   const [post, setPost] = useState(null);
@@ -197,7 +197,7 @@ const PostDetail = () => {
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  const backTarget = location.state?.fromList || '/posts';
+  const backTarget = location.state?.fromList || `/${familyId}/posts`;
 
   const loadPost = useCallback(async () => {
     setIsLoading(true);
@@ -326,9 +326,9 @@ const PostDetail = () => {
   return (
     <article className="post-detail-page container animate-fade-in">
       <nav className="post-detail-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/">Trang chủ</Link>
+        <Link to={`/${familyId}/home`}>Trang chủ</Link>
         <span>/</span>
-        <Link to="/posts">Bài viết</Link>
+        <Link to={`/${familyId}/posts`}>Bài viết</Link>
         <span>/</span>
         <span title={post.title}>{truncateText(post.title, 72)}</span>
       </nav>
@@ -371,7 +371,7 @@ const PostDetail = () => {
 
       <div className="post-detail-actions">
         {canUpdatePost(actor, post) && (
-          <Link className="btn btn-outline" to={`/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
+          <Link className="btn btn-outline" to={`/${familyId}/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
             <Edit3 size={17} /> Sửa
           </Link>
         )}

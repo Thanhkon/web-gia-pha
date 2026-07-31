@@ -12,7 +12,7 @@ const PostEditor = ({ mode = 'create' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
 
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(mode === 'edit');

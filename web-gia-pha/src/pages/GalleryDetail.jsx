@@ -49,7 +49,7 @@ const GalleryDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getGalleryActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const [album, setAlbum] = useState(null);
   const [albumForm, setAlbumForm] = useState(null);
   const [uploadAlbum, setUploadAlbum] = useState(null);

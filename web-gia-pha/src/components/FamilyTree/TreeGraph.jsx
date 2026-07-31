@@ -18,7 +18,8 @@ const TreeNode = React.memo(({
   onViewDetails,
   isKinshipMode,
   kinshipNodeA,
-  kinshipNodeB
+  kinshipNodeB,
+  canEdit
 }) => {
   // Mọi hook phải được gọi ở top level trước khi early return
   const currentAncestorSet = useMemo(
@@ -71,6 +72,7 @@ const TreeNode = React.memo(({
           isKinshipMode={isKinshipMode}
           kinshipNodeA={kinshipNodeA}
           kinshipNodeB={kinshipNodeB}
+          canEdit={canEdit}
         />
       ))}
     </ul>
@@ -90,6 +92,7 @@ const TreeNode = React.memo(({
             isKinshipMode={isKinshipMode}
             kinshipNodeA={kinshipNodeA}
             kinshipNodeB={kinshipNodeB}
+            canEdit={canEdit}
           />
           {collapseBtn}
         </div>
@@ -113,6 +116,7 @@ const TreeNode = React.memo(({
               isKinshipMode={isKinshipMode}
               kinshipNodeA={kinshipNodeA}
               kinshipNodeB={kinshipNodeB}
+              canEdit={canEdit}
             />
 
             {spouses.map((spouse) => (
@@ -127,6 +131,7 @@ const TreeNode = React.memo(({
                   isKinshipMode={isKinshipMode}
                   kinshipNodeA={kinshipNodeA}
                   kinshipNodeB={kinshipNodeB}
+                  canEdit={canEdit}
                 />
               </React.Fragment>
             ))}
@@ -163,6 +168,7 @@ const TreeNode = React.memo(({
                             isKinshipMode={isKinshipMode}
                             kinshipNodeA={kinshipNodeA}
                             kinshipNodeB={kinshipNodeB}
+                            canEdit={canEdit}
                           />
                         ))}
                       </ul>
@@ -188,6 +194,7 @@ const TreeNode = React.memo(({
                           isKinshipMode={isKinshipMode}
                           kinshipNodeA={kinshipNodeA}
                           kinshipNodeB={kinshipNodeB}
+                          canEdit={canEdit}
                         />
                       ))}
                     </ul>
@@ -210,6 +217,7 @@ const TreeNode = React.memo(({
                   isKinshipMode={isKinshipMode}
                   kinshipNodeA={kinshipNodeA}
                   kinshipNodeB={kinshipNodeB}
+                  canEdit={canEdit}
                 />
               ))
             )}
@@ -235,7 +243,8 @@ const TreeGraph = React.memo(({
   onViewDetails,
   isKinshipMode,
   kinshipNodeA,
-  kinshipNodeB
+  kinshipNodeB,
+  canEdit
 }) => {
   return (
     <div className="css-tree">
@@ -253,6 +262,7 @@ const TreeGraph = React.memo(({
             isKinshipMode={isKinshipMode}
             kinshipNodeA={kinshipNodeA}
             kinshipNodeB={kinshipNodeB}
+            canEdit={canEdit}
             ancestorSet={EMPTY_SET}
           />
         ))}

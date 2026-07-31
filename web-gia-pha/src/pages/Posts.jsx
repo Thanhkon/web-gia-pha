@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText, Loader2, PlusCircle } from 'lucide-react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Pagination from '../components/Pagination';
@@ -23,9 +23,10 @@ const defaultFilters = {
 const Posts = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const { familyId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const isManager = useMemo(() => isPostManager(actor), [actor]);
 
   const [posts, setPosts] = useState([]);
@@ -130,7 +131,7 @@ const Posts = () => {
         </div>
 
         {canCreatePost(actor) && (
-          <Link className="btn btn-primary" to="/posts/new">
+          <Link className="btn btn-primary" to={`/${familyId}/posts/new`}>
             <PlusCircle size={18} /> Tạo bài viết
           </Link>
         )}

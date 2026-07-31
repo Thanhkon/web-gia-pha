@@ -3,7 +3,7 @@ import { PlusCircle } from 'lucide-react';
 import avatarMale from '../../assets/avatar-male.svg';
 import avatarFemale from '../../assets/avatar-female.svg';
 
-const FamilyNodeCard = ({ person, onAddChild, onAddSpouse, id, onViewDetails, isKinshipMode, kinshipNodeA, kinshipNodeB }) => {
+const FamilyNodeCard = ({ person, onAddChild, onAddSpouse, id, onViewDetails, isKinshipMode, kinshipNodeA, kinshipNodeB, canEdit }) => {
   const [showMenu, setShowMenu] = useState(false);
   const isSelectedA = isKinshipMode && kinshipNodeA?.id === person.id;
   const isSelectedB = isKinshipMode && kinshipNodeB?.id === person.id;
@@ -15,8 +15,8 @@ const FamilyNodeCard = ({ person, onAddChild, onAddSpouse, id, onViewDetails, is
       onClick={() => onViewDetails && onViewDetails(person)}
     >
 
-      {/* Nút Thêm Mới Góc Thẻ (ẩn trong chế độ kinship) */}
-      {!isKinshipMode && (
+      {/* Nút Thêm Mới Góc Thẻ (ẩn trong chế độ kinship hoặc không có quyền edit) */}
+      {!isKinshipMode && canEdit && (
         <div className="node-add-btn-wrapper" onMouseLeave={() => setShowMenu(false)} onClick={e => e.stopPropagation()}>
           <button className="node-add-btn" onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}>
             <PlusCircle size={16} />

@@ -9,6 +9,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import EventActionDialog from '../components/Events/EventActionDialog';
 import EventDetailModal from '../components/Events/EventDetailModal';
 import EventFormModal from '../components/Events/EventFormModal';
@@ -99,6 +100,7 @@ const EventSearchResults = ({ groups, emptyText, onView }) => (
 );
 
 const Events = () => {
+  const { familyId } = useParams();
   const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
   const [currentUser, setCurrentUser] = useState(null);
   const [monthDate, setMonthDate] = useState(() => new Date());
@@ -137,7 +139,7 @@ const Events = () => {
         type: typeFilter,
       };
 
-      const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated);
+      const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated, familyId);
       const actor = userResponse.data;
       const calendarRequest = eventService.getCalendarEvents(params, actor);
 
@@ -175,7 +177,7 @@ const Events = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [authUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter]);
+  }, [authUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter, familyId]);
 
   useEffect(() => {
     loadEvents();

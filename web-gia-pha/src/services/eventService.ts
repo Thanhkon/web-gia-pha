@@ -243,7 +243,7 @@ async function fetchFamilyEvents(actor: MockCurrentUser | null, params?: EventQu
   return response.data.map(toEvent);
 }
 
-export function getEventActor(user?: AuthUser | null, isAuthenticated = Boolean(user)): MockCurrentUser | null {
+export function getEventActor(user?: AuthUser | null, isAuthenticated = Boolean(user), currentFamilyId?: string | null): MockCurrentUser | null {
   const role = normalizeRole(user?.role);
 
   if (!isAuthenticated || !user || !user.id || role === UserRole.GUEST) {
@@ -255,7 +255,7 @@ export function getEventActor(user?: AuthUser | null, isAuthenticated = Boolean(
     id: String(user.id),
     name: user.name || 'Nguoi dung',
     role,
-    familyId: String(user.familyId || DEFAULT_FAMILY_ID),
+    familyId: currentFamilyId || String(user.familyId || DEFAULT_FAMILY_ID),
     isAuthenticated: true,
   };
 }
@@ -293,8 +293,8 @@ export function canViewEvent(event: Event, user: MockCurrentUser | null | undefi
 }
 
 export const eventService = {
-  async getCurrentUser(user?: AuthUser | null, isAuthenticated = Boolean(user)) {
-    return createResponse(getEventActor(user, isAuthenticated));
+  async getCurrentUser(user?: AuthUser | null, isAuthenticated = Boolean(user), currentFamilyId?: string | null) {
+    return createResponse(getEventActor(user, isAuthenticated, currentFamilyId));
   },
 
   async getEvents(params?: EventQueryParams, actor: MockCurrentUser | null = null) {

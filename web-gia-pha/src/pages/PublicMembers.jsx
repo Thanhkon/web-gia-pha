@@ -73,7 +73,7 @@ const PublicMembers = () => {
         filterGeneration={filterGeneration}
         setFilterGeneration={setFilterGeneration}
         persons={persons}
-        // No add/import/export for public view
+        hideHeader={true}
       />
 
       <MembersTable 

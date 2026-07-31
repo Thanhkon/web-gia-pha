@@ -11,7 +11,8 @@ const MembersFilterBar = ({
   onAddMember,
   onImportExcel,
   onDownloadTemplate,
-  persons = [] // Cần để tính số đời tối đa động
+  persons = [], // Cần để tính số đời tối đa động
+  hideHeader = false
 }) => {
   const fileInputRef = useRef(null);
 
@@ -22,7 +23,8 @@ const MembersFilterBar = ({
 
   return (
     <>
-      <header className="admin-page-header">
+      {!hideHeader && (
+        <header className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Quản lý Thành viên</h1>
           <p className="admin-page-subtitle">Xem, thêm mới và chỉnh sửa hồ sơ thành viên trong Gia phả.</p>
@@ -90,6 +92,7 @@ const MembersFilterBar = ({
           </div>
         )}
       </header>
+      )}
 
       <div className="admin-toolbar">
         <div className="search-box">
