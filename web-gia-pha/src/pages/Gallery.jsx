@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   EyeOff,
   FolderOpen,
@@ -49,6 +49,8 @@ const updateFilterParams = (searchParams, setSearchParams, patch) => {
 
 const Gallery = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const actor = useMemo(() => getGalleryActor(user, isAuthenticated), [user, isAuthenticated]);
   const filters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
@@ -78,6 +80,13 @@ const Gallery = () => {
   useEffect(() => {
     loadAlbums();
   }, [loadAlbums]);
+
+  useEffect(() => {
+    if (!location.state?.notice) return;
+
+    setNotice({ type: 'success', text: location.state.notice });
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+  }, [location.pathname, location.search, location.state, navigate]);
 
   const handleSaveAlbum = async (payload) => {
     setIsSaving(true);

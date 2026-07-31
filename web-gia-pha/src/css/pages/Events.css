@@ -142,10 +142,44 @@
   font-size: 0.9rem;
 }
 
+.events-month-navigation {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: min(100%, 360px);
+}
+
+.events-month-heading {
+  min-width: 0;
+  text-align: center;
+}
+
+.events-month-nav-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  padding: 0;
+}
+
+.events-month-nav-btn svg {
+  display: block;
+}
+
 .events-calendar-controls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.events-lunar-note {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  opacity: 0.62;
+  line-height: 1.2;
 }
 
 .events-weekdays,
@@ -235,6 +269,11 @@
   text-align: left;
   line-height: 1.25;
   display: block;
+}
+
+.events-day-number span.is-lunar-special {
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .events-day-items {

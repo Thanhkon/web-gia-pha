@@ -18,11 +18,12 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import {
   AlbumFormModal,
   GalleryBadge,
+  MediaLightbox,
   MediaEditModal,
   UploadMediaModal,
 } from '../components/gallery/GalleryModals';
 import ImageLightbox from '../components/gallery/ImageLightbox';
-import { formatDate } from '../components/gallery/galleryViewUtils';
+import { formatDate, isImageSource } from '../components/gallery/galleryViewUtils';
 import {
   canDeleteAlbum,
   canDeleteMedia,
@@ -304,13 +305,18 @@ const GalleryDetail = () => {
                 <button
                   className="gallery-media-preview"
                   type="button"
-                  onClick={() => {
-                    if (media.type === MEDIA_TYPE.IMAGE) setLightboxMedia(media);
-                  }}
+                  onClick={() => setLightboxMedia(media)}
                 >
                   {media.type === MEDIA_TYPE.VIDEO ? (
                     <>
-                      <img src={media.thumbnailUrl} alt={media.fileName} loading="lazy" />
+                      {isImageSource(media.thumbnailUrl) ? (
+                        <img src={media.thumbnailUrl} alt={media.fileName} loading="lazy" />
+                      ) : (
+                        <span className="gallery-video-placeholder gallery-video-thumb">
+                          <Video size={30} />
+                          <span>{media.fileName}</span>
+                        </span>
+                      )}
                       <span className="gallery-video-mark"><Video size={18} /></span>
                     </>
                   ) : (
@@ -374,10 +380,15 @@ const GalleryDetail = () => {
       />
 
       <ImageLightbox
-        image={lightboxMedia}
+        image={lightboxMedia?.type === MEDIA_TYPE.IMAGE ? lightboxMedia : null}
         images={imageItems}
         onClose={() => setLightboxMedia(null)}
         onSelectImage={setLightboxMedia}
+      />
+
+      <MediaLightbox
+        media={lightboxMedia?.type === MEDIA_TYPE.VIDEO ? lightboxMedia : null}
+        onClose={() => setLightboxMedia(null)}
       />
 
       <ConfirmModal

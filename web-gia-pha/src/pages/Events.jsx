@@ -59,6 +59,45 @@ const EventMiniList = ({ title, events, emptyText, onView }) => (
   </section>
 );
 
+const EventSearchResults = ({ groups, emptyText, onView }) => (
+  <section className="events-side-panel">
+    <div className="events-side-header">
+      <Search size={20} />
+      <h2>Kết quả tìm kiếm</h2>
+    </div>
+
+    {groups.length === 0 ? (
+      <p className="events-empty-small">{emptyText}</p>
+    ) : (
+      <div className="events-search-results">
+        {groups.map((group) => (
+          <section className="events-search-group" key={group.key}>
+            <h3>{group.label}</h3>
+            <div className="events-mini-list">
+              {group.events.map((event) => (
+                <button
+                  className={`events-mini-item ${event.status === 'CANCELLED' ? 'is-cancelled' : ''}`}
+                  key={event.id}
+                  type="button"
+                  onClick={() => onView(event)}
+                >
+                  <span className="events-mini-date">
+                    {new Date(event.startAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
+                  </span>
+                  <span className="events-mini-content">
+                    <strong>{event.title}</strong>
+                    <span>{eventTypeLabels[event.type]} • {new Date(event.startAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    )}
+  </section>
+);
+
 const Events = () => {
   const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
   const [currentUser, setCurrentUser] = useState(null);
@@ -68,6 +107,7 @@ const Events = () => {
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [todayEvents, setTodayEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -78,6 +118,9 @@ const Events = () => {
   const [error, setError] = useState('');
 
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const normalizedSearchTerm = debouncedSearch.trim();
+  const isSearching = normalizedSearchTerm.length > 0;
+  const hasCalendarFilters = isSearching || Boolean(typeFilter);
   const canCreate = canCreateEvent(currentUser);
   const canManageSelectedEvent = selectedEvent ? canManageEvent(currentUser, selectedEvent) : false;
   const hasOpenModal = Boolean(selectedEvent || isFormOpen || cancelTarget || deleteTarget);
@@ -90,31 +133,49 @@ const Events = () => {
       const params = {
         year: monthDate.getFullYear(),
         month: monthDate.getMonth(),
-        search: debouncedSearch,
+        search: normalizedSearchTerm,
         type: typeFilter,
       };
 
       const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated);
       const actor = userResponse.data;
+      const calendarRequest = eventService.getCalendarEvents(params, actor);
+
+      if (isSearching) {
+        const [calendarResponse, searchResponse] = await Promise.all([
+          calendarRequest,
+          eventService.getEvents({ search: normalizedSearchTerm, type: typeFilter }, actor),
+        ]);
+
+        setCurrentUser(actor);
+        setCalendarEvents(calendarResponse.data);
+        setTodayEvents([]);
+        setUpcomingEvents([]);
+        setSearchResults(searchResponse.data);
+        return;
+      }
+
       const [calendarResponse, todayResponse, upcomingResponse] = await Promise.all([
-        eventService.getCalendarEvents(params, actor),
-        eventService.getTodayEvents({ search: debouncedSearch, type: typeFilter }, actor),
-        eventService.getUpcomingEvents(30, { search: debouncedSearch, type: typeFilter }, actor),
+        calendarRequest,
+        eventService.getTodayEvents({ type: typeFilter }, actor),
+        eventService.getUpcomingEvents(30, { type: typeFilter }, actor),
       ]);
 
       setCurrentUser(actor);
       setCalendarEvents(calendarResponse.data);
       setTodayEvents(todayResponse.data);
       setUpcomingEvents(upcomingResponse.data);
+      setSearchResults([]);
     } catch (loadError) {
       setError(loadError.message || 'Có lỗi xảy ra khi tải sự kiện.');
       setCalendarEvents([]);
       setTodayEvents([]);
       setUpcomingEvents([]);
+      setSearchResults([]);
     } finally {
       setIsLoading(false);
     }
-  }, [authUser, debouncedSearch, isAuthenticated, monthDate, typeFilter]);
+  }, [authUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter]);
 
   useEffect(() => {
     loadEvents();
@@ -137,6 +198,28 @@ const Events = () => {
     new Intl.DateTimeFormat('vi-VN', { month: 'long', year: 'numeric' }).format(monthDate)
   ), [monthDate]);
 
+  const groupedSearchResults = useMemo(() => {
+    const groupsMap = new Map();
+    const monthFormatter = new Intl.DateTimeFormat('vi-VN', { month: 'long', year: 'numeric' });
+
+    searchResults.forEach((event) => {
+      const startDate = new Date(event.startAt);
+      const key = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!groupsMap.has(key)) {
+        groupsMap.set(key, {
+          key,
+          label: monthFormatter.format(startDate),
+          events: [],
+        });
+      }
+
+      groupsMap.get(key).events.push(event);
+    });
+
+    return Array.from(groupsMap.values());
+  }, [searchResults]);
+
   const goToPreviousMonth = () => {
     setMonthDate((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
   };
@@ -157,6 +240,12 @@ const Events = () => {
     } catch (detailError) {
       setError(detailError.message || 'Không thể mở chi tiết sự kiện.');
     }
+  };
+
+  const openSearchResult = async (event) => {
+    const eventDate = new Date(event.startAt);
+    setMonthDate(new Date(eventDate.getFullYear(), eventDate.getMonth(), 1));
+    await openDetail(event.id);
   };
 
   const openCreateForm = () => {
@@ -255,6 +344,15 @@ const Events = () => {
     return calendarEvents.filter((event) => isDateBetween(date, event.startAt, event.endAt));
   };
 
+  const emptyCalendarTitle = hasCalendarFilters
+    ? 'Không tìm thấy sự kiện phù hợp'
+    : 'Tháng này chưa có sự kiện';
+  const emptyCalendarText = hasCalendarFilters
+    ? 'Thử đổi từ khóa, bộ lọc hoặc chuyển sang tháng khác.'
+    : canCreate
+      ? 'Chuyển sang tháng khác hoặc tạo sự kiện mới cho dòng họ.'
+      : 'Chuyển sang tháng khác để xem thêm.';
+
   return (
     <>
       <div className="events-page animate-fade-in">
@@ -315,18 +413,21 @@ const Events = () => {
         <div className="events-layout">
           <main className="events-calendar-panel">
             <header className="events-calendar-header">
-              <div>
-                <h2>{monthLabel}</h2>
-                <p>{calendarEvents.length} sự kiện trong tháng đang xem</p>
-              </div>
-              <div className="events-calendar-controls">
-                <button className="icon-btn" type="button" onClick={goToPreviousMonth} aria-label="Tháng trước">
+              <div className="events-month-navigation">
+                <button className="icon-btn events-month-nav-btn" type="button" onClick={goToPreviousMonth} aria-label="Tháng trước">
                   <ChevronLeft size={20} />
                 </button>
-                <button className="btn btn-outline" type="button" onClick={goToToday}>Hôm nay</button>
-                <button className="icon-btn" type="button" onClick={goToNextMonth} aria-label="Tháng sau">
+                <div className="events-month-heading">
+                  <h2>{monthLabel}</h2>
+                  <p>{calendarEvents.length} sự kiện trong tháng đang xem</p>
+                </div>
+                <button className="icon-btn events-month-nav-btn" type="button" onClick={goToNextMonth} aria-label="Tháng sau">
                   <ChevronRight size={20} />
                 </button>
+              </div>
+              <div className="events-calendar-controls">
+                <span className="events-lunar-note">Số nhỏ: ngày âm lịch</span>
+                <button className="btn btn-outline" type="button" onClick={goToToday}>Hôm nay</button>
               </div>
             </header>
 
@@ -358,7 +459,7 @@ const Events = () => {
                       >
                         <div className="events-day-number">
                           <strong>{day.solarDay}</strong>
-                          <span>{day.lunarDisplay}</span>
+                          <span className={day.isLunarSpecialDay ? 'is-lunar-special' : ''}>{day.lunarDisplay}</span>
                         </div>
 
                         <div className="events-day-items">
@@ -382,8 +483,8 @@ const Events = () => {
                 {calendarEvents.length === 0 && (
                   <div className="events-empty-state">
                     <Calendar size={28} />
-                    <h3>Không có sự kiện phù hợp</h3>
-                    <p>Thay đổi từ khóa, bộ lọc hoặc chuyển sang tháng khác để xem thêm.</p>
+                    <h3>{emptyCalendarTitle}</h3>
+                    <p>{emptyCalendarText}</p>
                   </div>
                 )}
               </>
@@ -391,19 +492,29 @@ const Events = () => {
           </main>
 
           <aside className="events-sidebar">
-            <EventMiniList
-              title="Sự kiện hôm nay"
-              events={todayEvents}
-              emptyText="Hôm nay chưa có sự kiện nào."
-              onView={openDetail}
-            />
+            {isSearching ? (
+              <EventSearchResults
+                groups={groupedSearchResults}
+                emptyText="Không tìm thấy sự kiện nào."
+                onView={openSearchResult}
+              />
+            ) : (
+              <>
+                <EventMiniList
+                  title="Sự kiện hôm nay"
+                  events={todayEvents}
+                  emptyText="Hôm nay chưa có sự kiện nào."
+                  onView={openDetail}
+                />
 
-            <EventMiniList
-              title="Sự kiện trong 30 ngày tới"
-              events={upcomingEvents}
-              emptyText="Chưa có sự kiện sắp tới trong 30 ngày."
-              onView={openDetail}
-            />
+                <EventMiniList
+                  title="Sự kiện trong 30 ngày tới"
+                  events={upcomingEvents}
+                  emptyText="Chưa có sự kiện sắp tới trong 30 ngày."
+                  onView={openDetail}
+                />
+              </>
+            )}
           </aside>
         </div>
       </section>

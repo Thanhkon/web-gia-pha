@@ -17,6 +17,7 @@ export type VietnameseLunarDate = {
   day: number;
   isLeapMonth: boolean;
   display: string;
+  compactDisplay: string;
 };
 
 export const formatDateKey = (date: Date) => {
@@ -154,6 +155,7 @@ export const getVietnameseLunarDate = (value: Date | string): VietnameseLunarDat
     day: lunar.getDay(),
     isLeapMonth,
     display: `${pad(lunar.getDay())}/${pad(monthNumber)}${isLeapMonth ? ' nhuận' : ''} âm lịch`,
+    compactDisplay: `${lunar.getDay()}/${monthNumber}${isLeapMonth ? 'N' : ''}`,
   };
 };
 
@@ -171,11 +173,14 @@ export const buildCalendarDays = (monthDate: Date) => {
   return Array.from({ length: 42 }, (_, index) => {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + index);
+    const lunarDate = getVietnameseLunarDate(date);
+
     return {
       date,
       dateKey: formatDateKey(date),
       solarDay: date.getDate(),
-      lunarDisplay: getVietnameseLunarDateDisplay(date),
+      lunarDisplay: lunarDate.compactDisplay,
+      isLunarSpecialDay: lunarDate.day === 1 || lunarDate.day === 15,
       isCurrentMonth: date.getMonth() === month,
       isToday: isSameDate(date, new Date()),
     };

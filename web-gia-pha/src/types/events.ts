@@ -128,7 +128,7 @@ export interface ApiResponse<T> {
   meta: {
     requestId: string;
     timestamp: string;
-    source: 'mock';
+    source: 'mock' | 'api';
   };
 }
 

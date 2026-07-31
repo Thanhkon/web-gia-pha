@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
-import { eventTypeOptions, recurrenceLabels } from '../../constants/eventConstants';
+import { eventTypeOptions, eventVisibilityLabels, recurrenceLabels } from '../../constants/eventConstants';
 import { CalendarType, EventVisibility, RecurrenceFrequency } from '../../types/events';
 import { toDateTimeLocalValue, toVietnamDateTimeOffset } from '../../services/calendarService';
 
@@ -192,8 +192,8 @@ const EventFormModal = ({ event, onClose, onSubmit, isSaving }) => {
                 value={form.visibility}
                 onChange={(inputEvent) => updateField('visibility', inputEvent.target.value)}
               >
-                <option value={EventVisibility.PUBLIC}>PUBLIC</option>
-                <option value={EventVisibility.INTERNAL}>INTERNAL</option>
+                <option value={EventVisibility.PUBLIC}>{eventVisibilityLabels[EventVisibility.PUBLIC]}</option>
+                <option value={EventVisibility.INTERNAL}>{eventVisibilityLabels[EventVisibility.INTERNAL]}</option>
               </select>
             </div>
           </div>

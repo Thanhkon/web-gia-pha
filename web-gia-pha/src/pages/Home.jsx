@@ -6,8 +6,8 @@ import {
   Calendar, BookOpen, Clock, ChevronRight, Edit3
 } from 'lucide-react';
 import MarqueeBanner from '../components/MarqueeBanner';
-import { postService } from '../services/postService';
-import { eventService } from '../services/eventService';
+import { getPostActor, postService } from '../services/postService';
+import { eventService, getEventActor } from '../services/eventService';
 import '../css/pages/Home.css';
 
 const Home = () => {
@@ -27,11 +27,18 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const postsRes = await postService.getPosts({ sortDirection: 'newest' }, 1, 4);
+        const postActor = getPostActor(user, isAuthenticated);
+        const eventActor = getEventActor(user, isAuthenticated);
+        const postsRes = await postService.getPosts({
+          actor: postActor,
+          filters: { sortDirection: 'newest' },
+          page: 1,
+          pageSize: 4,
+        });
         setPosts(postsRes.items);
 
-        const eventsRes = await eventService.getUpcomingEvents(30, {}, isAuthenticated ? user : null);
-        setEvents(eventsRes.items.slice(0, 3));
+        const eventsRes = await eventService.getUpcomingEvents(30, {}, eventActor);
+        setEvents(eventsRes.data.slice(0, 3));
       } catch (err) {
         console.error("Failed to load dashboard data", err);
       }

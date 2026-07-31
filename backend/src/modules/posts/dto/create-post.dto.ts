@@ -1,9 +1,14 @@
-import { PostStatus, PostVisibility } from '../entities/post.entity';
+import {
+  PostContentBlock,
+  PostStatus,
+  PostVisibility,
+} from '../entities/post.entity';
 
 export class CreatePostDto {
   title: string;
+  slug?: string | null;
   summary?: string | null;
-  content: string;
+  content: PostContentBlock[] | string;
   category?: string | null;
   status?: PostStatus;
   visibility?: PostVisibility;
