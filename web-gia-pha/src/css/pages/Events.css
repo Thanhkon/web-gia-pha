@@ -571,6 +571,12 @@
   min-height: 90px;
 }
 
+.event-form-section-title {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
 .form-control.is-invalid {
   border-color: #e53e3e;
 }

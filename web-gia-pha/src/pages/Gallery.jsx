@@ -53,6 +53,18 @@ const Gallery = () => {
   const { familyId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const actor = useMemo(() => getGalleryActor(user, isAuthenticated), [user, isAuthenticated]);
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const viewActor = useMemo(() => {
+    if (isAdminRoute || !actor?.familyId) {
+      return actor;
+    }
+
+    return {
+      ...actor,
+      role: 'MEMBER',
+    };
+  }, [actor, isAdminRoute]);
   const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const filters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
   const [albums, setAlbums] = useState([]);
@@ -61,14 +73,15 @@ const Gallery = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const isManager = canManageAlbum(actor);
+  const isManager = canManageAlbum(viewActor);
   const searchText = searchParams.toString();
+  const listUrl = `${location.pathname}${searchText ? `?${searchText}` : ''}`;
   const listUrl = `/${familyId}/gallery${searchText ? `?${searchText}` : ''}`;
 
   const loadAlbums = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await galleryService.getAlbums({ actor, filters });
+      const data = await galleryService.getAlbums({ actor: viewActor, filters });
       setAlbums(data);
     } catch (error) {
       setNotice({ type: 'error', text: error.message || 'Không thể tải thư viện.' });
@@ -76,7 +89,7 @@ const Gallery = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [actor, filters]);
+  }, [filters, viewActor]);
 
   useEffect(() => {
     loadAlbums();
@@ -116,7 +129,7 @@ const Gallery = () => {
           <p>Lưu giữ album, ảnh và video của dòng họ theo phạm vi công khai hoặc nội bộ.</p>
         </div>
 
-        {canCreateAlbum(actor) && (
+        {canCreateAlbum(viewActor) && (
           <button className="btn btn-primary" type="button" onClick={() => setAlbumForm({ album: null })}>
             <PlusCircle size={18} /> Tạo album
           </button>
@@ -141,7 +154,7 @@ const Gallery = () => {
           >
             <option value="">Tất cả phạm vi</option>
             <option value={ALBUM_VISIBILITY.PUBLIC}>Công khai</option>
-            {actor && <option value={ALBUM_VISIBILITY.INTERNAL}>Nội bộ</option>}
+            {viewActor && <option value={ALBUM_VISIBILITY.INTERNAL}>Nội bộ</option>}
           </select>
         </label>
 
@@ -177,7 +190,7 @@ const Gallery = () => {
 
       <div className="gallery-results-bar">
         <span>{albums.length} album phù hợp</span>
-        <span>{getActorText(actor)}</span>
+        <span>{getActorText(viewActor)}</span>
       </div>
 
       {isLoading ? (

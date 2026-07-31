@@ -68,6 +68,15 @@ const App = () => {
               } />
               <Route path="/admin" element={<ProtectedRoute />}>
                 <Route element={<AdminLayout />}>
+                  <Route index element={<Home />} />
+                  <Route path="members" element={<AdminMembers />} />
+                  <Route path="tree" element={<FamilyTree />} />
+                  <Route path="requests" element={<AdminEditRequests />} />
+                  <Route path="events" element={<Events />} />
+                  <Route path="posts" element={<Posts />} />
+                  <Route path="gallery" element={<Gallery />} />
+                  <Route path="settings" element={<NotFoundPage />} />
+                  <Route path="*" element={<NotFoundPage />} />
                   <Route index element={<Navigate to="families" replace />} />
                   <Route path="families" element={<FamilyList />} />
                   <Route path="families/:familyId">

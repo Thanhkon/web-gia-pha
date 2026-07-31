@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import ConfirmModal from '../components/common/ConfirmModal';
 import PostBadge from '../components/Posts/PostBadge';
-import { POST_CONTENT_BLOCK, POST_STATUS } from '../types/posts';
+import { POST_CONTENT_BLOCK, POST_ROLES, POST_STATUS } from '../types/posts';
 import {
   canDeletePost,
   canHidePost,
@@ -183,6 +183,22 @@ const PostDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
+  const backTarget = location.state?.fromList || '/posts';
+  const isAdminContext = String(backTarget).startsWith('/admin');
+  const viewActor = useMemo(() => {
+    if (isAdminContext || !actor?.familyId || actor.role === POST_ROLES.GUEST) {
+      return actor;
+    }
+
+    return {
+      ...actor,
+      role: POST_ROLES.MEMBER,
+      canCreatePost: false,
+      canManagePosts: false,
+    };
+  }, [actor, isAdminContext]);
+  const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
   const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const isManager = useMemo(() => isPostManager(actor), [actor]);
 
@@ -204,7 +220,7 @@ const PostDetail = () => {
     setLoadError('');
 
     try {
-      const result = await postService.getPostById(id, actor);
+      const result = await postService.getPostById(id, viewActor);
       setPost(result);
     } catch (error) {
       setPost(null);
@@ -212,7 +228,7 @@ const PostDetail = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [actor, id]);
+  }, [id, viewActor]);
 
   const loadPostLists = useCallback(async (currentPost) => {
     if (!currentPost) {
@@ -226,7 +242,7 @@ const PostDetail = () => {
 
     try {
       const result = await postService.getPosts({
-        actor,
+        actor: viewActor,
         filters: {
           status: POST_STATUS.PUBLISHED,
           sortDirection: 'newest',
@@ -247,7 +263,7 @@ const PostDetail = () => {
     } finally {
       setIsListsLoading(false);
     }
-  }, [actor]);
+  }, [viewActor]);
 
   useEffect(() => {
     setCoverHasError(false);
@@ -322,10 +338,16 @@ const PostDetail = () => {
 
   const displayDate = getPostDate(post);
   const readingTime = getReadingTime(post);
+  const postsCrumb = isAdminContext
+    ? { label: 'Quản lý bài viết', to: backTarget }
+    : { label: 'Bài viết', to: '/posts' };
 
   return (
     <article className="post-detail-page container animate-fade-in">
       <nav className="post-detail-breadcrumb" aria-label="Breadcrumb">
+        <Link to={isAdminContext ? '/admin' : '/'}>{isAdminContext ? 'Bảng điều khiển' : 'Trang chủ'}</Link>
+        <span>/</span>
+        <Link to={postsCrumb.to}>{postsCrumb.label}</Link>
         <Link to={`/${familyId}/home`}>Trang chủ</Link>
         <span>/</span>
         <Link to={`/${familyId}/posts`}>Bài viết</Link>
@@ -370,22 +392,24 @@ const PostDetail = () => {
       )}
 
       <div className="post-detail-actions">
+        {canUpdatePost(viewActor, post) && (
+          <Link className="btn btn-outline" to={`/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
         {canUpdatePost(actor, post) && (
           <Link className="btn btn-outline" to={`/${familyId}/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
             <Edit3 size={17} /> Sửa
           </Link>
         )}
-        {canHidePost(actor, post) && (
+        {canHidePost(viewActor, post) && (
           <button className="btn btn-outline" type="button" onClick={() => setConfirmAction('hide')}>
             <EyeOff size={17} /> Ẩn
           </button>
         )}
-        {canPublishPost(actor, post) && (
+        {canPublishPost(viewActor, post) && (
           <button className="btn btn-outline" type="button" onClick={() => setConfirmAction('publish')}>
             <RotateCcw size={17} /> {post.status === POST_STATUS.HIDDEN ? 'Đăng lại' : 'Đăng bài'}
           </button>
         )}
-        {canDeletePost(actor, post) && (
+        {canDeletePost(viewActor, post) && (
           <button className="btn btn-outline text-danger" type="button" onClick={() => setConfirmAction('delete')}>
             <Trash2 size={17} /> Xóa
           </button>
