@@ -11,7 +11,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 
-type SafeUser = Omit<User, 'passwordHash'>;
+type SafeUser = Omit<User, 'passwordHash' | 'name'> & {
+  name: string | null;
+};
 
 const scrypt = promisify(scryptCallback);
 
@@ -20,7 +22,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-  ) { }
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<SafeUser> {
     return this.toPublicUser(await this.createEntity(createUserDto));
@@ -35,7 +37,7 @@ export class UsersService {
 
     const user = this.usersRepository.create({
       email: createUserDto.email,
-      username: createUserDto.username,
+      name: createUserDto.name,
       passwordHash: await this.hashPassword(createUserDto.password),
     });
 
@@ -72,9 +74,9 @@ export class UsersService {
     });
   }
 
-  findByUsername(username: string): Promise<User | null> {
+  findByUsername(name: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: { username },
+      where: { name },
     });
   }
 
@@ -137,8 +139,11 @@ export class UsersService {
 
   toPublicUser(user: User): SafeUser {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash, ...safeUser } = user;
+    const { passwordHash, name, ...safeUser } = user;
 
-    return safeUser;
+    return {
+      ...safeUser,
+      name: name ?? null,
+    };
   }
 }

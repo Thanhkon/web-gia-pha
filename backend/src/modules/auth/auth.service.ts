@@ -59,25 +59,23 @@ export class AuthService {
       throw new ConflictException('Email already exists');
     }
 
-    const username = this.normalizeUsername(registerDto.username);
+    const name = this.normalizeUsername(registerDto.name);
     const user = await this.usersService.createEntity({
       email,
       password,
-      ...(username ? { username } : {}),
+      ...(name ? { name } : {}),
     });
 
     return this.buildAuthResponse(user);
   }
 
   async login(loginDto: LoginDto) {
-    const username = this.normalizeUsername(loginDto.username);
+    const email = this.normalizeEmail(loginDto.email);
     const password = loginDto.password ?? '';
-    const user = username
-      ? await this.usersService.findByUsername(username)
-      : null;
+    const user = email ? await this.usersService.findByEmail(email) : null;
 
     if (!user) {
-      throw new UnauthorizedException('Invalid username or password');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     const isPasswordValid = await this.verifyPassword(
@@ -86,7 +84,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid username or password');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     return this.buildAuthResponse(user);
