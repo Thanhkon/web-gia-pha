@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from 'react-redux';
-import { login } from '../../store/slices/authSlice';
-import users from '../../assets/users.json';
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../../store/slices/authSlice";
+import apiClient from "../../utils/apiClient";
+import users from "../../assets/users.json";
 import "../../css/pages/Auth.css";
 
 function Login() {
     useEffect(() => {
-        document.title = "Sign In";
+        document.title = "Đăng Nhập";
     }, []);
 
     const [loginData, setLoginData] = useState({
@@ -31,7 +32,13 @@ function Login() {
 
     const handleLocalLogin = (user) => {
         dispatch(login({
-            ...user
+            id: user.id,
+            username: user.username,
+            role: user.username === "admin" ? "FAMILY_HEAD" : "MEMBER",
+            familyId: "1",
+            memberId: user.username === "admin" ? null : String(user.id),
+            canCreatePost: user.username === "admin",
+            canManagePosts: user.username === "admin",
         }));
         handleSuccessLogin();
     };
@@ -40,13 +47,8 @@ function Login() {
         e.preventDefault();
         setError("");
 
-        // Xác thực 
         if (!loginData.username || !loginData.password) {
             setError("Không được để trống");
-            return;
-        }
-        if (loginData.password.length < 6) {
-            setError("Mật khẩu không được ít hơn 6 kí tự");
             return;
         }
 
@@ -54,55 +56,40 @@ function Login() {
             (user) => user.username === loginData.username && user.password === loginData.password
         );
 
+        if (loginData.password.length < 6 && !localUser) {
+            setError("Mật khẩu không được ít hơn 6 kí tự");
+            return;
+        }
+
         try {
-            // Gửi dữ liệu đăng nhập đến API
-            const apiBaseUrl = import.meta.env.VITE_API_URL;
-            const response = await fetch(`${apiBaseUrl}/auth/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(loginData),
+            const response = await apiClient.post("/auth/login", {
+                email: loginData.username,
+                password: loginData.password,
             });
 
-            const data = await response.json();
-            if (response.ok) {
-                // Nếu backend OK thì dùng tài khoản backend
-                // TODO: dispatch login with backend data if needed
-                handleSuccessLogin();
-                return;
-            }
-
+            dispatch(login(response.data));
+            handleSuccessLogin();
+        } catch (requestError) {
+            console.error("Login failed:", requestError);
             if (localUser) {
                 handleLocalLogin(localUser);
                 return;
             }
-
-            setError(data.message || "Đăng nhập thất bại");
-
-        } catch (error) {
-            console.error("Lỗi khi đăng nhập:", error);
-            if (localUser) {
-                handleLocalLogin(localUser);
-                return;
-            }
-            setError("Đã xảy ra lỗi hệ thống");
+            setError(requestError.response?.data?.message || "Đăng nhập thất bại");
         }
-    }
+    };
 
     return (
         <div className="auth-page">
             <div className="auth-box">
                 <h2>Đăng Nhập</h2>
                 <form className="auth-form" onSubmit={handleSubmit}>
-                    {/* Error */}
                     {error && (
                         <p className="auth-error">
                             {error}
                         </p>
                     )}
 
-                    {/* Username */}
                     <div className="input-box">
                         <label className="label-auth">Username</label>
                         <input
@@ -118,7 +105,6 @@ function Login() {
                         />
                     </div>
 
-                    {/* Password */}
                     <div className="input-box">
                         <label className="label-auth">Password</label>
                         <div className="password-wrapper">
@@ -144,7 +130,6 @@ function Login() {
                         </div>
                     </div>
 
-                    {/* Navigate to Register */}
                     <p>Chưa có tài khoản?{" "}
                         <span
                             style={{ color: "blue", cursor: "pointer" }}
@@ -159,4 +144,5 @@ function Login() {
         </div>
     );
 }
+
 export default Login;

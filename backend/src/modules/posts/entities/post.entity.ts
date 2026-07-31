@@ -22,6 +22,25 @@ export const POST_VISIBILITIES = ['PUBLIC', 'FAMILY', 'ADMIN_ONLY'] as const;
 
 export type PostStatus = (typeof POST_STATUSES)[number];
 export type PostVisibility = (typeof POST_VISIBILITIES)[number];
+export type PostContentBlockType = 'HEADING' | 'PARAGRAPH' | 'IMAGE';
+
+export type PostContentBlock =
+  | {
+      id: string;
+      type: 'HEADING';
+      text: string;
+    }
+  | {
+      id: string;
+      type: 'PARAGRAPH';
+      text: string;
+    }
+  | {
+      id: string;
+      type: 'IMAGE';
+      imageUrl: string;
+      caption?: string | null;
+    };
 
 @Entity('posts')
 export class Post {
@@ -45,14 +64,14 @@ export class Post {
   @Column()
   title: string;
 
-  @Column({ type: 'varchar', unique: true, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   slug: string | null;
 
   @Column({ type: 'text', nullable: true })
   summary: string | null;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({ type: 'jsonb' })
+  content: PostContentBlock[];
 
   @Column({ type: 'varchar', nullable: true })
   category: string | null;

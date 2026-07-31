@@ -31,7 +31,8 @@ export const MEDIA_TYPE_LABELS = {
 export const GALLERY_UPLOAD_LIMITS = {
   maxFilesPerUpload: 20,
   maxImageSize: 10 * 1024 * 1024,
-  maxVideoSize: 100 * 1024 * 1024,
+  apiJsonPayloadBudget: 75 * 1024,
+  imageMaxDimension: 1280,
   imageTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
   videoTypes: ['video/mp4', 'video/webm'],
 };

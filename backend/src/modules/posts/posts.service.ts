@@ -5,17 +5,36 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { extname, join } from 'node:path';
 import { IsNull, Not, Repository } from 'typeorm';
 import { Family } from '../members/entities/family.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import {
   Post,
+  PostContentBlock,
   POST_STATUSES,
   POST_VISIBILITIES,
   PostStatus,
   PostVisibility,
 } from './entities/post.entity';
+
+type PostUploadFile = {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+};
+
+const POST_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
+const POST_IMAGE_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]);
 
 @Injectable()
 export class PostsService {
@@ -84,6 +103,31 @@ export class PostsService {
     }
 
     return post;
+  }
+
+  async uploadImage(file?: PostUploadFile) {
+    if (!file) {
+      throw new BadRequestException('image is required');
+    }
+
+    if (!POST_IMAGE_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException('Only JPG, PNG and WEBP images are allowed');
+    }
+
+    if (file.size > POST_IMAGE_MAX_SIZE) {
+      throw new BadRequestException('Image must be smaller than 5 MB');
+    }
+
+    const extension = this.getImageExtension(file);
+    const fileName = `${Date.now()}-${randomUUID()}${extension}`;
+    const uploadDir = join(process.cwd(), 'uploads', 'posts');
+
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(join(uploadDir, fileName), file.buffer);
+
+    return {
+      url: `/uploads/posts/${fileName}`,
+    };
   }
 
   async update(id: number, authorId: number, updatePostDto: UpdatePostDto) {
@@ -172,14 +216,16 @@ export class PostsService {
       throw new BadRequestException('title is required');
     }
 
-    if (!dto.content?.trim()) {
+    if (this.normalizeContentBlocks(dto.content).length === 0) {
       throw new BadRequestException('content is required');
     }
   }
 
   private normalizePostInput(dto: CreatePostDto | UpdatePostDto) {
     const { coverImage, publishedAt, slug, status, visibility, ...rest } = dto;
-    const data: Partial<Post> = { ...rest };
+    const data = { ...rest } as Partial<Post> & {
+      content?: PostContentBlock[] | string;
+    };
 
     if (data.thumbnailUrl === undefined && coverImage !== undefined) {
       data.thumbnailUrl = coverImage;
@@ -192,9 +238,9 @@ export class PostsService {
       }
     }
 
-    if (typeof data.content === 'string') {
-      data.content = data.content.trim();
-      if (!data.content) {
+    if (data.content !== undefined) {
+      data.content = this.normalizeContentBlocks(data.content);
+      if (data.content.length === 0) {
         throw new BadRequestException('content cannot be empty');
       }
     }
@@ -212,6 +258,67 @@ export class PostsService {
     }
 
     return data;
+  }
+
+  private normalizeContentBlocks(content?: PostContentBlock[] | string) {
+    if (content === undefined) {
+      return [];
+    }
+
+    if (typeof content === 'string') {
+      const text = content.trim();
+      return text
+        ? [
+            {
+              id: randomUUID(),
+              type: 'PARAGRAPH',
+              text,
+            } satisfies PostContentBlock,
+          ]
+        : [];
+    }
+
+    if (!Array.isArray(content)) {
+      throw new BadRequestException('content must be an array');
+    }
+
+    return content.flatMap((block) => {
+      if (!block || typeof block !== 'object') {
+        throw new BadRequestException('content block must be an object');
+      }
+
+      const id = typeof block.id === 'string' && block.id.trim()
+        ? block.id.trim()
+        : randomUUID();
+
+      if (block.type === 'HEADING' || block.type === 'PARAGRAPH') {
+        const text = typeof block.text === 'string' ? block.text.trim() : '';
+        return text ? [{ id, type: block.type, text } as PostContentBlock] : [];
+      }
+
+      if (block.type === 'IMAGE') {
+        const imageUrl = typeof block.imageUrl === 'string'
+          ? block.imageUrl.trim()
+          : '';
+        const caption = typeof block.caption === 'string'
+          ? block.caption.trim()
+          : '';
+
+        return imageUrl
+          ? [
+              {
+                id,
+                type: 'IMAGE',
+                imageUrl,
+                ...(caption ? { caption } : {}),
+              } as PostContentBlock,
+            ]
+          : [];
+      }
+
+      const invalidBlock = block as { type?: unknown };
+      throw new BadRequestException(`Invalid content block type: ${String(invalidBlock.type)}`);
+    });
   }
 
   private normalizeStatus(status: string): PostStatus {
@@ -273,6 +380,17 @@ export class PostsService {
       .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  }
+
+  private getImageExtension(file: PostUploadFile) {
+    const extension = extname(file.originalname).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.webp'].includes(extension)) {
+      return extension;
+    }
+
+    if (file.mimetype === 'image/png') return '.png';
+    if (file.mimetype === 'image/webp') return '.webp';
+    return '.jpg';
   }
 }
 

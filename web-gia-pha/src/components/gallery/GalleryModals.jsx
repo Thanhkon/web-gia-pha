@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image as ImageIcon,
   Loader2,
@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react';
 import ConfirmModal from '../common/ConfirmModal';
+import { isImageSource } from './galleryViewUtils';
 import { validateMediaFiles } from '../../services/galleryService';
 import {
   ALBUM_STATUS,
@@ -113,9 +114,9 @@ export const AlbumFormModal = ({ album, isSaving, onClose, onSubmit }) => {
 
   return (
     <>
-      <div className="modal-overlay">
+      <div className="modal-overlay gallery-modal-overlay">
         <section className="modal-container gallery-form-modal" role="dialog" aria-modal="true" aria-labelledby="album-form-title">
-          <header className="gallery-modal-header">
+          <header className="modal-header gallery-modal-header">
             <div>
               <span>{album ? 'Chỉnh sửa album' : 'Tạo album mới'}</span>
               <h2 id="album-form-title">{album ? album.title : 'Album dòng họ'}</h2>
@@ -126,70 +127,76 @@ export const AlbumFormModal = ({ album, isSaving, onClose, onSubmit }) => {
           </header>
 
           <form className="gallery-form" onSubmit={handleSubmit}>
-            <label>
-              <span>Tên album</span>
-              <input
-                value={form.title}
-                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                placeholder="Ví dụ: Lễ Thanh Minh 2026"
-              />
-            </label>
+            <div className="modal-body gallery-modal-body">
+              <h3 className="form-section-title">Thông tin album</h3>
+              <div className="gallery-form-grid">
+                <label>
+                  <span>Tên album</span>
+                  <input
+                    value={form.title}
+                    onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                    placeholder="Ví dụ: Lễ Thanh Minh 2026"
+                  />
+                </label>
 
-            <label>
-              <span>Mô tả</span>
-              <textarea
-                rows={4}
-                value={form.description}
-                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                placeholder="Nội dung mô tả ngắn cho album"
-              />
-            </label>
-
-            <div className="gallery-cover-row">
-              <div className="gallery-cover-preview">
-                {form.coverImage ? (
-                  <img src={form.coverImage} alt="Ảnh đại diện album" />
-                ) : (
-                  <div className="gallery-cover-empty">
-                    <ImageIcon size={28} />
-                    <span>Chưa có ảnh đại diện</span>
-                  </div>
-                )}
+                <label>
+                  <span>Phạm vi hiển thị</span>
+                  <select
+                    value={form.visibility}
+                    onChange={(event) => setForm((current) => ({ ...current, visibility: event.target.value }))}
+                  >
+                    <option value={ALBUM_VISIBILITY.PUBLIC}>Công khai</option>
+                    <option value={ALBUM_VISIBILITY.INTERNAL}>Nội bộ</option>
+                  </select>
+                </label>
               </div>
-              <label className="gallery-file-trigger">
-                <Upload size={17} />
-                <span>Chọn ảnh đại diện</span>
-                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleCoverChange} />
-              </label>
-            </div>
-
-            <div className="gallery-form-grid">
-              <label>
-                <span>Phạm vi hiển thị</span>
-                <select
-                  value={form.visibility}
-                  onChange={(event) => setForm((current) => ({ ...current, visibility: event.target.value }))}
-                >
-                  <option value={ALBUM_VISIBILITY.PUBLIC}>Công khai</option>
-                  <option value={ALBUM_VISIBILITY.INTERNAL}>Nội bộ</option>
-                </select>
-              </label>
 
               <label>
-                <span>Trạng thái</span>
-                <select
-                  value={form.status}
-                  onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-                >
-                  <option value={ALBUM_STATUS.VISIBLE}>Đã hiển thị</option>
-                  <option value={ALBUM_STATUS.HIDDEN}>Đã ẩn</option>
-                </select>
+                <span>Mô tả</span>
+                <textarea
+                  rows={4}
+                  value={form.description}
+                  onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                  placeholder="Nội dung mô tả ngắn cho album"
+                />
               </label>
+
+              <h3 className="form-section-title">Hiển thị</h3>
+              <div className="gallery-cover-row">
+                <div className="gallery-cover-preview">
+                  {form.coverImage ? (
+                    <img src={form.coverImage} alt="Ảnh đại diện album" />
+                  ) : (
+                    <div className="gallery-cover-empty">
+                      <ImageIcon size={28} />
+                      <span>Chưa có ảnh đại diện</span>
+                    </div>
+                  )}
+                </div>
+                <div className="gallery-cover-controls">
+                  <label className="gallery-file-trigger">
+                    <Upload size={17} />
+                    <span>Chọn ảnh đại diện</span>
+                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleCoverChange} />
+                  </label>
+
+                  <label>
+                    <span>Trạng thái</span>
+                    <select
+                      value={form.status}
+                      onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
+                    >
+                      <option value={ALBUM_STATUS.VISIBLE}>Đã hiển thị</option>
+                      <option value={ALBUM_STATUS.HIDDEN}>Đã ẩn</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              {error && <div className="gallery-form-error">{error}</div>}
             </div>
 
-            {error && <div className="gallery-form-error">{error}</div>}
-
-            <footer className="gallery-modal-actions">
+            <footer className="modal-footer gallery-modal-actions">
               <button className="btn btn-outline" type="button" onClick={requestClose} disabled={isSaving}>Hủy</button>
               <button className="btn btn-primary" type="submit" disabled={isSaving}>
                 {isSaving ? <Loader2 className="spin-icon" size={18} /> : <Save size={18} />}
@@ -217,14 +224,19 @@ export const AlbumFormModal = ({ album, isSaving, onClose, onSubmit }) => {
 export const UploadMediaModal = ({ album, isUploading, onClose, onSubmit }) => {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
+  const itemsRef = useRef([]);
 
   useEscape(Boolean(album), onClose);
 
   useEffect(() => {
-    return () => {
-      items.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-    };
+    itemsRef.current = items;
   }, [items]);
+
+  useEffect(() => {
+    return () => {
+      itemsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    };
+  }, []);
 
   if (!album) return null;
 
@@ -233,13 +245,16 @@ export const UploadMediaModal = ({ album, isUploading, onClose, onSubmit }) => {
     const errors = validateMediaFiles(files);
 
     if (errors.length > 0) {
+      itemsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       setItems([]);
       setError(errors.join('\n'));
       event.target.value = '';
       return;
     }
 
+    itemsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
     setItems(files.map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(16).slice(2)}`,
       file,
       previewUrl: URL.createObjectURL(file),
       description: '',
@@ -254,9 +269,21 @@ export const UploadMediaModal = ({ album, isUploading, onClose, onSubmit }) => {
     )));
   };
 
+  const removeItem = (id) => {
+    setItems((current) => {
+      const removedItem = current.find((item) => item.id === id);
+      if (removedItem) {
+        URL.revokeObjectURL(removedItem.previewUrl);
+      }
+
+      return current.filter((item) => item.id !== id);
+    });
+    setError('');
+  };
+
   const handleSubmit = () => {
     if (items.length === 0) {
-      setError('Vui lòng chọn ít nhất một tệp ảnh hoặc video.');
+      setError('Vui lòng chọn ít nhất một tệp ảnh.');
       return;
     }
 
@@ -264,11 +291,11 @@ export const UploadMediaModal = ({ album, isUploading, onClose, onSubmit }) => {
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay gallery-modal-overlay">
       <section className="modal-container gallery-upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
-        <header className="gallery-modal-header">
+        <header className="modal-header gallery-modal-header">
           <div>
-            <span>Thêm ảnh/video</span>
+            <span>Thêm ảnh</span>
             <h2 id="upload-modal-title">{album.title}</h2>
           </div>
           <button className="icon-btn" type="button" onClick={onClose} aria-label="Đóng form tải lên">
@@ -276,20 +303,20 @@ export const UploadMediaModal = ({ album, isUploading, onClose, onSubmit }) => {
           </button>
         </header>
 
-        <div className="gallery-upload-form">
+        <div className="modal-body gallery-upload-form gallery-modal-body">
           <div className="gallery-upload-rules">
             <strong>Quy định tải lên</strong>
-            <p>Ảnh: JPG, JPEG, PNG, WEBP tối đa 10 MB/tệp. Video: MP4, WEBM tối đa 100 MB/tệp. Tối đa 20 tệp/lần.</p>
+            <p>Ảnh: JPG, JPEG, PNG, WEBP tối đa 10 MB/tệp. Ảnh sẽ được nén trước khi tải lên để phù hợp API hiện tại.</p>
           </div>
 
           <label className="gallery-upload-dropzone">
             <Upload size={26} />
-            <span>Chọn nhiều ảnh hoặc video</span>
+            <span>Chọn nhiều ảnh</span>
             <small>Hệ thống sẽ kiểm tra định dạng, kích thước và số lượng trước khi tải lên.</small>
             <input
               type="file"
               multiple
-              accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/webm"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
               onChange={handleFilesChange}
               disabled={isUploading}
             />
@@ -302,7 +329,16 @@ export const UploadMediaModal = ({ album, isUploading, onClose, onSubmit }) => {
               {items.map((item, index) => {
                 const isVideo = item.file.type.startsWith('video/');
                 return (
-                  <article className="gallery-upload-preview-item" key={`${item.file.name}-${item.file.size}`}>
+                  <article className="gallery-upload-preview-item" key={item.id}>
+                    <button
+                      className="icon-btn gallery-upload-preview-remove"
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      disabled={isUploading}
+                      aria-label={`Xóa ${item.file.name} khỏi danh sách tải lên`}
+                    >
+                      <X size={16} />
+                    </button>
                     <div className="gallery-upload-preview-media">
                       {isVideo ? (
                         <video src={item.previewUrl} muted />
@@ -330,14 +366,14 @@ export const UploadMediaModal = ({ album, isUploading, onClose, onSubmit }) => {
             </div>
           )}
 
-          <footer className="gallery-modal-actions">
-            <button className="btn btn-outline" type="button" onClick={onClose} disabled={isUploading}>Hủy</button>
-            <button className="btn btn-primary" type="button" onClick={handleSubmit} disabled={isUploading}>
-              {isUploading ? <Loader2 className="spin-icon" size={18} /> : <Upload size={18} />}
-              Tải lên
-            </button>
-          </footer>
         </div>
+        <footer className="modal-footer gallery-modal-actions">
+          <button className="btn btn-outline" type="button" onClick={onClose} disabled={isUploading}>Hủy</button>
+          <button className="btn btn-primary" type="button" onClick={handleSubmit} disabled={isUploading}>
+            {isUploading ? <Loader2 className="spin-icon" size={18} /> : <Upload size={18} />}
+            Tải lên
+          </button>
+        </footer>
       </section>
     </div>
   );
@@ -351,9 +387,9 @@ export const MediaEditModal = ({ media, isSaving, onClose, onSubmit }) => {
   if (!media) return null;
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay gallery-modal-overlay">
       <section className="modal-container gallery-media-edit-modal" role="dialog" aria-modal="true" aria-labelledby="media-edit-title">
-        <header className="gallery-modal-header">
+        <header className="modal-header gallery-modal-header">
           <div>
             <span>{MEDIA_TYPE_LABELS[media.type]}</span>
             <h2 id="media-edit-title">{media.fileName}</h2>
@@ -362,7 +398,7 @@ export const MediaEditModal = ({ media, isSaving, onClose, onSubmit }) => {
             <X size={20} />
           </button>
         </header>
-        <div className="gallery-form">
+        <div className="modal-body gallery-form gallery-modal-body">
           <label>
             <span>Mô tả riêng</span>
             <textarea
@@ -371,14 +407,14 @@ export const MediaEditModal = ({ media, isSaving, onClose, onSubmit }) => {
               onChange={(event) => setDescription(event.target.value)}
             />
           </label>
-          <footer className="gallery-modal-actions">
-            <button className="btn btn-outline" type="button" onClick={onClose} disabled={isSaving}>Hủy</button>
-            <button className="btn btn-primary" type="button" onClick={() => onSubmit(description)} disabled={isSaving}>
-              {isSaving ? <Loader2 className="spin-icon" size={18} /> : <Save size={18} />}
-              Lưu mô tả
-            </button>
-          </footer>
         </div>
+        <footer className="modal-footer gallery-modal-actions">
+          <button className="btn btn-outline" type="button" onClick={onClose} disabled={isSaving}>Hủy</button>
+          <button className="btn btn-primary" type="button" onClick={() => onSubmit(description)} disabled={isSaving}>
+            {isSaving ? <Loader2 className="spin-icon" size={18} /> : <Save size={18} />}
+            Lưu mô tả
+          </button>
+        </footer>
       </section>
     </div>
   );
@@ -387,17 +423,35 @@ export const MediaEditModal = ({ media, isSaving, onClose, onSubmit }) => {
 export const MediaLightbox = ({ media, onClose }) => {
   useEscape(Boolean(media), onClose);
 
+  useEffect(() => {
+    if (!media) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [media]);
+
   if (!media) return null;
 
+  const poster = isImageSource(media.thumbnailUrl) ? media.thumbnailUrl : undefined;
+
   return (
-    <div className="modal-overlay gallery-lightbox-overlay">
-      <section className="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Xem tệp media">
-        <button className="icon-btn gallery-lightbox-close" type="button" onClick={onClose} aria-label="Đóng ảnh đang xem">
+    <div className="gallery-lightbox-overlay" onClick={onClose}>
+      <section
+        className="gallery-lightbox"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Xem tệp media"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button className="icon-btn gallery-lightbox-close" type="button" onClick={onClose} aria-label="Đóng tệp đang xem">
           <X size={22} />
         </button>
         <div className="gallery-lightbox-media">
           {media.type === MEDIA_TYPE.VIDEO && media.url ? (
-            <video src={media.url} controls poster={media.thumbnailUrl} />
+            <video src={media.url} controls poster={poster} />
           ) : media.type === MEDIA_TYPE.VIDEO ? (
             <div className="gallery-video-placeholder">
               <Video size={54} />

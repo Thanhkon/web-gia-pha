@@ -9,6 +9,12 @@ export const POST_VISIBILITY = {
   INTERNAL: 'INTERNAL',
 };
 
+export const POST_CONTENT_BLOCK = {
+  HEADING: 'HEADING',
+  PARAGRAPH: 'PARAGRAPH',
+  IMAGE: 'IMAGE',
+};
+
 export const POST_ROLES = {
   ADMIN: 'ADMIN',
   FAMILY_HEAD: 'FAMILY_HEAD',
@@ -62,7 +68,16 @@ export const POST_VISIBILITY_LABELS = {
  * @property {string} familyId
  * @property {string} title
  * @property {string} summary
- * @property {string} content
+ * @typedef {'HEADING' | 'PARAGRAPH' | 'IMAGE'} PostContentBlockType
+ *
+ * @typedef {Object} PostContentBlock
+ * @property {string} id
+ * @property {PostContentBlockType} type
+ * @property {string=} text
+ * @property {string=} imageUrl
+ * @property {string=} caption
+ *
+ * @property {PostContentBlock[]} content
  * @property {string} category
  * @property {string} coverImage
  * @property {PostStatus} status
@@ -77,7 +92,7 @@ export const POST_VISIBILITY_LABELS = {
  * @typedef {Object} CreatePostDto
  * @property {string} title
  * @property {string} summary
- * @property {string} content
+ * @property {PostContentBlock[]} content
  * @property {string} category
  * @property {string} coverImage
  * @property {PostVisibility} visibility
@@ -86,7 +101,7 @@ export const POST_VISIBILITY_LABELS = {
  * @typedef {Object} UpdatePostDto
  * @property {string} title
  * @property {string} summary
- * @property {string} content
+ * @property {PostContentBlock[]} content
  * @property {string} category
  * @property {string} coverImage
  * @property {PostVisibility} visibility
