@@ -6,7 +6,7 @@ import "../../css/pages/Auth.css";
 
 function Register() {
     useEffect(() => {
-        document.title = "Sign Up";
+        document.title = "Đăng Ký";
     }, []);
 
     const [registerData, setRegisterData] = useState({
@@ -24,17 +24,17 @@ function Register() {
         setError("");
 
         if (!registerData.username || !registerData.password || !registerData.confirmPassword) {
-            setError("Khong duoc de trong");
+            setError("Không được để trống");
             return;
         }
 
         if (registerData.password !== registerData.confirmPassword) {
-            setError("Mat khau khong trung khop");
+            setError("Mật khẩu không trùng khớp");
             return;
         }
 
         if (registerData.password.length < 6) {
-            setError("Mat khau khong duoc it hon 6 ki tu");
+            setError("Mật khẩu không được ít hơn 6 kí tự");
             return;
         }
 
@@ -47,14 +47,14 @@ function Register() {
             navigate("/login");
         } catch (requestError) {
             console.error(requestError);
-            setError(requestError.response?.data?.message || "Dang ky that bai");
+            setError(requestError.response?.data?.message || "Đăng ký thất bại");
         }
     };
 
     return (
         <div className="auth-page">
             <div className="auth-box">
-                <h2>Dang Ky</h2>
+                <h2>Đăng Ký</h2>
                 <form className="auth-form" onSubmit={handleSubmit}>
                     {error && (
                         <p className="auth-error">
@@ -127,12 +127,12 @@ function Register() {
                         </div>
                     </div>
 
-                    <p>Da co tai khoan? <span onClick={() => navigate("/login")}>
-                        Dang nhap
+                    <p>Đã có tài khoản? <span onClick={() => navigate("/login")}>
+                        Đăng nhập
                     </span></p>
 
                     <button type="submit" className="btn-auth">
-                        Dang Ky
+                        Đăng Ký
                     </button>
                 </form>
             </div>

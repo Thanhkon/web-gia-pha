@@ -51,11 +51,11 @@ const truncateText = (value, maxLength = 72) => {
 };
 
 const GalleryDetail = () => {
-  const { albumId } = useParams();
+  const { familyId, albumId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getGalleryActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
   const [album, setAlbum] = useState(null);
   const [albumForm, setAlbumForm] = useState(null);
   const [uploadAlbum, setUploadAlbum] = useState(null);
@@ -81,6 +81,8 @@ const GalleryDetail = () => {
     };
   }, [actor, isAdminContext]);
   const isManager = canManageAlbum(viewActor, album);
+  const backUrl = location.state?.from || `/${familyId}/gallery${location.search || ''}`;
+  const isManager = canManageAlbum(actor, album);
   const imageItems = useMemo(() => (
     album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE) || []
   ), [album]);

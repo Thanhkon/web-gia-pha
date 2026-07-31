@@ -104,7 +104,7 @@ const toDisplayBlocks = (content) => normalizeContentBlocks(content).map((block)
 
 const toPost = (post) => ({
   id: String(post.id),
-  familyId: normalizeFamilyId(post.familyId),
+  familyId: normalizeFamilyId(post.familyId || post.family?.id),
   title: post.title || '',
   summary: post.summary || getFirstParagraphText(post.content).slice(0, 180),
   content: toDisplayBlocks(post.content),
@@ -151,7 +151,7 @@ const toPostPayload = (payload) => ({
   status: toApiStatus(payload.status),
 });
 
-export function getPostActor(user, isAuthenticated = Boolean(user)) {
+export function getPostActor(user, isAuthenticated = Boolean(user), currentFamilyId = null) {
   const role = normalizeRole(user?.role);
 
   if (!isAuthenticated || !user || !user.id || role === POST_ROLES.GUEST) {
@@ -159,7 +159,7 @@ export function getPostActor(user, isAuthenticated = Boolean(user)) {
       id: 'guest',
       name: 'Khach',
       role: POST_ROLES.GUEST,
-      familyId: null,
+      familyId: currentFamilyId || null,
       canCreatePost: false,
       canManagePosts: false,
     };
@@ -169,7 +169,7 @@ export function getPostActor(user, isAuthenticated = Boolean(user)) {
     id: String(user.id),
     name: user.name || user.username || user.email || 'Nguoi dung',
     role,
-    familyId: normalizeFamilyId(user.familyId),
+    familyId: currentFamilyId || normalizeFamilyId(user.familyId),
     canCreatePost: user.canCreatePost ?? role !== POST_ROLES.MEMBER,
     canManagePosts: user.canManagePosts ?? role !== POST_ROLES.MEMBER,
   };

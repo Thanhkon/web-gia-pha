@@ -59,7 +59,7 @@ export class AuthService {
       throw new ConflictException('Email already exists');
     }
 
-    const name = registerDto.name?.trim();
+    const name = this.normalizeUsername(registerDto.name);
     const user = await this.usersService.createEntity({
       email,
       password,
@@ -72,7 +72,7 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const email = this.normalizeEmail(loginDto.email);
     const password = loginDto.password ?? '';
-    const user = await this.usersService.findByEmail(email);
+    const user = email ? await this.usersService.findByEmail(email) : null;
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -402,5 +402,9 @@ export class AuthService {
     }
 
     return normalizedEmail;
+  }
+
+  private normalizeUsername(username?: string) {
+    return username?.trim() ?? '';
   }
 }

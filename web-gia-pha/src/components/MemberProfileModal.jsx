@@ -1,16 +1,62 @@
 import React from 'react';
 import { X, Edit2 } from 'lucide-react';
+import { Solar } from 'lunar-javascript';
 import '../css/components/MemberProfileModal.css';
 import avatarMale from '../assets/avatar-male.svg';
 import avatarFemale from '../assets/avatar-female.svg';
+
+const getCanChiYear = (year) => {
+  const cans = ['Canh', 'Tân', 'Nhâm', 'Quý', 'Giáp', 'Ất', 'Bính', 'Đinh', 'Mậu', 'Kỷ'];
+  const chis = ['Thân', 'Dậu', 'Tuất', 'Hợi', 'Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi'];
+  return `${cans[year % 10]} ${chis[year % 12]}`;
+};
+
+const formatDeathDate = (dateString) => {
+  if (!dateString) return 'Chưa cập nhật';
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return 'Chưa cập nhật';
+    
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    
+    const solarStr = `${dd}/${mm}/${yyyy}`;
+    
+    const solar = Solar.fromYmd(yyyy, d.getMonth() + 1, d.getDate());
+    const lunar = solar.getLunar();
+    
+    const lDD = String(lunar.getDay()).padStart(2, '0');
+    const lMM = String(lunar.getMonth()).padStart(2, '0');
+    const lYear = lunar.getYear();
+    const canChi = getCanChiYear(lYear);
+    
+    return `${solarStr} (âm: ${lDD}/${lMM} năm ${canChi})`;
+  } catch (e) {
+    return 'Chưa cập nhật';
+  }
+};
 
 const MemberProfileModal = ({ member, persons = [], relationships = [], onClose, onEdit }) => {
   if (!member) return null;
 
   // Find relationships
   const findPerson = (id) => persons.find(p => p.id === id);
-  const father = findPerson(member.fatherId);
-  const mother = findPerson(member.motherId);
+  
+  const parentIds = relationships
+    .filter(r => r.type === 'biological_child' && r.person_b === member.id)
+    .map(r => r.person_a);
+
+  let father = null;
+  let mother = null;
+
+  parentIds.forEach(id => {
+    const parent = findPerson(id);
+    if (parent) {
+      if (parent.gender === 'male') father = parent;
+      else mother = parent;
+    }
+  });
   
   const spouseIds = relationships
     .filter(r => r.type === 'marriage' && (r.person_a === member.id || r.person_b === member.id))
@@ -46,7 +92,7 @@ const MemberProfileModal = ({ member, persons = [], relationships = [], onClose,
             <div className="detail-item"><strong>Đời thứ:</strong> {member.generation}</div>
             <div className="detail-item"><strong>Năm sinh:</strong> {member.birthYear || (member.dateOfBirth && new Date(member.dateOfBirth).getFullYear()) || 'Chưa cập nhật'}</div>
             {member.isDeceased && (
-               <div className="detail-item"><strong>Ngày mất (Âm):</strong> {member.deathLunarDate || 'Chưa cập nhật'}</div>
+               <div className="detail-item full-width"><strong>Ngày mất:</strong> {formatDeathDate(member.dateOfDeath)}</div>
             )}
             <div className="detail-item"><strong>Nơi sinh:</strong> {member.placeOfBirth || 'Chưa cập nhật'}</div>
             <div className="detail-item full-width"><strong>Địa chỉ:</strong> {member.currentAddress || 'Chưa cập nhật'}</div>

@@ -8,11 +8,11 @@ import { canCreatePost, canUpdatePost, getPostActor, postService } from '../serv
 import '../css/pages/Posts.css';
 
 const PostEditor = ({ mode = 'create' }) => {
-  const { id } = useParams();
+  const { familyId, id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated), [user, isAuthenticated]);
+  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
 
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(mode === 'edit');
@@ -22,7 +22,7 @@ const PostEditor = ({ mode = 'create' }) => {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const pendingNavigationRef = useRef(null);
 
-  const backTarget = location.state?.fromList || '/posts';
+  const backTarget = location.state?.fromList || `/${familyId}/posts`;
   const isCreateMode = mode === 'create';
 
   const loadPost = useCallback(async () => {
@@ -110,7 +110,7 @@ const PostEditor = ({ mode = 'create' }) => {
         : await postService.updatePost(id, payload, actor);
 
       setHasUnsavedChanges(false);
-      navigate(`/posts/${savedPost.id}`, {
+      navigate(`/${familyId}/posts/${savedPost.id}`, {
         replace: true,
         state: { fromList: backTarget },
       });

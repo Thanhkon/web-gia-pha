@@ -37,7 +37,7 @@ const toAlbum = (album) => {
   const media = cloneMedia(album.media);
   return {
     id: String(album.id),
-    familyId: normalizeFamilyId(album.familyId),
+    familyId: normalizeFamilyId(album.familyId || album.family?.id),
     title: album.title || '',
     description: album.description || '',
     coverImage: album.coverImage || '',
@@ -230,7 +230,7 @@ export function validateMediaFiles(files) {
   });
 }
 
-export function getGalleryActor(user, isAuthenticated = Boolean(user)) {
+export function getGalleryActor(user, isAuthenticated = Boolean(user), currentFamilyId = null) {
   const role = normalizeRole(user?.role);
 
   if (!isAuthenticated || !user || !user.id || role === UserRole.GUEST) {
@@ -241,7 +241,7 @@ export function getGalleryActor(user, isAuthenticated = Boolean(user)) {
     id: String(user.id),
     name: user.name || user.username || user.email || 'Nguoi dung',
     role,
-    familyId: normalizeFamilyId(user.familyId),
+    familyId: currentFamilyId || normalizeFamilyId(user.familyId),
     memberId: user.memberId || null,
   };
 }

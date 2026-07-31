@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import EventActionDialog from '../components/Events/EventActionDialog';
 import EventDetailModal from '../components/Events/EventDetailModal';
 import EventFormModal from '../components/Events/EventFormModal';
@@ -101,6 +102,7 @@ const EventSearchResults = ({ groups, emptyText, onView }) => (
 
 const Events = () => {
   const location = useLocation();
+  const { familyId } = useParams();
   const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
   const isAdminRoute = location.pathname.startsWith('/admin');
   const [currentUser, setCurrentUser] = useState(null);
@@ -154,7 +156,7 @@ const Events = () => {
         type: typeFilter,
       };
 
-      const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated);
+      const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated, familyId);
       const actor = userResponse.data;
       const viewUser = getViewUser(actor);
       const calendarRequest = eventService.getCalendarEvents(params, viewUser);
@@ -194,6 +196,7 @@ const Events = () => {
       setIsLoading(false);
     }
   }, [authUser, getViewUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter]);
+  }, [authUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter, familyId]);
 
   useEffect(() => {
     loadEvents();

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Send, AlertCircle, Plus, X } from 'lucide-react';
 import SearchableSelect from '../common/SearchableSelect';
+import AlertModal from '../common/AlertModal';
 
 export const FIELD_DICT = {
   fullName: 'Họ và tên',
@@ -31,6 +32,8 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
   
   const [selectedFieldToAdd, setSelectedFieldToAdd] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationAlert, setValidationAlert] = useState({ isOpen: false, message: '' });
 
   const selectedPerson = persons.find(p => p.id === selectedPersonId);
 
@@ -61,43 +64,60 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
 
   const handlePreview = (e) => {
     e.preventDefault();
+
+    if (!e.target.checkValidity()) {
+      setValidationAlert({
+        isOpen: true,
+        message: 'Vui lòng điền đầy đủ các trường thông tin bắt buộc có dấu (*) trước khi tiếp tục.'
+      });
+      return;
+    }
+
     if (pendingCount >= 5) {
-      alert('Bạn đang có quá 5 yêu cầu chờ duyệt. Vui lòng chờ Admin xử lý trước khi gửi thêm.');
+      setValidationAlert({ isOpen: true, message: 'Bạn đang có quá 5 yêu cầu chờ duyệt. Vui lòng chờ Admin xử lý trước khi gửi thêm.' });
       return;
     }
     if (!selectedPersonId || !reason || !submitterName || Object.keys(changes).length === 0) {
-      alert('Vui lòng chọn thành viên, nhập thông tin thay đổi, lý do và tên người gửi.');
+      setValidationAlert({ isOpen: true, message: 'Vui lòng chọn thành viên, nhập thông tin thay đổi, lý do và tên người gửi.' });
       return;
     }
     
     const emptyFields = Object.values(changes).filter(c => String(c.new).trim() === '');
     if (emptyFields.length > 0) {
-      alert('Vui lòng nhập giá trị mới cho tất cả các trường bạn muốn thay đổi, hoặc xóa trường đó đi nếu không cần thiết.');
+      setValidationAlert({ isOpen: true, message: 'Vui lòng nhập giá trị mới cho tất cả các trường bạn muốn thay đổi, hoặc xóa trường đó đi nếu không cần thiết.' });
       return;
     }
 
     setShowPreview(true);
   };
 
-  const handleConfirmSubmit = () => {
-    onSubmit({
-      type: 'edit_member',
-      targetMemberId: selectedPersonId,
-      targetMemberName: selectedPerson.fullName,
-      changes,
-      reason,
-      submittedBy: {
-        name: submitterName,
-        phone: submitterPhone
-      }
-    });
+  const handleConfirmSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        type: 'edit_member',
+        targetMemberId: selectedPersonId,
+        targetMemberName: selectedPerson.fullName,
+        changes,
+        reason,
+        submittedBy: {
+          name: submitterName,
+          phone: submitterPhone
+        }
+      });
 
-    setSelectedPersonId('');
-    setChanges({});
-    setReason('');
-    setSubmitterName('');
-    setSubmitterPhone('');
-    setShowPreview(false);
+      setSelectedPersonId('');
+      setChanges({});
+      setReason('');
+      setSubmitterName('');
+      setSubmitterPhone('');
+      setShowPreview(false);
+    } catch (err) {
+      console.error('Lỗi khi gửi yêu cầu:', err);
+      // Toast error is handled in parent component where onSubmit is defined
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const personOptions = persons.map(p => ({
@@ -125,7 +145,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
           </div>
         )}
         
-        <form onSubmit={handlePreview} className="request-form">
+        <form onSubmit={handlePreview} noValidate className="request-form">
           <div className="form-group">
             <label>Chọn thành viên cần sửa <span className="required">*</span></label>
             <SearchableSelect
@@ -203,7 +223,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
             ></textarea>
           </div>
 
-          <div className="form-row">
+          <div className="edit-request-form-row">
             <div className="form-group">
               <label>Họ và tên người gửi <span className="required">*</span></label>
               <input
@@ -278,13 +298,20 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-outline" onClick={() => setShowPreview(false)}>Quay lại sửa</button>
-              <button type="button" className="btn btn-primary" onClick={handleConfirmSubmit}>
-                <Send size={16} className="icon-mr-8" /> Xác nhận gửi
+              <button type="button" className="btn btn-primary" onClick={handleConfirmSubmit} disabled={isSubmitting}>
+                {isSubmitting ? 'Đang gửi...' : <><Send size={16} className="icon-mr-8" /> Xác nhận gửi</>}
               </button>
             </div>
           </div>
         </div>
       )}
+      
+      <AlertModal
+        isOpen={validationAlert.isOpen}
+        title="Lỗi nhập liệu"
+        message={validationAlert.message}
+        onClose={() => setValidationAlert({ isOpen: false, message: '' })}
+      />
     </div>
   );
 };

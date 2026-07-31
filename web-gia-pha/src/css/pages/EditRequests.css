@@ -72,7 +72,7 @@
   box-shadow: 0 0 0 3px rgba(155, 44, 44, 0.1);
 }
 
-.form-row {
+.edit-request-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;

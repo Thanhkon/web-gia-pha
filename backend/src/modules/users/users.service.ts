@@ -11,7 +11,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 
-type SafeUser = Omit<User, 'passwordHash'>;
+type SafeUser = Omit<User, 'passwordHash' | 'name'> & {
+  name: string | null;
+};
 
 const scrypt = promisify(scryptCallback);
 
@@ -69,6 +71,12 @@ export class UsersService {
   findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { email },
+    });
+  }
+
+  findByUsername(name: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { name },
     });
   }
 
@@ -130,8 +138,12 @@ export class UsersService {
   }
 
   toPublicUser(user: User): SafeUser {
-    const { passwordHash, ...safeUser } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, name, ...safeUser } = user;
 
-    return safeUser;
+    return {
+      ...safeUser,
+      name: name ?? null,
+    };
   }
 }

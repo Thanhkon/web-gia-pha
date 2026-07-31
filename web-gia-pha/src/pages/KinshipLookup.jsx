@@ -1,14 +1,27 @@
-import React, { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Users, ArrowRight, UserCheck } from 'lucide-react';
 import SearchableSelect from '../components/common/SearchableSelect';
 import { computeKinship } from '../utils/kinshipHelpers';
 
+import { useParams } from 'react-router-dom';
+import { fetchFamilyTree } from '../store/slices/membersSlice';
+
 import '../css/pages/KinshipLookup.css';
 
 const KinshipLookup = () => {
+  const { familyId } = useParams();
+  const dispatch = useDispatch();
+  
   const persons = useSelector((state) => state.members.persons);
   const relationships = useSelector((state) => state.members.relationships);
+  const { status } = useSelector((state) => state.members);
+
+  useEffect(() => {
+    if (familyId) {
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const [personAId, setPersonAId] = useState('');
   const [personBId, setPersonBId] = useState('');
@@ -91,7 +104,7 @@ const KinshipLookup = () => {
                 <div className="kinship-person-card">
                   <span className="person-role">Người hỏi</span>
                   <span className="person-name">{result.personA.fullName}</span>
-                  <span className="person-call">Xưng là: <strong>{result.aCallsB}</strong></span>
+                  <span className="person-call">Xưng là: <strong>{result.bCallsA}</strong></span>
                 </div>
 
                 <div className="kinship-exchange-icon">
@@ -101,7 +114,7 @@ const KinshipLookup = () => {
                 <div className="kinship-person-card">
                   <span className="person-role">Người đối diện</span>
                   <span className="person-name">{result.personB.fullName}</span>
-                  <span className="person-call">Gọi là: <strong>{result.bCallsA}</strong></span>
+                  <span className="person-call">Gọi là: <strong>{result.aCallsB}</strong></span>
                 </div>
               </div>
 

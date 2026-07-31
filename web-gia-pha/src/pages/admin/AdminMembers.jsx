@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as XLSX from 'xlsx';
+import toast from 'react-hot-toast';
 import MemberForm from '../../components/Admin/MemberForm/MemberForm';
 import MemberProfileModal from '../../components/MemberProfileModal';
 import MembersFilterBar from '../../components/Admin/MembersFilterBar';
@@ -13,17 +13,22 @@ import {
   addParentChildRelation,
   addMarriageRelation,
   updateMemberToFamily,
-  deleteMemberFromFamily
+  deleteMemberFromFamily,
+  softDeleteMember
 } from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
+import { useFamily } from '../../hooks/useFamily';
 import '../../css/pages/AdminMembers.css';
 
 const AdminMembers = () => {
+  const familyId = useFamily();
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(fetchFamilyTree(1)); // Tạm thời hardcode familyId = 1
-  }, [dispatch]);
+    if (familyId) {
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const relationships = useSelector(state => state.members.relationships);
@@ -103,10 +108,32 @@ const AdminMembers = () => {
             avatarUrl: submittedData.avatarUrl || null,
           }
         })).unwrap();
+
+        // Frontend patch: Thêm quan hệ cha mẹ/vợ chồng nếu có thay đổi (chỉ thêm mới vì backend không có API xoá)
+        const currentParents = relationships
+          .filter(r => r.type === 'biological_child' && r.person_b === editingId)
+          .map(r => r.person_a);
+        
+        if (submittedData.fatherId && !currentParents.includes(submittedData.fatherId)) {
+          try { await dispatch(addParentChildRelation({ parentId: submittedData.fatherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch(e) { console.error(e); }
+        }
+        if (submittedData.motherId && !currentParents.includes(submittedData.motherId)) {
+          try { await dispatch(addParentChildRelation({ parentId: submittedData.motherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch(e) { console.error(e); }
+        }
+        
+        const currentSpouses = relationships
+          .filter(r => r.type === 'marriage' && (r.person_a === editingId || r.person_b === editingId))
+          .flatMap(r => [r.person_a, r.person_b])
+          .filter(id => id !== editingId);
+
+        if (submittedData.spouseId && !currentSpouses.includes(submittedData.spouseId)) {
+          try { await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: editingId })).unwrap(); } catch(e) { console.error(e); }
+        }
+
+        toast.success('Cập nhật thành công!');
       } else {
-        const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
         const newMember = await dispatch(addMemberToFamily({
-          familyId: CURRENT_FAMILY_ID,
+          familyId: familyId,
           memberData: {
             fullName: submittedData.fullName,
             otherName: submittedData.otherName,
@@ -145,7 +172,7 @@ const AdminMembers = () => {
       setNewMember(emptyMember);
     } catch (err) {
       console.error('Lỗi khi thêm:', err);
-      alert('Có lỗi xảy ra!');
+      toast.error('Có lỗi xảy ra!');
     }
   };
 
@@ -156,7 +183,38 @@ const AdminMembers = () => {
   };
 
   const handleEdit = (person) => {
-    setNewMember({ ...person });
+    // Tìm cha mẹ từ relationships
+    const personParents = relationships
+      .filter(r => r.type === 'biological_child' && r.person_b === person.id)
+      .map(r => r.person_a);
+
+    let fatherId = '';
+    let motherId = '';
+
+    if (personParents.length > 0) {
+      personParents.forEach(parentId => {
+        const parent = persons.find(p => p.id === parentId);
+        if (parent) {
+          if (parent.gender === 'male') fatherId = parent.id;
+          else motherId = parent.id;
+        }
+      });
+    }
+
+    // Tìm vợ/chồng từ relationships
+    const marriage = relationships.find(r => r.type === 'marriage' && (r.person_a === person.id || r.person_b === person.id));
+    let spouseId = '';
+    if (marriage) {
+      spouseId = marriage.person_a === person.id ? marriage.person_b : marriage.person_a;
+    }
+
+    setNewMember({ 
+      ...emptyMember, // để đảm bảo có đủ các trường rỗng mặc định
+      ...person,
+      fatherId,
+      motherId,
+      spouseId
+    });
     setEditingId(person.id);
     setIsModalOpen(true);
   };
@@ -168,72 +226,23 @@ const AdminMembers = () => {
   const confirmDelete = async (isHardDelete) => {
     if (deleteConfirm.id) {
       try {
-        await dispatch(deleteMemberFromFamily(deleteConfirm.id)).unwrap();
+        if (isHardDelete) {
+          await dispatch(deleteMemberFromFamily(deleteConfirm.id)).unwrap();
+          toast.success('Xóa vĩnh viễn thành công!');
+        } else {
+          await dispatch(softDeleteMember(deleteConfirm.id)).unwrap();
+          toast.success('Đã chuyển thành viên vào thùng rác (Xóa tạm)!');
+        }
       } catch (err) {
         console.error('Lỗi khi xóa:', err);
-        alert('Có lỗi xảy ra khi xóa!');
+        toast.error('Có lỗi xảy ra khi xóa!');
       }
     }
     setDeleteConfirm({ isOpen: false, id: null });
   };
 
   const handleImportExcel = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
-        
-        const newPersons = [];
-        const newRelationships = [];
-        let count = 0;
-
-        data.forEach(row => {
-          if (!row.HoTen) return; 
-          const newId = row.ID ? String(row.ID) : Date.now().toString() + Math.random();
-          
-          const member = {
-            id: newId,
-            fullName: row.HoTen,
-            gender: row.GioiTinh === 'Nu' || row.GioiTinh === 'Nữ' ? 'female' : 'male',
-            generation: Number(row.DoiThu) || 1,
-            isInLaw: row.LaDauRe == 1,
-            dateOfBirth: row.NgaySinh ? String(row.NgaySinh) : '',
-            dateOfDeath: row.NgayMat ? String(row.NgayMat) : '',
-            isDeceased: row.ConSong == 0 || !!row.NgayMat,
-            fatherId: row.MaCha ? String(row.MaCha) : '',
-            motherId: row.MaMe ? String(row.MaMe) : '',
-            spouseId: row.MaVoChong ? String(row.MaVoChong) : ''
-          };
-          
-          newPersons.push(member);
-          
-          if (member.fatherId) {
-            newRelationships.push({ type: 'biological_child', person_a: member.fatherId, person_b: newId });
-          }
-          if (member.motherId) {
-            newRelationships.push({ type: 'biological_child', person_a: member.motherId, person_b: newId });
-          }
-          if (member.spouseId && member.isInLaw) {
-            newRelationships.push({ type: 'marriage', person_a: member.spouseId, person_b: newId });
-          }
-          count++;
-        });
-
-        console.log('Chức năng nhập file hàng loạt tạm thời bị vô hiệu hóa vì Backend chưa hỗ trợ');
-        // TODO: Cập nhật API hàng loạt sau
-        alert(`Đã Import thành công ${count} thành viên!`);
-      } catch (err) {
-        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng!');
-      }
-    };
-    reader.readAsBinaryString(file);
+    toast.error('Chức năng Import file hàng loạt đang được nâng cấp ở phía Backend. Vui lòng thử lại sau!');
     e.target.value = null; 
   };
 

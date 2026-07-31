@@ -263,7 +263,7 @@
 .action-buttons {
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .text-blue { color: #3182ce !important; }
@@ -386,6 +386,10 @@
 
 .text-right {
   text-align: right;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .font-semibold {

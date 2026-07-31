@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useParams } from 'react-router-dom';
+import { fetchFamilyTree } from '../store/slices/membersSlice';
 import MemberProfileModal from '../components/MemberProfileModal';
 import MembersFilterBar from '../components/Admin/MembersFilterBar';
 import MembersTable from '../components/Admin/MembersTable';
@@ -9,6 +11,15 @@ import '../css/pages/AdminMembers.css';
 import '../css/pages/PublicMembers.css';
 
 const PublicMembers = () => {
+  const { familyId } = useParams();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (familyId) {
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
+
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const relationships = useSelector(state => state.members.relationships);
   
@@ -62,7 +73,7 @@ const PublicMembers = () => {
         filterGeneration={filterGeneration}
         setFilterGeneration={setFilterGeneration}
         persons={persons}
-        // No add/import/export for public view
+        hideHeader={true}
       />
 
       <MembersTable 

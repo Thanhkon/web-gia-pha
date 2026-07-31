@@ -1,5 +1,6 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import apiClient from '../../utils/apiClient';
+import { getTreeData, buildAdjacencyLists } from '../../utils/familyTreeUtils';
 
 // Thunks
 export const fetchFamilyTree = createAsyncThunk(
@@ -77,6 +78,18 @@ export const deleteMemberFromFamily = createAsyncThunk(
   }
 );
 
+export const softDeleteMember = createAsyncThunk(
+  'members/softDeleteMember',
+  async (memberId, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.patch(`/members/${memberId}`, { isDeleted: true });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to soft delete member');
+    }
+  }
+);
+
 export const addParentChildRelation = createAsyncThunk(
   'members/addParentChild',
   async (relationData, { rejectWithValue }) => {
@@ -145,6 +158,10 @@ const membersSlice = createSlice({
     builder
       .addCase(fetchFamilyTree.pending, (state) => {
         state.loading = true;
+        state.error = null;
+        state.familyInfo = null;
+        state.persons = [];
+        state.relationships = [];
       })
       .addCase(fetchFamilyTree.fulfilled, (state, action) => {
         state.loading = false;
@@ -171,6 +188,12 @@ const membersSlice = createSlice({
           state.persons[index] = action.payload;
         }
       })
+      .addCase(softDeleteMember.fulfilled, (state, action) => {
+        const index = state.persons.findIndex(p => p.id === action.payload.id);
+        if (index !== -1) {
+          state.persons[index] = action.payload;
+        }
+      })
       .addCase(deleteMemberFromFamily.fulfilled, (state, action) => {
         const id = action.payload;
         state.persons = state.persons.filter(p => p.id !== id);
@@ -180,4 +203,50 @@ const membersSlice = createSlice({
 });
 
 export const { setNodeCollapse, updateMemberSync, deleteMemberSync } = membersSlice.actions;
+
+// --- Selectors ---
+export const selectPersons = (state) => state.members.persons;
+export const selectRelationships = (state) => state.members.relationships;
+
+// createSelector sẽ memoize kết quả dựa trên persons và relationships
+export const selectTreeData = createSelector(
+  [selectPersons, selectRelationships],
+  (persons, relationships) => {
+    return getTreeData(persons, relationships);
+  }
+);
+
+export const selectFamilyTreeGraphData = createSelector(
+  [selectPersons, selectRelationships],
+  (persons, relationships) => {
+    const pMap = new Map();
+    const currentPersons = persons.filter(p => !p.isDeleted);
+    currentPersons.forEach(p => pMap.set(p.id, p));
+
+    const adjacency = buildAdjacencyLists(relationships, pMap);
+
+    const rootNodes = [];
+    const seenAsSpouse = new Set();
+    
+    const sortedForRoots = [...currentPersons].sort((a, b) => {
+      if (a.gender === 'male' && b.gender !== 'male') return -1;
+      if (a.gender !== 'male' && b.gender === 'male') return 1;
+      return 0;
+    });
+
+    sortedForRoots.forEach(p => {
+      const parents = adjacency[p.id]?.parents || [];
+      const isActuallyInLaw = p.isInLaw;
+      
+      if (parents.length === 0 && !isActuallyInLaw && !seenAsSpouse.has(p.id)) {
+        rootNodes.push(p);
+        const spouses = adjacency[p.id]?.spouses || [];
+        spouses.forEach(sId => seenAsSpouse.add(sId));
+      }
+    });
+
+    return { personsMap: pMap, adj: adjacency, roots: rootNodes };
+  }
+);
+
 export default membersSlice.reducer;

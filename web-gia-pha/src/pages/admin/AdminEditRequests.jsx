@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { selectAllRequests, fetchRequests, approveRequestThunk, rejectRequestThunk, deleteRequestThunk } from '../../store/slices/editRequestsSlice';
 import { fetchFamilyTree } from '../../store/slices/membersSlice';
 import RequestCard from '../../components/EditRequests/RequestCard';
 import RequestDetailModal from '../../components/EditRequests/RequestDetailModal';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import '../../css/pages/AdminEditRequests.css';
 
 const AdminEditRequests = () => {
+  const { familyId } = useParams();
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'processed'
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -23,10 +26,11 @@ const AdminEditRequests = () => {
   const persons = useSelector(state => state.members.persons);
 
   useEffect(() => {
-    const CURRENT_FAMILY_ID = 1; // Tạm thời hardcode
-    dispatch(fetchRequests(CURRENT_FAMILY_ID));
-    dispatch(fetchFamilyTree(CURRENT_FAMILY_ID));
-  }, [dispatch]);
+    if (familyId) {
+      dispatch(fetchRequests(familyId));
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const handleApprove = async (requestId, adminNote) => {
     try {
@@ -37,13 +41,13 @@ const AdminEditRequests = () => {
       })).unwrap();
       
       // Reload family tree to get updated member data
-      dispatch(fetchFamilyTree(1));
+      dispatch(fetchFamilyTree(familyId));
 
       setSelectedRequest(null);
-      alert('Đã duyệt và áp dụng thay đổi thành công!');
+      toast.success('Đã duyệt và áp dụng thay đổi thành công!');
     } catch (err) {
       console.error(err);
-      alert('Lỗi khi duyệt yêu cầu!');
+      toast.error('Lỗi khi duyệt yêu cầu!');
     }
   };
 
@@ -56,10 +60,10 @@ const AdminEditRequests = () => {
       })).unwrap();
       
       setSelectedRequest(null);
-      alert('Đã từ chối yêu cầu thành công!');
+      toast.success('Đã từ chối yêu cầu thành công!');
     } catch (err) {
       console.error(err);
-      alert('Lỗi khi từ chối yêu cầu!');
+      toast.error('Lỗi khi từ chối yêu cầu!');
     }
   };
 
@@ -73,7 +77,7 @@ const AdminEditRequests = () => {
         await dispatch(deleteRequestThunk(deleteConfirmId)).unwrap();
       } catch(err) {
         console.error(err);
-        alert('Lỗi khi xóa yêu cầu!');
+        toast.error('Lỗi khi xóa yêu cầu!');
       }
     }
     setDeleteConfirmId(null);

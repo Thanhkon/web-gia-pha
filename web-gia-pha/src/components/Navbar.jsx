@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid } from 'lucide-react';
+import { useFamily } from '../hooks/useFamily';
+import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
+import { fetchFamilies } from '../store/slices/familiesSlice';
+import { selectPendingCount, fetchRequests } from '../store/slices/editRequestsSlice';
 import { mockRoleLabels } from '../data/mockAuth';
+import defaultAvatar from '../assets/avatar-female.svg';
 import '../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -11,10 +15,14 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { primaryFamilyId } = useSelector((state) => state.settings);
+  const { list: userFamilies } = useSelector((state) => state.families);
+  const pendingRequestsCount = useSelector(selectPendingCount);
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -30,43 +38,59 @@ const Navbar = () => {
     };
   }, []);
 
+  const currentFamilyId = useFamily();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchFamilies());
+    }
+    if (currentFamilyId) {
+      dispatch(fetchRequests(currentFamilyId));
+    }
+  }, [dispatch, isAuthenticated, currentFamilyId]);
+
+  // Convert to Number for strict equality checks, since useParams returns string
+  const activeFamilyId = currentFamilyId ? Number(currentFamilyId) : (primaryFamilyId || (userFamilies?.length > 0 ? userFamilies[0].id : null));
+  const activeFamily = userFamilies?.find(f => f.id === activeFamilyId);
+
+
+
+
   const handleNavClick = (path) => {
     setIsMobileMenuOpen(false);
     navigate(path);
   };
 
   const navGroups = [
-    {
-      name: 'Gia Phả',
-      items: [
-        { name: 'Sơ đồ gia phả', path: '/family-tree' },
-        { name: 'Danh sách Thành viên', path: '/members' },
-        { name: 'Gửi yêu cầu sửa', path: '/edit-requests' },
-      ]
-    },
-    {
-      name: 'Hoạt động',
-      items: [
-        { name: 'Bài viết', path: '/posts' },
-        { name: 'Sự kiện', path: '/events' },
-        { name: 'Thư viện ảnh', path: '/gallery' },
-      ]
-    }
+    ...(currentFamilyId ? [
+      {
+        name: 'Gia phả',
+        items: [
+          { name: 'Danh sách thành viên', path: `/${currentFamilyId}/members` },
+          { name: 'Sơ đồ cây', path: `/${currentFamilyId}/family-tree` },
+          { 
+            name: pendingRequestsCount > 0 ? `Yêu cầu chỉnh sửa (${pendingRequestsCount})` : 'Yêu cầu chỉnh sửa', 
+            path: `/${currentFamilyId}/edit-requests` 
+          },
+        ]
+      },
+      {
+        name: 'Hoạt động',
+        items: [
+          { name: 'Bài viết', path: `/${currentFamilyId}/posts` },
+          { name: 'Sự kiện', path: `/${currentFamilyId}/events` },
+          { name: 'Thư viện ảnh', path: `/${currentFamilyId}/gallery` },
+        ]
+      }
+    ] : [])
   ];
 
-  const handleAuthClick = async () => {
-    if (isAuthenticated) {
-      setIsUserMenuOpen(!isUserMenuOpen);
-    } else {
-      setIsMobileMenuOpen(false);
-      navigate('/login');
-    }
-  };
 
   const handleLogout = () => {
     dispatch(logout());
     setIsUserMenuOpen(false);
-    navigate('/');
+    setShowLogoutConfirm(false);
+    navigate('/login');
     setIsMobileMenuOpen(false);
   };
 
@@ -90,16 +114,58 @@ const Navbar = () => {
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
-        <Link to="/" className="nav-logo" onClick={() => setIsMobileMenuOpen(false)}>
+        <div className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px' }}>
           <BookOpen size={24} />
-          <span>Web Gia Phả</span>
-        </Link>
+          {userFamilies?.length > 1 ? (
+            <div 
+              className="nav-dropdown" 
+              onMouseEnter={() => window.innerWidth > 768 && setOpenDropdown('switcher')}
+              onMouseLeave={() => window.innerWidth > 768 && setOpenDropdown(null)}
+              style={{ margin: 0 }}
+            >
+              <button
+                className={`nav-link dropdown-toggle ${openDropdown === 'switcher' ? 'active' : ''}`}
+                onClick={() => toggleDropdown('switcher')}
+                style={{ fontSize: '1.25rem', fontWeight: '700', padding: 0, color: 'inherit', display: 'flex', alignItems: 'center' }}
+              >
+                <span style={{ maxWidth: '220px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activeFamily ? activeFamily.name : 'Web Gia Phả'}
+                </span>
+                <ChevronDown size={16} className={`chevron ${openDropdown === 'switcher' ? 'open' : ''}`} style={{ marginLeft: '4px', flexShrink: 0 }} />
+              </button>
+
+              <div className={`dropdown-menu ${openDropdown === 'switcher' ? 'show' : ''}`} style={{ left: 0, right: 'auto', minWidth: '200px' }}>
+                {userFamilies.map(fam => (
+                  <button
+                    key={fam.id}
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      navigate(`/${fam.id}/home`);
+                    }}
+                    className={`dropdown-item ${activeFamilyId === fam.id ? 'active' : ''}`}
+                    style={{ textAlign: 'left', fontWeight: 'normal' }}
+                  >
+                    {fam.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <Link to={activeFamilyId ? `/${activeFamilyId}/home` : '/admin/families'} onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'inherit', textDecoration: 'none' }}>
+              <span>{activeFamily ? activeFamily.name : 'Web Gia Phả'}</span>
+            </Link>
+          )}
+        </div>
 
         {/* Lớp phủ mờ khi mở Sidebar Mobile */}
-        {isMobileMenuOpen && <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
+        {isMobileMenuOpen && (
+          <div 
+            className="sidebar-overlay" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+        )}
 
         <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-          {/* Nút đóng cho Sidebar */}
           <div className="sidebar-header">
             <h3>Menu</h3>
             <button className="icon-btn" onClick={() => setIsMobileMenuOpen(false)}>
@@ -123,75 +189,80 @@ const Navbar = () => {
 
               {/* Dropdown Menu */}
               <div className={`dropdown-menu ${openDropdown === index ? 'show' : ''}`}>
-                {group.items.map((item, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleNavClick(item.path)}
-                    className={`dropdown-item ${location.pathname === item.path ? 'active' : ''}`}
-                  >
-                    {item.name}
-                  </button>
-                ))}
+                {group.items.map((item, idx) => {
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleNavClick(item.path)}
+                      className={`dropdown-item ${location.pathname === item.path ? 'active' : ''}`}
+                    >
+                      {item.name}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
 
           {/* Direct link for Kinship Lookup placed after dropdowns */}
           <button
-            className={`nav-link direct-link ${location.pathname === '/kinship-lookup' ? 'active' : ''}`}
-            onClick={() => handleNavClick('/kinship-lookup')}
+            className={`nav-link direct-link ${location.pathname.includes('/kinship-lookup') ? 'active' : ''}`}
+            onClick={() => handleNavClick(`/${currentFamilyId}/kinship-lookup`)}
           >
             Tra cứu xưng hô
           </button>
         </div>
 
-        <div className="nav-actions">
-          <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => navigate('/notifications')}>
+        <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '280px', justifyContent: 'flex-end' }}>
+          <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => navigate(`/${currentFamilyId}/edit-requests`)}>
             <Bell size={20} />
-            <span className="notification-dot"></span>
+            {pendingRequestsCount > 0 && <span className="notification-dot"></span>}
           </button>
 
-          {!isAuthenticated && (
-            <button
-              type="button"
-              className="register-btn"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                navigate('/register');
-              }}
-            >
-              Đăng ký
-            </button>
-          )}
-
           <div className="user-menu-container" ref={userMenuRef}>
-            <button className="avatar-btn" aria-label="Tài khoản" onClick={handleAuthClick}>
-              {isAuthenticated ? (
-                <>
-                  <User size={18} />
-                  <span className="hide-mobile" style={{ fontSize: '0.875rem', fontWeight: 500 }}>{user?.name}</span>
-                  <ChevronDown size={14} className="hide-mobile" style={{ marginLeft: '4px' }} />
-                </>
-              ) : (
-                <>
-                  <User size={18} />
-                  <span className="hide-mobile" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Đăng nhập</span>
-                </>
-              )}
+            <button className="avatar-btn" aria-label="Tài khoản" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
+              <img
+                src={user?.avatar || defaultAvatar}
+                alt={user?.name || 'Avatar người dùng'}
+                className="avatar-img"
+              />
             </button>
 
-            {/* User Dropdown Menu */}
-            {isAuthenticated && isUserMenuOpen && (
+            {isUserMenuOpen && (
               <div className="user-dropdown-menu">
                 <div className="user-dropdown-header">
-                  <strong>{user?.name}</strong>
-                  <span>{mockRoleLabels[user?.role] || 'Khách'}</span>
+                  <strong>{user?.name || `${user?.lastName || ''} ${user?.firstName || ''}`}</strong>
+                  <span>{mockRoleLabels[user?.role] || user?.role || 'Khách'}</span>
                 </div>
-                <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin'); }}>
+                
+                <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin/families'); }}>
                   <LayoutGrid size={16} /> Bảng điều khiển
                 </button>
-                <div className="user-dropdown-divider"></div>
-                <button className="user-dropdown-item text-danger" onClick={handleLogout}>
+
+                <button 
+                  className="user-dropdown-item" 
+                  onClick={() => { 
+                    setIsUserMenuOpen(false); 
+                    navigate('/pages/profile/me'); 
+                  }}
+                >
+                  <Users size={16} /> Thông tin cá nhân
+                </button>
+
+                <button 
+                  className="user-dropdown-item" 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate('/admin/settings');
+                  }}
+                >
+                  <Settings size={17} /> Cài đặt chung
+                </button>
+
+                <button className="user-dropdown-item text-danger" onClick={() => {
+                  setIsUserMenuOpen(false);
+                  setShowLogoutConfirm(true);
+                }}>
                   <LogOut size={16} /> Đăng xuất
                 </button>
               </div>
@@ -199,6 +270,22 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {showLogoutConfirm && (
+        <div className="logout-confirm-backdrop" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="logout-confirm-modal" onClick={(event) => event.stopPropagation()}>
+            <p className="logout-confirm-text">Bạn có chắc chắn muốn đăng xuất?</p>
+            <div className="logout-confirm-actions">
+              <button type="button" className="logout-cancel-btn" onClick={() => setShowLogoutConfirm(false)}>
+                Quay lại
+              </button>
+              <button type="button" className="logout-confirm-btn" onClick={handleLogout}>
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

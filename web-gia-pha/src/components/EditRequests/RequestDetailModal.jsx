@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { FIELD_DICT } from './RequestForm';
 import ConfirmModal from '../common/ConfirmModal';
 
@@ -12,8 +13,8 @@ const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
   const handleApproveClick = () => setConfirmType('approve');
 
   const handleRejectClick = () => {
-    if (!adminNote) {
-      alert('Vui lòng nhập lý do từ chối để thông báo cho người gửi.');
+    if (!adminNote.trim()) {
+      toast.error('Vui lòng nhập lý do từ chối để thông báo cho người gửi.');
       return;
     }
     setConfirmType('reject');
@@ -97,7 +98,7 @@ const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
         title={confirmType === 'approve' ? 'Duyệt yêu cầu' : 'Từ chối yêu cầu'}
         message={
           confirmType === 'approve'
-            ? `Xác nhận duyệt và áp dụng thay đổi cho ${request.targetMemberName}?`
+            ? `Xác nhận duyệt và áp dụng thay đổi cho ${request.targetMember?.fullName || request.targetMemberName || 'người này'}?`
             : 'Xác nhận TỪ CHỐI yêu cầu này?'
         }
         onConfirm={handleConfirm}

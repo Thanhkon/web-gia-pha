@@ -1,18 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams, useLocation } from 'react-router-dom';
+import { useFamily } from '../hooks/useFamily';
 import { usePanZoom } from '../hooks/usePanZoom';
 import MemberForm from '../components/Admin/MemberForm/MemberForm';
 import { 
   fetchFamilyTree, 
   addMemberToFamily, 
   addParentChildRelation, 
-  addMarriageRelation 
+  addMarriageRelation,
+  selectFamilyTreeGraphData
 } from '../store/slices/membersSlice';
 import { buildAdjacencyLists } from '../utils/familyTreeUtils';
 import TreeToolbar from '../components/FamilyTree/TreeToolbar';
 import TreeGraph from '../components/FamilyTree/TreeGraph';
 import MemberProfileModal from '../components/MemberProfileModal';
 import KinshipModal from '../components/FamilyTree/KinshipModal';
+import FeatureState from '../components/common/FeatureState';
 import { getTreeData } from '../utils/familyTreeUtils';
 import { computeKinship } from '../utils/kinshipHelpers';
 import '../css/pages/FamilyTree.css';
@@ -42,18 +47,23 @@ const FamilyTree = () => {
   }, []);
 
 
+  const familyId = useFamily();
   const dispatch = useDispatch();
   const persons = useSelector(state => state.members.persons);
   const relationships = useSelector(state => state.members.relationships);
   const loading = useSelector(state => state.members.loading);
+  const error = useSelector(state => state.members.error);
   const familyInfo = useSelector(state => state.members.familyInfo);
+  const location = useLocation();
+  const isAdminView = location.pathname.includes('/admin');
   
-  // Mặc định gọi ID 1 tạm thời
-  const CURRENT_FAMILY_ID = 1;
+  // Mặc định gọi ID từ params
 
   useEffect(() => {
-    dispatch(fetchFamilyTree(CURRENT_FAMILY_ID));
-  }, [dispatch]);
+    if (familyId) {
+      dispatch(fetchFamilyTree(familyId));
+    }
+  }, [dispatch, familyId]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newMember, setNewMember] = useState(EMPTY_MEMBER);
@@ -67,13 +77,31 @@ const FamilyTree = () => {
   const [isKinshipModalOpen, setIsKinshipModalOpen] = useState(false);
 
   const onAddChild = useCallback((person) => {
-    setNewMember({
+    // Tìm người phối ngẫu (spouse) trong mảng relationships
+    const marriage = relationships.find(r => 
+      r.type === 'marriage' && (r.person_a === person.id || r.person_b === person.id)
+    );
+    let spouseId = null;
+    if (marriage) {
+      spouseId = marriage.person_a === person.id ? marriage.person_b : marriage.person_a;
+    }
+
+    const initial = {
       ...EMPTY_MEMBER,
-      [person.gender === 'male' ? 'fatherId' : 'motherId']: person.id,
       generation: Number(person.generation) + 1
-    });
+    };
+
+    if (person.gender === 'male') {
+      initial.fatherId = person.id;
+      if (spouseId) initial.motherId = spouseId;
+    } else {
+      initial.motherId = person.id;
+      if (spouseId) initial.fatherId = spouseId;
+    }
+
+    setNewMember(initial);
     setIsModalOpen(true);
-  }, []); // dep rỗng vì EMPTY_MEMBER là hằng số ổn định
+  }, [relationships]);
 
   const onAddSpouse = useCallback((person) => {
     setNewMember({
@@ -102,7 +130,7 @@ const FamilyTree = () => {
     try {
       // Gọi API thêm member
       const newMember = await dispatch(addMemberToFamily({
-        familyId: CURRENT_FAMILY_ID,
+        familyId: familyId,
         memberData: {
           fullName: submittedData.fullName,
           otherName: submittedData.otherName,
@@ -149,11 +177,12 @@ const FamilyTree = () => {
 
       setIsModalOpen(false);
       setNewMember(EMPTY_MEMBER);
+      toast.success('Thêm thành viên thành công!');
     } catch (err) {
       console.error('Lỗi khi thêm thành viên:', err);
-      alert('Có lỗi xảy ra khi thêm thành viên!');
+      toast.error('Có lỗi xảy ra khi thêm thành viên!');
     }
-  }, [dispatch]);
+  }, [dispatch, familyId]);
 
   const {
     scale, position, isDragging,
@@ -183,40 +212,8 @@ const FamilyTree = () => {
     groupChildrenBySpouse: false,
   });
 
-  // Tính toán dữ liệu đồ thị — chỉ tính lại khi persons/relationships thay đổi
-  const { personsMap, adj, roots } = useMemo(() => {
-    const pMap = new Map();
-    const currentPersons = persons.filter(p => !p.isDeleted);
-    currentPersons.forEach(p => pMap.set(p.id, p));
-
-    const adjacency = buildAdjacencyLists(relationships, pMap);
-
-    // Xử lý tìm roots: 
-    // Những người không có cha mẹ sẽ là root. 
-    // Tuy nhiên, nếu vợ chồng đều không có cha mẹ, ta chỉ lấy 1 người làm root (ưu tiên nam) để tránh trùng lặp khung.
-    const rootNodes = [];
-    const seenAsSpouse = new Set();
-    
-    // Ưu tiên xử lý nam trước để làm root chính
-    const sortedForRoots = [...currentPersons].sort((a, b) => {
-      if (a.gender === 'male' && b.gender !== 'male') return -1;
-      if (a.gender !== 'male' && b.gender === 'male') return 1;
-      return 0;
-    });
-
-    sortedForRoots.forEach(p => {
-      const parents = adjacency[p.id]?.parents || [];
-      const isActuallyInLaw = p.isInLaw; // Vẫn giữ fallback nếu frontend có truyền
-      
-      if (parents.length === 0 && !isActuallyInLaw && !seenAsSpouse.has(p.id)) {
-        rootNodes.push(p);
-        const spouses = adjacency[p.id]?.spouses || [];
-        spouses.forEach(sId => seenAsSpouse.add(sId));
-      }
-    });
-
-    return { personsMap: pMap, adj: adjacency, roots: rootNodes };
-  }, [persons, relationships]);
+  // Tính toán dữ liệu đồ thị — lấy từ Redux selector (đã được memoize)
+  const { personsMap, adj, roots } = useSelector(selectFamilyTreeGraphData);
 
   // personsArray để truyền vào MemberForm — tránh Object.values() mỗi render
   const personsArray = useMemo(() => Array.from(personsMap.values()), [personsMap]);
@@ -250,15 +247,27 @@ const FamilyTree = () => {
 
   // Căn giữa lần đầu render
   useEffect(() => {
-    const timer = setTimeout(centerTree, 100);
-    return () => clearTimeout(timer);
-  }, [centerTree]);
+    if (!loading && !error && roots.length > 0) {
+      const timer = setTimeout(centerTree, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [centerTree, loading, error, roots.length]);
 
-  if (roots.length === 0) return (
-    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-      Chưa có dữ liệu gia phả. Hãy thêm thành viên đầu tiên trong trang Quản trị.
-    </div>
-  );
+  let status = 'success';
+  if (loading) status = 'loading';
+  else if (error) status = 'error';
+  else if (roots.length === 0) status = 'empty';
+
+  if (status !== 'success') {
+    return (
+      <FeatureState 
+        status={status} 
+        error={error} 
+        emptyMessage="Chưa có dữ liệu gia phả. Hãy thêm thành viên đầu tiên trong trang Quản trị."
+        onRetry={() => dispatch(fetchFamilyTree(familyId))}
+      />
+    );
+  }
 
   return (
     <div className="tree-page">
@@ -298,6 +307,7 @@ const FamilyTree = () => {
             isKinshipMode={isKinshipMode}
             kinshipNodeA={kinshipNodeA}
             kinshipNodeB={kinshipNodeB}
+            canEdit={isAdminView}
           />
         </div>
       </div>

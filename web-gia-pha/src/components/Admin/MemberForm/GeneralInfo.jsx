@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useSelector } from 'react-redux';
 import SearchableSelect from '../../common/SearchableSelect';
+import toast from 'react-hot-toast';
 
 const GeneralInfo = ({ formData, onChange, persons }) => {
   const relationships = useSelector(state => state.members.relationships);
+  const fileInputRef = useRef(null);
 
   const availableMales = persons.filter(p => p.gender === 'male' && p.id !== formData.id);
   const availableFemales = persons.filter(p => p.gender === 'female' && p.id !== formData.id);
@@ -31,7 +33,7 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('Lỗi: Ảnh quá lớn. Vui lòng chọn ảnh dưới 2MB!');
+        toast.error('Lỗi: Ảnh quá lớn. Vui lòng chọn ảnh dưới 2MB!');
         return;
       }
       const reader = new FileReader();

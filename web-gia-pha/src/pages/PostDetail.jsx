@@ -107,7 +107,7 @@ const PostThumb = ({ post, backTarget, variant = 'compact' }) => {
   return (
     <Link
       className={`post-detail-related-link post-detail-related-link-${variant}`}
-      to={`/posts/${post.id}`}
+      to={`/${post.familyId}/posts/${post.id}`}
       state={{ fromList: backTarget }}
     >
       {hasThumb ? (
@@ -179,7 +179,7 @@ const RelatedPosts = ({ isLoading, error, posts, backTarget }) => (
 );
 
 const PostDetail = () => {
-  const { id } = useParams();
+  const { familyId, id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -199,6 +199,8 @@ const PostDetail = () => {
     };
   }, [actor, isAdminContext]);
   const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
+  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
+  const isManager = useMemo(() => isPostManager(actor), [actor]);
 
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -210,6 +212,8 @@ const PostDetail = () => {
   const [listsError, setListsError] = useState('');
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
+
+  const backTarget = location.state?.fromList || `/${familyId}/posts`;
 
   const loadPost = useCallback(async () => {
     setIsLoading(true);
@@ -344,6 +348,9 @@ const PostDetail = () => {
         <Link to={isAdminContext ? '/admin' : '/'}>{isAdminContext ? 'Bảng điều khiển' : 'Trang chủ'}</Link>
         <span>/</span>
         <Link to={postsCrumb.to}>{postsCrumb.label}</Link>
+        <Link to={`/${familyId}/home`}>Trang chủ</Link>
+        <span>/</span>
+        <Link to={`/${familyId}/posts`}>Bài viết</Link>
         <span>/</span>
         <span title={post.title}>{truncateText(post.title, 72)}</span>
       </nav>
@@ -387,6 +394,8 @@ const PostDetail = () => {
       <div className="post-detail-actions">
         {canUpdatePost(viewActor, post) && (
           <Link className="btn btn-outline" to={`/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
+        {canUpdatePost(actor, post) && (
+          <Link className="btn btn-outline" to={`/${familyId}/posts/${post.id}/edit`} state={{ fromList: backTarget }}>
             <Edit3 size={17} /> Sửa
           </Link>
         )}

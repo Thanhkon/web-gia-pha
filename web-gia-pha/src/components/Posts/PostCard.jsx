@@ -25,7 +25,7 @@ const PostCard = ({ post, actor, onPublish, onHide, onDelete }) => {
   return (
     <article className="post-card">
       <Link
-        to={`/posts/${post.id}`}
+        to={`/${post.familyId}/posts/${post.id}`}
         state={{ fromList: `${location.pathname}${location.search}` }}
         className="post-card-cover"
         aria-label={`Xem bài viết ${post.title}`}
@@ -46,7 +46,7 @@ const PostCard = ({ post, actor, onPublish, onHide, onDelete }) => {
         </div>
 
         <Link
-          to={`/posts/${post.id}`}
+          to={`/${post.familyId}/posts/${post.id}`}
           state={{ fromList: `${location.pathname}${location.search}` }}
           className="post-card-title"
         >
@@ -65,7 +65,7 @@ const PostCard = ({ post, actor, onPublish, onHide, onDelete }) => {
           {canUpdatePost(actor, post) && (
             <Link
               className="btn btn-outline post-action-btn"
-              to={`/posts/${post.id}/edit`}
+              to={`/${post.familyId}/posts/${post.id}/edit`}
               state={{ fromList: `${location.pathname}${location.search}` }}
               title="Sửa bài viết"
             >

@@ -7,6 +7,7 @@ import postsReducer from './slices/postsSlice';
 import albumsReducer from './slices/albumsSlice';
 import membersReducer from './slices/membersSlice';
 import editRequestsReducer from './slices/editRequestsSlice';
+import familiesReducer from './slices/familiesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     albums: albumsReducer,
     members: membersReducer,
     editRequests: editRequestsReducer,
+    families: familiesReducer,
   },
 });
 
