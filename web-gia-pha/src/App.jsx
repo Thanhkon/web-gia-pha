@@ -76,9 +76,12 @@ const App = () => {
                     <Route path="tree" element={<FamilyTree />} />
                     <Route path="requests" element={<AdminEditRequests />} />
                     <Route path="events" element={<Events />} />
+                    <Route path="posts" element={<Posts />} />
+                    <Route path="gallery" element={<Gallery />} />
                     <Route path="dashboard-settings" element={<AdminDashboardSettings />} />
                   </Route>
                   <Route path="settings" element={<Setting />} />
+                  <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Route>
               <Route path="/pages/profile/:profileId" element={<ProtectedRoute />}>

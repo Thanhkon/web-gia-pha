@@ -375,6 +375,34 @@
   font-weight: 800;
 }
 
+.gallery-detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.gallery-detail-breadcrumb a {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.gallery-detail-breadcrumb a:hover {
+  color: var(--primary);
+}
+
+.gallery-detail-breadcrumb span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-main);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .gallery-detail-page-header {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import defaultBg from '../../assets/default-bg.jpg';
 
 const defaultSettings = {
   primaryFamilyId: null,
@@ -6,7 +7,7 @@ const defaultSettings = {
   hero: {
     title: "Gia Phả Dòng Họ",
     subtitle: "Nơi lưu giữ những kỷ vật tinh thần cho muôn đời sau.",
-    bgImage: "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    bgImage: defaultBg
   },
   marqueeItems: [
     "Vinh danh ông Nguyễn Văn A đã tài trợ quỹ khuyến học 50.000.000đ",

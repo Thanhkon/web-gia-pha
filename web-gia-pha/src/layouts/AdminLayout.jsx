@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useFamily } from '../hooks/useFamily';
 import { useDispatch, useSelector } from 'react-redux';
-import { Users, FileText, Settings, LogOut, Menu, GitMerge, Home, Edit3, BookOpen } from 'lucide-react';
+import { CalendarDays, Edit3, FileText, GitMerge, Home, Images, LogOut, Menu, Settings, Users, BookOpen } from 'lucide-react';
 import { logout } from '../store/slices/authSlice';
 import { selectPendingCount, fetchRequests } from '../store/slices/editRequestsSlice';
 import '../css/layouts/AdminLayout.css';
@@ -29,16 +29,17 @@ const AdminLayout = () => {
 
   return (
     <div className={`admin-layout ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="sidebar-brand">
-          <button className="toggle-sidebar-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
+          <button className="toggle-sidebar-btn" onClick={() => setIsCollapsed(!isCollapsed)} type="button">
             <Menu size={24} />
           </button>
           {!isCollapsed && <span>Bảng điều khiển</span>}
         </div>
 
         <nav className="sidebar-nav">
+
+
           <NavLink to="/admin/families" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Danh sách gia phả">
             <Home size={18} /> {!isCollapsed && <span>Danh sách gia phả</span>}
           </NavLink>
@@ -67,8 +68,14 @@ const AdminLayout = () => {
                   <span className="sidebar-badge-dot"></span>
                 )}
               </NavLink>
-              <NavLink to={`/admin/families/${familyId}/events`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Bài viết & Sự kiện">
-                <BookOpen size={18} /> {!isCollapsed && <span>Bài viết & Sự kiện</span>}
+              <NavLink to={`/admin/families/${familyId}/events`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Quản lý sự kiện">
+                <CalendarDays size={18} /> {!isCollapsed && <span>Quản lý sự kiện</span>}
+              </NavLink>
+              <NavLink to={`/admin/families/${familyId}/posts`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Quản lý bài viết">
+                <FileText size={18} /> {!isCollapsed && <span>Quản lý bài viết</span>}
+              </NavLink>
+              <NavLink to={`/admin/families/${familyId}/gallery`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Quản lý thư viện ảnh">
+                <Images size={18} /> {!isCollapsed && <span>Quản lý thư viện ảnh</span>}
               </NavLink>
               <NavLink to={`/admin/families/${familyId}/dashboard-settings`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Cấu hình Trang chủ">
                 <Settings size={18} /> {!isCollapsed && <span>Cấu hình Trang chủ</span>}
@@ -87,18 +94,15 @@ const AdminLayout = () => {
             </div>
             {!isCollapsed && <div className="admin-name">{user?.name || 'Admin'}</div>}
           </div>
-          <button className="sidebar-link logout-btn" onClick={handleLogout} title="Đăng xuất">
+          <button className="sidebar-link logout-btn" onClick={handleLogout} title="Đăng xuất" type="button">
             <LogOut size={18} /> {!isCollapsed && <span>Đăng xuất</span>}
           </button>
-          {familyId && (
-            <button className="sidebar-link back-home-btn" onClick={() => navigate(`/${familyId}/home`)} title="Về Trang chủ">
-              <Home size={18} /> {!isCollapsed && <span>Về Trang chủ</span>}
-            </button>
-          )}
+          <button className="sidebar-link back-home-btn" onClick={() => navigate(familyId ? `/${familyId}/home` : '/')} title="Về trang chủ" type="button">
+            <Home size={18} /> {!isCollapsed && <span>Về trang chủ</span>}
+          </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="admin-main">
         <Outlet />
       </main>

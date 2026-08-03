@@ -156,7 +156,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Let inner pages scroll */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .sidebar-link-content {

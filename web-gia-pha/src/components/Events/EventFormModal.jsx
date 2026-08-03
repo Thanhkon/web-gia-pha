@@ -32,7 +32,7 @@ const buildInitialForm = (event) => {
     type: event?.type ?? eventTypeOptions[0].value,
     description: event?.description ?? '',
     location: event?.location ?? '',
-    inputCalendar: event?.inputCalendar ?? CalendarType.SOLAR,
+    inputCalendar: CalendarType.SOLAR,
     startAt,
     endAt: event ? toDateTimeLocalValue(event.endAt) : defaultEnd(startAt),
     recurrenceFrequency: event?.recurrence?.frequency ?? RecurrenceFrequency.NONE,
@@ -133,7 +133,7 @@ const EventFormModal = ({ event, onClose, onSubmit, isSaving }) => {
         </header>
 
         <div className="modal-body">
-          <h3 className="form-section-title">Thông tin chung</h3>
+          <h3 className="form-section-title event-form-section-title">Thông tin chung</h3>
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="event-title">Tên sự kiện</label>
@@ -198,23 +198,7 @@ const EventFormModal = ({ event, onClose, onSubmit, isSaving }) => {
             </div>
           </div>
 
-          <h3 className="form-section-title">Thời gian</h3>
-          <div className="segmented-control">
-            <button
-              type="button"
-              className={form.inputCalendar === CalendarType.SOLAR ? 'active' : ''}
-              onClick={() => updateField('inputCalendar', CalendarType.SOLAR)}
-            >
-              Dương lịch
-            </button>
-            <button
-              type="button"
-              className={form.inputCalendar === CalendarType.LUNAR ? 'active' : ''}
-              onClick={() => updateField('inputCalendar', CalendarType.LUNAR)}
-            >
-              Âm lịch
-            </button>
-          </div>
+          <h3 className="form-section-title event-form-section-title">Thời gian</h3>
 
           <div className="form-row">
             <div className="form-group">
@@ -265,7 +249,7 @@ const EventFormModal = ({ event, onClose, onSubmit, isSaving }) => {
             </label>
           </div>
 
-          <h3 className="form-section-title">Nhắc lịch</h3>
+          <h3 className="form-section-title event-form-section-title">Nhắc lịch</h3>
           <div className="reminder-list">
             {form.reminders.map((reminder, index) => (
               <div className="reminder-row" key={reminder.id}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Minus, Plus, RefreshCw, Filter, Users } from 'lucide-react';
+import { Minus, Plus, RefreshCw, Filter, Users, BarChart2, Download, Image as ImageIcon, FileText } from 'lucide-react';
 
 const TreeToolbar = ({
   filters,
@@ -8,9 +8,13 @@ const TreeToolbar = ({
   zoomOut,
   centerTree,
   isKinshipMode,
-  onToggleKinshipMode
+  onToggleKinshipMode,
+  onToggleStats,
+  onExportPNG,
+  onExportPDF
 }) => {
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const toggleFilter = (key) => {
     setFilters(prev => ({ ...prev, [key]: !prev[key] }));
@@ -21,7 +25,6 @@ const TreeToolbar = ({
       <div className="filter-dropdown-container">
         <button className="btn btn-outline" onClick={() => setShowFilterMenu(!showFilterMenu)}>
           <Filter size={16} style={{ display: 'inline', marginRight: '4px' }} />
-          Bộ lọc hiển thị
         </button>
 
         {showFilterMenu && (
@@ -60,8 +63,8 @@ const TreeToolbar = ({
         </button>
       </div>
 
-      <button 
-        className={`btn ${isKinshipMode ? 'btn-primary' : 'btn-outline'}`} 
+      <button
+        className={`btn ${isKinshipMode ? 'btn-primary' : 'btn-outline'}`}
         onClick={onToggleKinshipMode}
       >
         <Users size={16} style={{ display: 'inline', marginRight: '4px' }} />
@@ -70,8 +73,38 @@ const TreeToolbar = ({
 
       <button className="btn btn-secondary" onClick={centerTree}>
         <RefreshCw size={16} style={{ display: 'inline', marginRight: '4px' }} />
-        Căn giữa
       </button>
+
+      <button className="btn btn-outline" onClick={onToggleStats}>
+        <BarChart2 size={16} style={{ display: 'inline', marginRight: '4px' }} />
+      </button>
+      <div className="filter-dropdown-container">
+        <button className="btn btn-outline" onClick={() => setShowExportMenu(!showExportMenu)}>
+          <Download size={16} style={{ display: 'inline' }} />
+        </button>
+
+        {showExportMenu && (
+          <div className="filter-dropdown-menu" style={{ right: 0, left: 'auto', width: '220px' }}>
+            <h4>Xuất gia phả</h4>
+            <div 
+              className="filter-menu-item"
+              style={{ padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              onClick={() => { setShowExportMenu(false); onExportPNG?.(); }}
+            >
+              <ImageIcon size={16} style={{ marginRight: '8px' }} />
+              Xuất ảnh (PNG)
+            </div>
+            <div 
+              className="filter-menu-item"
+              style={{ padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              onClick={() => { setShowExportMenu(false); onExportPDF?.(); }}
+            >
+              <FileText size={16} style={{ marginRight: '8px' }} />
+              Xuất tài liệu (PDF)
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

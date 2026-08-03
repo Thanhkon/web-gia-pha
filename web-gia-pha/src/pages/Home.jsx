@@ -9,8 +9,47 @@ import MarqueeBanner from '../components/MarqueeBanner';
 import Skeleton from '../components/common/Skeleton';
 import { getPostActor, postService } from '../services/postService';
 import { eventService, getEventActor } from '../services/eventService';
+import { POST_ROLES } from '../types/posts';
 import { galleryService, getGalleryActor } from '../services/galleryService';
 import '../css/pages/Home.css';
+
+const toMemberPostActor = (actor) => {
+  if (!actor?.familyId || actor.role === POST_ROLES.GUEST) {
+    return actor;
+  }
+
+  return {
+    ...actor,
+    role: POST_ROLES.MEMBER,
+    canCreatePost: false,
+    canManagePosts: false,
+  };
+};
+
+const toMemberEventActor = (actor) => {
+  if (!actor || actor.role === 'GUEST') {
+    return actor;
+  }
+
+  return {
+    ...actor,
+    role: 'MEMBER',
+    permissions: {},
+    canCreatePost: false,
+    canManagePosts: false,
+  };
+};
+
+const toMemberGalleryActor = (actor) => {
+  if (!actor?.familyId) {
+    return actor;
+  }
+
+  return {
+    ...actor,
+    role: 'MEMBER',
+  };
+};
 
 const Home = () => {
   useEffect(() => {
@@ -46,8 +85,8 @@ const Home = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const postActor = getPostActor(user, isAuthenticated, familyId);
-        const eventActor = getEventActor(user, isAuthenticated, familyId);
+        const postActor = toMemberPostActor(getPostActor(user, isAuthenticated, familyId));
+        const eventActor = toMemberEventActor(getEventActor(user, isAuthenticated, familyId));
         const postsRes = await postService.getPosts({
           actor: postActor,
           filters: { sortDirection: 'newest' },
@@ -59,7 +98,7 @@ const Home = () => {
         const eventsRes = await eventService.getUpcomingEvents(30, {}, eventActor);
         setEvents(eventsRes.data.slice(0, 3));
 
-        const galleryActor = getGalleryActor(user, isAuthenticated, familyId);
+        const galleryActor = toMemberGalleryActor(getGalleryActor(user, isAuthenticated, familyId));
         const albumsRes = await galleryService.getAlbums({ actor: galleryActor });
         setGalleryAlbums(albumsRes.slice(0, 4));
       } catch (err) {

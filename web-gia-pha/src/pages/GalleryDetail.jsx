@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Edit3,
@@ -44,6 +44,12 @@ import {
 } from '../types/gallery';
 import '../css/pages/Gallery.css';
 
+const truncateText = (value, maxLength = 72) => {
+  const text = String(value || '').trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trim()}...`;
+};
+
 const GalleryDetail = () => {
   const { familyId, albumId } = useParams();
   const navigate = useNavigate();
@@ -62,14 +68,29 @@ const GalleryDetail = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const backUrl = location.state?.from || `/${familyId}/gallery${location.search || ''}`;
-  const isManager = canManageAlbum(actor, album);
+  const publicGalleryPath = familyId ? `/${familyId}/gallery` : '/gallery';
+  const backUrl = location.state?.from || `${publicGalleryPath}${location.search || ''}`;
+  const isAdminContext = String(backUrl).startsWith('/admin');
+  const viewActor = useMemo(() => {
+    if (isAdminContext || !actor?.familyId) {
+      return actor;
+    }
+
+    return {
+      ...actor,
+      role: 'MEMBER',
+    };
+  }, [actor, isAdminContext]);
+  const isManager = canManageAlbum(viewActor, album);
   const imageItems = useMemo(() => (
     album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE) || []
   ), [album]);
   const imageCount = album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE).length || 0;
   const videoCount = album?.media.filter((item) => item.type === MEDIA_TYPE.VIDEO).length || 0;
   const totalCount = album?.media.length || 0;
+  const galleryCrumb = isAdminContext
+    ? { label: 'Quản lý thư viện ảnh', to: backUrl }
+    : { label: 'Thư viện ảnh', to: publicGalleryPath };
 
   const goBackToLibrary = () => {
     navigate(backUrl);
@@ -81,7 +102,7 @@ const GalleryDetail = () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await galleryService.getAlbumById(albumId, actor);
+      const data = await galleryService.getAlbumById(albumId, viewActor);
       setAlbum(data);
     } catch (loadError) {
       setAlbum(null);
@@ -89,7 +110,7 @@ const GalleryDetail = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [actor, albumId]);
+  }, [albumId, viewActor]);
 
   useEffect(() => {
     loadAlbum();
@@ -100,7 +121,7 @@ const GalleryDetail = () => {
 
     setIsSaving(true);
     try {
-      const updatedAlbum = await galleryService.updateAlbum(album.id, payload, actor);
+      const updatedAlbum = await galleryService.updateAlbum(album.id, payload, viewActor);
       setAlbum(updatedAlbum);
       setAlbumForm(null);
       setNotice({ type: 'success', text: 'Album đã được cập nhật.' });
@@ -116,7 +137,7 @@ const GalleryDetail = () => {
 
     setIsUploading(true);
     try {
-      const updatedAlbum = await galleryService.uploadMedia(uploadAlbum.id, files, actor, descriptions);
+      const updatedAlbum = await galleryService.uploadMedia(uploadAlbum.id, files, viewActor, descriptions);
       setAlbum(updatedAlbum);
       setUploadAlbum(null);
       setNotice({ type: 'success', text: 'Tệp đã được tải lên album.' });
@@ -131,7 +152,7 @@ const GalleryDetail = () => {
     if (!album) return;
 
     try {
-      const updatedAlbum = await galleryService.toggleAlbumStatus(album.id, actor);
+      const updatedAlbum = await galleryService.toggleAlbumStatus(album.id, viewActor);
       setAlbum(updatedAlbum);
       setNotice({
         type: 'success',
@@ -148,7 +169,7 @@ const GalleryDetail = () => {
     setIsSaving(true);
     try {
       if (confirmAction.type === 'deleteAlbum') {
-        await galleryService.deleteAlbum(confirmAction.album.id, actor);
+        await galleryService.deleteAlbum(confirmAction.album.id, viewActor);
         setConfirmAction(null);
         navigate(backUrl, {
           state: { notice: 'Album và toàn bộ ảnh, video bên trong đã được xóa.' },
@@ -157,7 +178,7 @@ const GalleryDetail = () => {
       }
 
       if (confirmAction.type === 'deleteMedia') {
-        const updatedAlbum = await galleryService.deleteMedia(confirmAction.album.id, confirmAction.media.id, actor);
+        const updatedAlbum = await galleryService.deleteMedia(confirmAction.album.id, confirmAction.media.id, viewActor);
         setAlbum(updatedAlbum);
         setNotice({ type: 'success', text: 'Ảnh hoặc video đã được xóa khỏi album.' });
       }
@@ -175,7 +196,7 @@ const GalleryDetail = () => {
 
     setIsSaving(true);
     try {
-      const updatedAlbum = await galleryService.updateMedia(album.id, editingMedia.id, { description }, actor);
+      const updatedAlbum = await galleryService.updateMedia(album.id, editingMedia.id, { description }, viewActor);
       setAlbum(updatedAlbum);
       setEditingMedia(null);
       setNotice({ type: 'success', text: 'Mô tả tệp đã được cập nhật.' });
@@ -214,6 +235,14 @@ const GalleryDetail = () => {
 
   return (
     <div className="gallery-page gallery-detail-page container animate-fade-in">
+      <nav className="gallery-detail-breadcrumb" aria-label="Breadcrumb">
+        <Link to={isAdminContext ? '/admin' : '/'}>{isAdminContext ? 'Bảng điều khiển' : 'Trang chủ'}</Link>
+        <span>/</span>
+        <Link to={galleryCrumb.to}>{galleryCrumb.label}</Link>
+        <span>/</span>
+        <span title={album.title}>{truncateText(album.title)}</span>
+      </nav>
+
       <button className="gallery-back-link" type="button" onClick={goBackToLibrary}>
         <ArrowLeft size={18} /> Quay lại thư viện
       </button>
@@ -232,10 +261,12 @@ const GalleryDetail = () => {
               {album.visibility === ALBUM_VISIBILITY.PUBLIC ? <Globe2 size={13} /> : <Lock size={13} />}
               {ALBUM_VISIBILITY_LABELS[album.visibility]}
             </GalleryBadge>
-            <GalleryBadge type={album.status.toLowerCase()}>
-              {album.status === ALBUM_STATUS.VISIBLE ? <Eye size={13} /> : <EyeOff size={13} />}
-              {ALBUM_STATUS_LABELS[album.status]}
-            </GalleryBadge>
+            {isManager && (
+              <GalleryBadge type={album.status.toLowerCase()}>
+                {album.status === ALBUM_STATUS.VISIBLE ? <Eye size={13} /> : <EyeOff size={13} />}
+                {ALBUM_STATUS_LABELS[album.status]}
+              </GalleryBadge>
+            )}
           </div>
         </div>
 
@@ -260,7 +291,7 @@ const GalleryDetail = () => {
 
         {isManager && (
           <div className="gallery-manager-actions">
-            {canUpdateAlbum(actor, album) && (
+            {canUpdateAlbum(viewActor, album) && (
               <button className="btn btn-outline" type="button" onClick={() => setAlbumForm({ album })}>
                 <Edit3 size={16} /> Chỉnh sửa album
               </button>
@@ -269,12 +300,12 @@ const GalleryDetail = () => {
               {album.status === ALBUM_STATUS.VISIBLE ? <EyeOff size={16} /> : <Eye size={16} />}
               {album.status === ALBUM_STATUS.VISIBLE ? 'Ẩn album' : 'Hiển thị album'}
             </button>
-            {canUploadMedia(actor, album) && (
+            {canUploadMedia(viewActor, album) && (
               <button className="btn btn-outline" type="button" onClick={() => setUploadAlbum(album)}>
                 <Upload size={16} /> Thêm ảnh/video
               </button>
             )}
-            {canDeleteAlbum(actor, album) && (
+            {canDeleteAlbum(viewActor, album) && (
               <button className="btn btn-danger" type="button" onClick={() => setConfirmAction({ type: 'deleteAlbum', album })}>
                 <Trash2 size={16} /> Xóa album
               </button>
@@ -333,12 +364,12 @@ const GalleryDetail = () => {
 
                 {isManager && (
                   <div className="gallery-media-actions">
-                    {canUpdateMedia(actor, album) && (
+                    {canUpdateMedia(viewActor, album) && (
                       <button className="icon-btn" type="button" onClick={() => setEditingMedia(media)} aria-label="Sửa mô tả tệp">
                         <Edit3 size={16} />
                       </button>
                     )}
-                    {canDeleteMedia(actor, album) && (
+                    {canDeleteMedia(viewActor, album) && (
                       <button
                         className="icon-btn text-danger"
                         type="button"
