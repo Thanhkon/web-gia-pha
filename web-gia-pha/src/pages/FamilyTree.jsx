@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useLocation } from 'react-router-dom';
 import { useFamily } from '../hooks/useFamily';
 import { usePanZoom } from '../hooks/usePanZoom';
 import MemberForm from '../components/Admin/MemberForm/MemberForm';
-import { 
-  fetchFamilyTree, 
-  addMemberToFamily, 
-  addParentChildRelation, 
+import {
+  fetchFamilyTree,
+  addMemberToFamily,
+  addParentChildRelation,
   addMarriageRelation,
   selectFamilyTreeGraphData
 } from '../store/slices/membersSlice';
@@ -17,6 +19,7 @@ import TreeToolbar from '../components/FamilyTree/TreeToolbar';
 import TreeGraph from '../components/FamilyTree/TreeGraph';
 import MemberProfileModal from '../components/MemberProfileModal';
 import KinshipModal from '../components/FamilyTree/KinshipModal';
+import MemberStatisticsWidget from '../components/Admin/MemberStatisticsWidget';
 import FeatureState from '../components/common/FeatureState';
 import { getTreeData } from '../utils/familyTreeUtils';
 import { computeKinship } from '../utils/kinshipHelpers';
@@ -56,7 +59,7 @@ const FamilyTree = () => {
   const familyInfo = useSelector(state => state.members.familyInfo);
   const location = useLocation();
   const isAdminView = location.pathname.includes('/admin');
-  
+
   // Mặc định gọi ID từ params
 
   useEffect(() => {
@@ -68,6 +71,7 @@ const FamilyTree = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newMember, setNewMember] = useState(EMPTY_MEMBER);
   const [viewingMember, setViewingMember] = useState(null);
+  const [showStats, setShowStats] = useState(false);
 
   // Tra cứu quan hệ xưng hô
   const [isKinshipMode, setIsKinshipMode] = useState(false);
@@ -78,7 +82,7 @@ const FamilyTree = () => {
 
   const onAddChild = useCallback((person) => {
     // Tìm người phối ngẫu (spouse) trong mảng relationships
-    const marriage = relationships.find(r => 
+    const marriage = relationships.find(r =>
       r.type === 'marriage' && (r.person_a === person.id || r.person_b === person.id)
     );
     let spouseId = null;
@@ -237,11 +241,83 @@ const FamilyTree = () => {
   const handleToggleKinshipMode = () => {
     setIsKinshipMode(prev => !prev);
     if (isKinshipMode) {
-      // Khi tắt chế độ tra cứu thì reset trạng thái
       setKinshipNodeA(null);
       setKinshipNodeB(null);
       setKinshipResult(null);
       setIsKinshipModalOpen(false);
+    }
+  };
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const filterExportNodes = (node) => {
+    if (node.classList && (
+      node.classList.contains('toggle-collapse-btn') || 
+      node.classList.contains('node-add-btn-wrapper')
+    )) {
+      return false;
+    }
+    return true;
+  };
+
+  const handleExportPNG = async () => {
+    const el = document.getElementById('exportable-tree-container');
+    if (!el) return;
+    try {
+      setIsExporting(true);
+      toast.loading('Đang xử lý hình ảnh...', { id: 'exporting' });
+      
+      const dataUrl = await toPng(el, { 
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        filter: filterExportNodes
+      });
+      
+      const link = document.createElement('a');
+      link.download = `So_Do_Gia_Pha.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success('Xuất ảnh thành công!', { id: 'exporting' });
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi xuất ảnh', { id: 'exporting' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    const el = document.getElementById('exportable-tree-container');
+    if (!el) return;
+    try {
+      setIsExporting(true);
+      toast.loading('Đang tạo PDF...', { id: 'exporting' });
+      
+      const dataUrl = await toPng(el, { 
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        filter: filterExportNodes
+      });
+      
+      const pdf = new jsPDF({
+        orientation: el.scrollWidth > el.scrollHeight ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [Math.max(el.scrollWidth, 100), Math.max(el.scrollHeight, 100)]
+      });
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, el.scrollWidth, el.scrollHeight);
+      pdf.save('So_Do_Gia_Pha.pdf');
+      
+      toast.success('Xuất tài liệu PDF thành công!', { id: 'exporting' });
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi xuất PDF', { id: 'exporting' });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -260,9 +336,9 @@ const FamilyTree = () => {
 
   if (status !== 'success') {
     return (
-      <FeatureState 
-        status={status} 
-        error={error} 
+      <FeatureState
+        status={status}
+        error={error}
         emptyMessage="Chưa có dữ liệu gia phả. Hãy thêm thành viên đầu tiên trong trang Quản trị."
         onRetry={() => dispatch(fetchFamilyTree(familyId))}
       />
@@ -271,15 +347,25 @@ const FamilyTree = () => {
 
   return (
     <div className="tree-page">
-      <TreeToolbar
-        filters={filters}
-        setFilters={setFilters}
-        zoomIn={zoomIn}
-        zoomOut={zoomOut}
-        centerTree={centerTree}
-        isKinshipMode={isKinshipMode}
-        onToggleKinshipMode={handleToggleKinshipMode}
-      />
+        <TreeToolbar
+          filters={filters}
+          setFilters={setFilters}
+          zoomIn={zoomIn}
+          zoomOut={zoomOut}
+          centerTree={centerTree}
+          isKinshipMode={isKinshipMode}
+          onToggleKinshipMode={handleToggleKinshipMode}
+          onToggleStats={() => setShowStats(!showStats)}
+          onExportPNG={handleExportPNG}
+          onExportPDF={handleExportPDF}
+        />
+
+      {showStats && (
+        <MemberStatisticsWidget
+          persons={persons}
+          onClose={() => setShowStats(false)}
+        />
+      )}
 
       <div
         className={`tree-container ${isDragging ? 'dragging' : ''}`}
