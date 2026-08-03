@@ -1,13 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import MemberForm from '../../components/Admin/MemberForm/MemberForm';
 import MemberProfileModal from '../../components/MemberProfileModal';
 import MembersFilterBar from '../../components/Admin/MembersFilterBar';
 import MembersTable from '../../components/Admin/MembersTable';
+import MemberStatisticsWidget from '../../components/Admin/MemberStatisticsWidget';
 import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import { 
+import {
   fetchFamilyTree,
   addMemberToFamily,
   addParentChildRelation,
@@ -32,29 +34,30 @@ const AdminMembers = () => {
 
   const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
   const relationships = useSelector(state => state.members.relationships);
-  
+
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const [filterGeneration, setFilterGeneration] = useState('');
   const [filterGender, setFilterGender] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewingMember, setViewingMember] = useState(null);
+  const [showStats, setShowStats] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const emptyMember = {
-    fullName: '', otherName: '', gender: 'male', 
-    generation: 1, role: '', isInLaw: false, 
+    fullName: '', otherName: '', gender: 'male',
+    generation: 1, role: '', isInLaw: false,
     fatherId: '', motherId: '', spouseId: '',
-    dateOfBirth: '', 
+    dateOfBirth: '',
     isDeceased: false, dateOfDeath: '', deathLunarDate: '',
-    placeOfBirth: '', currentAddress: '', 
+    placeOfBirth: '', currentAddress: '',
     education: '', occupation: '', biography: '', note: '',
     avatarUrl: ''
   };
@@ -87,8 +90,8 @@ const AdminMembers = () => {
   const handleAddSubmit = async (submittedData) => {
     try {
       if (editingId) {
-        await dispatch(updateMemberToFamily({ 
-          memberId: editingId, 
+        await dispatch(updateMemberToFamily({
+          memberId: editingId,
           memberData: {
             fullName: submittedData.fullName,
             otherName: submittedData.otherName,
@@ -113,21 +116,21 @@ const AdminMembers = () => {
         const currentParents = relationships
           .filter(r => r.type === 'biological_child' && r.person_b === editingId)
           .map(r => r.person_a);
-        
+
         if (submittedData.fatherId && !currentParents.includes(submittedData.fatherId)) {
-          try { await dispatch(addParentChildRelation({ parentId: submittedData.fatherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch(e) { console.error(e); }
+          try { await dispatch(addParentChildRelation({ parentId: submittedData.fatherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch (e) { console.error(e); }
         }
         if (submittedData.motherId && !currentParents.includes(submittedData.motherId)) {
-          try { await dispatch(addParentChildRelation({ parentId: submittedData.motherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch(e) { console.error(e); }
+          try { await dispatch(addParentChildRelation({ parentId: submittedData.motherId, childId: editingId, relationType: 'biological_child' })).unwrap(); } catch (e) { console.error(e); }
         }
-        
+
         const currentSpouses = relationships
           .filter(r => r.type === 'marriage' && (r.person_a === editingId || r.person_b === editingId))
           .flatMap(r => [r.person_a, r.person_b])
           .filter(id => id !== editingId);
 
         if (submittedData.spouseId && !currentSpouses.includes(submittedData.spouseId)) {
-          try { await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: editingId })).unwrap(); } catch(e) { console.error(e); }
+          try { await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: editingId })).unwrap(); } catch (e) { console.error(e); }
         }
 
         toast.success('Cập nhật thành công!');
@@ -153,9 +156,9 @@ const AdminMembers = () => {
             avatarUrl: submittedData.avatarUrl || null,
           }
         })).unwrap();
-        
+
         const newId = newMember.id;
-        
+
         if (submittedData.fatherId) {
           await dispatch(addParentChildRelation({ parentId: submittedData.fatherId, childId: newId, relationType: 'biological_child' })).unwrap();
         }
@@ -166,7 +169,7 @@ const AdminMembers = () => {
           await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: newId })).unwrap();
         }
       }
-      
+
       setIsModalOpen(false);
       setEditingId(null);
       setNewMember(emptyMember);
@@ -208,7 +211,7 @@ const AdminMembers = () => {
       spouseId = marriage.person_a === person.id ? marriage.person_b : marriage.person_a;
     }
 
-    setNewMember({ 
+    setNewMember({
       ...emptyMember, // để đảm bảo có đủ các trường rỗng mặc định
       ...person,
       fatherId,
@@ -243,30 +246,120 @@ const AdminMembers = () => {
 
   const handleImportExcel = (e) => {
     toast.error('Chức năng Import file hàng loạt đang được nâng cấp ở phía Backend. Vui lòng thử lại sau!');
-    e.target.value = null; 
+    e.target.value = null;
   };
 
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
       {
-        ID: '1', HoTen: 'Nguyễn Văn A', GioiTinh: 'Nam', DoiThu: 1,
-        LaDauRe: 0, NgaySinh: '01/01/1950', NgayMat: '', ConSong: 1,
-        MaCha: '', MaMe: '', MaVoChong: ''
+        "Mã (ID)": '1',
+        "Họ và tên": 'Nguyễn Văn A',
+        "Tên gọi khác": '',
+        "Giới tính": 'Nam',
+        "Đời thứ": 1,
+        "Vai trò": 'Trưởng họ',
+        "Dâu/Rể": 0,
+        "Mã Cha": '',
+        "Mã Mẹ": '',
+        "Mã Vợ/Chồng": '',
+        "Ngày sinh": '01/01/1950',
+        "Nơi sinh": 'Hà Nội',
+        "Ngày mất": '',
+        "Ngày mất (Âm lịch)": '',
+        "Còn sống": 1,
+        "Nghề nghiệp": 'Giáo viên',
+        "Trình độ": 'Đại học',
+        "Địa chỉ hiện tại": 'Hà Nội',
+        "Tiểu sử": '',
+        "Ghi chú": ''
       },
       {
-        ID: '2', HoTen: 'Lê Thị B', GioiTinh: 'Nữ', DoiThu: 1,
-        LaDauRe: 1, NgaySinh: '02/02/1955', NgayMat: '', ConSong: 1,
-        MaCha: '', MaMe: '', MaVoChong: '1'
+        "Mã (ID)": '2',
+        "Họ và tên": 'Lê Thị B',
+        "Tên gọi khác": '',
+        "Giới tính": 'Nữ',
+        "Đời thứ": 1,
+        "Vai trò": '',
+        "Dâu/Rể": 1,
+        "Mã Cha": '',
+        "Mã Mẹ": '',
+        "Mã Vợ/Chồng": '1',
+        "Ngày sinh": '02/02/1955',
+        "Nơi sinh": 'Hưng Yên',
+        "Ngày mất": '',
+        "Ngày mất (Âm lịch)": '',
+        "Còn sống": 1,
+        "Nghề nghiệp": 'Nội trợ',
+        "Trình độ": 'Phổ thông',
+        "Địa chỉ hiện tại": 'Hà Nội',
+        "Tiểu sử": '',
+        "Ghi chú": ''
       }
     ]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Mau_Gia_Pha");
+    XLSX.utils.book_append_sheet(wb, ws, "Mau_Nhap_Gia_Pha");
     XLSX.writeFile(wb, "Mau_Nhap_Gia_Pha.xlsx");
+  };
+
+  const handleExportExcel = () => {
+    if (!persons || persons.length === 0) {
+      toast.warning('Không có dữ liệu để xuất!');
+      return;
+    }
+    
+    const exportData = persons.map(p => {
+      const personParents = relationships
+        .filter(r => r.type === 'biological_child' && r.person_b === p.id)
+        .map(r => r.person_a);
+      let fatherId = '';
+      let motherId = '';
+      personParents.forEach(parentId => {
+        const parent = persons.find(x => x.id === parentId);
+        if (parent) {
+          if (parent.gender === 'male') fatherId = parent.id;
+          else motherId = parent.id;
+        }
+      });
+      const marriage = relationships.find(r => r.type === 'marriage' && (r.person_a === p.id || r.person_b === p.id));
+      let spouseId = '';
+      if (marriage) {
+        spouseId = marriage.person_a === p.id ? marriage.person_b : marriage.person_a;
+      }
+      
+      return {
+        "Mã (ID)": p.id,
+        "Họ và tên": p.fullName || '',
+        "Tên gọi khác": p.otherName || '',
+        "Giới tính": p.gender === 'male' ? 'Nam' : (p.gender === 'female' ? 'Nữ' : ''),
+        "Đời thứ": p.generation || 1,
+        "Vai trò": p.role || '',
+        "Dâu/Rể": p.isInLaw ? 1 : 0,
+        "Mã Cha": fatherId,
+        "Mã Mẹ": motherId,
+        "Mã Vợ/Chồng": spouseId,
+        "Ngày sinh": p.dateOfBirth || '',
+        "Nơi sinh": p.placeOfBirth || '',
+        "Ngày mất": p.dateOfDeath || '',
+        "Ngày mất (Âm lịch)": p.deathLunarDate || '',
+        "Còn sống": p.isDeceased ? 0 : 1,
+        "Nghề nghiệp": p.occupation || '',
+        "Trình độ": p.education || '',
+        "Địa chỉ hiện tại": p.currentAddress || '',
+        "Tiểu sử": p.biography || '',
+        "Ghi chú": p.note || ''
+      };
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_Thanh_Vien");
+    XLSX.writeFile(wb, "Danh_Sach_Thanh_Vien.xlsx");
+    toast.success('Xuất dữ liệu thành công!');
   };
 
   return (
     <div className="admin-page">
-      <MembersFilterBar 
+      <MembersFilterBar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         filterGender={filterGender}
@@ -276,10 +369,11 @@ const AdminMembers = () => {
         onAddMember={openAddModal}
         onImportExcel={handleImportExcel}
         onDownloadTemplate={handleDownloadTemplate}
+        onExportExcel={handleExportExcel}
         persons={persons}
       />
 
-      <MembersTable 
+      <MembersTable
         filteredPersons={paginatedPersons}
         viewMode={viewMode}
         setViewMode={setViewMode}
@@ -287,20 +381,21 @@ const AdminMembers = () => {
         handleEdit={handleEdit}
         handleDelete={handleDelete}
       />
-      
-      <Pagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        onPageChange={setCurrentPage} 
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
 
       {isModalOpen && (
-        <MemberForm 
-          initialData={newMember} 
+        <MemberForm
+          initialData={newMember}
           persons={persons}
           relationships={relationships}
           isEditing={!!editingId}
           onSubmit={handleAddSubmit}
+          onRefresh={() => dispatch(fetchFamilyTree(familyId))}
           onCancel={() => setIsModalOpen(false)}
         />
       )}

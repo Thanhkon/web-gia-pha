@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiClient from '../../utils/apiClient';
+import defaultBg from '../../assets/default-bg.jpg';
 
 // Mock data (thay thế bằng API call thực tế sau này)
 const defaultMock = [
@@ -31,13 +32,43 @@ const saveMockFamilies = () => {
 export const fetchFamilies = createAsyncThunk(
   'families/fetchAll',
   async (_, { rejectWithValue }) => {
+    let dataToProcess = [];
     try {
       const response = await apiClient.get('/families');
-      return response.data;
+      dataToProcess = response.data;
     } catch (error) {
       console.warn('API /families failed (possibly not implemented yet). Fallback to mock data.', error);
       await new Promise(resolve => setTimeout(resolve, 800));
-      return [...mockFamilies];
+      dataToProcess = [...mockFamilies];
+    }
+
+    // Tạm thời tính toán thống kê (membersCount, generations) ở frontend
+    // Bằng cách gọi API lấy danh sách thành viên của từng gia phả
+    try {
+      const updatedData = await Promise.all(dataToProcess.map(async (family) => {
+        try {
+          const membersRes = await apiClient.get(`/families/${family.id}/members`);
+          const membersData = membersRes.data?.members || [];
+          const membersCount = membersData.length;
+          let maxGen = 1;
+          membersData.forEach(m => {
+            const gen = parseInt(m.generation, 10) || 1;
+            if (gen > maxGen) maxGen = gen;
+          });
+
+          return {
+            ...family,
+            membersCount,
+            generations: maxGen
+          };
+        } catch (err) {
+          // Nếu không lấy được, giữ nguyên số liệu cũ
+          return family;
+        }
+      }));
+      return updatedData;
+    } catch (error) {
+      return dataToProcess;
     }
   }
 );
@@ -52,7 +83,7 @@ export const createFamily = createAsyncThunk(
         membersCount: 0,
         generations: 1,
         role: 'admin',
-        coverImg: familyData.coverImg || 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        coverImg: familyData.coverImg || defaultBg,
       };
       mockFamilies.unshift(newFamily); // Keep mock updated for session
       saveMockFamilies();
@@ -67,7 +98,7 @@ export const createFamily = createAsyncThunk(
         generations: 1,
         role: 'admin',
         createdAt: new Date().toISOString(),
-        coverImg: familyData.coverImg || 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        coverImg: familyData.coverImg || defaultBg,
       };
       mockFamilies.unshift(newFamily);
       saveMockFamilies();

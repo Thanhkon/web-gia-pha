@@ -247,7 +247,7 @@ const TreeGraph = React.memo(({
   canEdit
 }) => {
   return (
-    <div className="css-tree">
+    <div id="exportable-tree-container" className="css-tree">
       <ul>
         {roots.map(root => (
           <TreeNode
