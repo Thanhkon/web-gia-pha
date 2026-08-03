@@ -10,8 +10,12 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 import { CreateHonorDto } from './dto/create-honor.dto';
@@ -60,6 +64,15 @@ export class HonorsController {
     @Body() updateHonorDto: UpdateHonorDto,
   ) {
     return this.honorsService.update(id, updateHonorDto);
+  }
+
+  @Post('honors/:id/image')
+  @UseInterceptors(FileInterceptor('image'))
+  uploadImage(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file?: UploadedStorageFile,
+  ) {
+    return this.honorsService.uploadImage(id, file);
   }
 
   @Delete('honors/:id')

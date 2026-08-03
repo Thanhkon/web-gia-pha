@@ -31,6 +31,9 @@ export class Family {
   @Column({ name: 'coverImageUrl', type: 'varchar', nullable: true })
   coverImageUrl: string | null;
 
+  @Column({ name: 'coverImagePublicId', type: 'varchar', nullable: true })
+  coverImagePublicId: string | null;
+
   @CreateDateColumn({ name: 'createdAt', type: 'timestamp' })
   createdAt: Date;
 

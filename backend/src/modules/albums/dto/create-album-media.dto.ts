@@ -4,6 +4,7 @@ export class CreateAlbumMediaDto {
   type: MediaType;
   url: string;
   thumbnailUrl?: string | null;
+  cloudinaryPublicId?: string | null;
   fileName: string;
   description?: string | null;
 }

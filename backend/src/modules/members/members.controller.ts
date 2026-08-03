@@ -7,8 +7,12 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
@@ -39,6 +43,15 @@ export class MembersController {
     @Body() updateFamilyDto: UpdateFamilyDto,
   ) {
     return this.membersService.updateFamily(familyId, updateFamilyDto);
+  }
+
+  @Post('families/:familyId/cover-image')
+  @UseInterceptors(FileInterceptor('image'))
+  uploadFamilyCover(
+    @Param('familyId', ParseIntPipe) familyId: number,
+    @UploadedFile() file?: UploadedStorageFile,
+  ) {
+    return this.membersService.uploadFamilyCover(familyId, file);
   }
 
   @Delete('families/:familyId')
@@ -78,6 +91,15 @@ export class MembersController {
     @Body() updateMemberDto: UpdateMemberDto,
   ) {
     return this.membersService.updateMember(id, updateMemberDto);
+  }
+
+  @Post('members/:id/avatar')
+  @UseInterceptors(FileInterceptor('image'))
+  uploadMemberAvatar(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file?: UploadedStorageFile,
+  ) {
+    return this.membersService.uploadMemberAvatar(id, file);
   }
 
   @Delete('members/:id')

@@ -3,4 +3,5 @@ export class CreateFamilyDto {
   originPlace?: string | null;
   description?: string | null;
   coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
 }

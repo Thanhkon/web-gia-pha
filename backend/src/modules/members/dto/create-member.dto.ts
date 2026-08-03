@@ -12,6 +12,7 @@ export class CreateMemberDto {
   placeOfBirth?: string | null;
   currentAddress?: string | null;
   avatarUrl?: string | null;
+  avatarPublicId?: string | null;
   education?: string | null;
   occupation?: string | null;
   biography?: string | null;
