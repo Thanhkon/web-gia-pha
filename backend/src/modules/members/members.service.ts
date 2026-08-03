@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { StorageService } from '../../common/storage/storage.service';
+import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 import { CreateMarriageDto } from './dto/create-marriage.dto';
@@ -28,6 +30,7 @@ export class MembersService {
     private readonly parentChildRepository: Repository<ParentChildRelation>,
     @InjectRepository(Marriage)
     private readonly marriagesRepository: Repository<Marriage>,
+    private readonly storageService: StorageService,
   ) {}
 
   async createFamily(createFamilyDto: CreateFamilyDto) {
@@ -64,6 +67,24 @@ export class MembersService {
         name: updateFamilyDto.name.trim(),
       }),
     });
+
+    return this.familiesRepository.save(family);
+  }
+
+  async uploadFamilyCover(familyId: number, file?: UploadedStorageFile) {
+    const family = await this.findOneFamily(familyId);
+
+    if (!file) {
+      throw new BadRequestException('image is required');
+    }
+
+    const upload = await this.storageService.upload(file, {
+      folder: `gia-pha/families/${family.id}/cover`,
+      resourceType: 'image',
+    });
+
+    family.coverImageUrl = upload.secureUrl;
+    family.coverImagePublicId = upload.publicId;
 
     return this.familiesRepository.save(family);
   }
@@ -191,6 +212,30 @@ export class MembersService {
       member,
       this.normalizeMemberInput(updateMemberDto),
     );
+    return this.membersRepository.save(member);
+  }
+
+  async uploadMemberAvatar(memberId: number, file?: UploadedStorageFile) {
+    const member = await this.membersRepository.findOne({
+      where: { id: memberId },
+    });
+
+    if (!member) {
+      throw new NotFoundException(`Member ${memberId} not found`);
+    }
+
+    if (!file) {
+      throw new BadRequestException('image is required');
+    }
+
+    const upload = await this.storageService.upload(file, {
+      folder: `gia-pha/families/${member.familyId}/members/${member.id}/avatar`,
+      resourceType: 'image',
+    });
+
+    member.avatarUrl = upload.secureUrl;
+    member.avatarPublicId = upload.publicId;
+
     return this.membersRepository.save(member);
   }
 

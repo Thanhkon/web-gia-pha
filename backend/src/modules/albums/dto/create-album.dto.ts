@@ -4,6 +4,7 @@ export class CreateAlbumDto {
   title: string;
   description?: string | null;
   coverImage?: string | null;
+  coverImagePublicId?: string | null;
   visibility?: AlbumVisibility;
   status?: AlbumStatus;
 }

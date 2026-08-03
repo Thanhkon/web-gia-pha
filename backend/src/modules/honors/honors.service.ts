@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
+import { StorageService } from '../../common/storage/storage.service';
+import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { Family } from '../members/entities/family.entity';
 import { Member } from '../members/entities/member.entity';
 import { CreateHonorDto } from './dto/create-honor.dto';
@@ -20,6 +22,7 @@ export class HonorsService {
     private readonly familiesRepository: Repository<Family>,
     @InjectRepository(Member)
     private readonly membersRepository: Repository<Member>,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(
@@ -141,6 +144,30 @@ export class HonorsService {
     }
 
     this.validateDateRange(honor.startAt, honor.endAt);
+
+    return this.honorsRepository.save(honor);
+  }
+
+  async uploadImage(honorId: number, file?: UploadedStorageFile) {
+    const honor = await this.honorsRepository.findOne({
+      where: { id: honorId, deletedAt: IsNull() },
+    });
+
+    if (!honor) {
+      throw new NotFoundException(`Honor ${honorId} not found`);
+    }
+
+    if (!file) {
+      throw new BadRequestException('image is required');
+    }
+
+    const upload = await this.storageService.upload(file, {
+      folder: `gia-pha/families/${honor.familyId}/honors/${honor.id}`,
+      resourceType: 'image',
+    });
+
+    honor.imageUrl = upload.secureUrl;
+    honor.imagePublicId = upload.publicId;
 
     return this.honorsRepository.save(honor);
   }

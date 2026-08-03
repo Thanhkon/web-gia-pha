@@ -10,8 +10,12 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -60,6 +64,15 @@ export class EventsController {
     @Body() updateEventDto: UpdateEventDto,
   ) {
     return this.eventsService.update(id, updateEventDto);
+  }
+
+  @Post('events/:id/cover-image')
+  @UseInterceptors(FileInterceptor('image'))
+  uploadCoverImage(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file?: UploadedStorageFile,
+  ) {
+    return this.eventsService.uploadCoverImage(id, file);
   }
 
   @Delete('events/:id')

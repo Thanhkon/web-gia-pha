@@ -33,6 +33,9 @@ export class AlbumMedia {
   @Column({ name: 'thumbnailUrl', type: 'text', nullable: true })
   thumbnailUrl: string | null;
 
+  @Column({ name: 'cloudinaryPublicId', type: 'varchar', nullable: true })
+  cloudinaryPublicId: string | null;
+
   @Column({ name: 'fileName' })
   fileName: string;
 

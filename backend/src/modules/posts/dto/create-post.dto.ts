@@ -13,6 +13,8 @@ export class CreatePostDto {
   status?: PostStatus;
   visibility?: PostVisibility;
   thumbnailUrl?: string | null;
+  thumbnailPublicId?: string | null;
   coverImage?: string | null;
+  coverImagePublicId?: string | null;
   publishedAt?: string | Date | null;
 }

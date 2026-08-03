@@ -39,6 +39,7 @@ export type PostContentBlock =
       id: string;
       type: 'IMAGE';
       imageUrl: string;
+      publicId?: string | null;
       caption?: string | null;
     };
 
@@ -84,6 +85,9 @@ export class Post {
 
   @Column({ name: 'thumbnailUrl', type: 'varchar', nullable: true })
   thumbnailUrl: string | null;
+
+  @Column({ name: 'thumbnailPublicId', type: 'varchar', nullable: true })
+  thumbnailPublicId: string | null;
 
   @Column({ name: 'publishedAt', type: 'timestamp', nullable: true })
   publishedAt: Date | null;

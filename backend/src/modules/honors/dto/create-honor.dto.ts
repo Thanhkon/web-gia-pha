@@ -7,6 +7,7 @@ export class CreateHonorDto {
   description?: string | null;
   achievement?: string | null;
   imageUrl?: string | null;
+  imagePublicId?: string | null;
   documentUrl?: string | null;
   awardedAt?: string | Date | null;
   startAt?: string | Date | null;

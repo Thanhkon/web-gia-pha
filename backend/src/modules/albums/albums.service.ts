@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
+import { StorageService } from '../../common/storage/storage.service';
+import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { Family } from '../members/entities/family.entity';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
@@ -32,6 +34,7 @@ export class AlbumsService {
     private readonly albumMediaRepository: Repository<AlbumMedia>,
     @InjectRepository(Family)
     private readonly familiesRepository: Repository<Family>,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(
@@ -123,6 +126,30 @@ export class AlbumsService {
     return this.albumsRepository.save(album);
   }
 
+  async uploadCoverImage(albumId: number, file?: UploadedStorageFile) {
+    const album = await this.albumsRepository.findOne({
+      where: { id: albumId, deletedAt: IsNull() },
+    });
+
+    if (!album) {
+      throw new NotFoundException(`Album ${albumId} not found`);
+    }
+
+    if (!file) {
+      throw new BadRequestException('image is required');
+    }
+
+    const upload = await this.storageService.upload(file, {
+      folder: `gia-pha/families/${album.familyId}/albums/${album.id}/cover`,
+      resourceType: 'image',
+    });
+
+    album.coverImage = upload.secureUrl;
+    album.coverImagePublicId = upload.publicId;
+
+    return this.albumsRepository.save(album);
+  }
+
   async remove(id: number) {
     const album = await this.albumsRepository.findOne({
       where: { id, deletedAt: IsNull() },
@@ -166,6 +193,45 @@ export class AlbumsService {
       albumId,
       uploadedById,
       type: this.normalizeMediaType(createAlbumMediaDto.type),
+      uploadedAt: new Date(),
+    });
+
+    return this.albumMediaRepository.save(media);
+  }
+
+  async uploadMedia(
+    albumId: number,
+    uploadedById: number,
+    file?: UploadedStorageFile,
+    description?: string | null,
+  ) {
+    const album = await this.albumsRepository.findOne({
+      where: { id: albumId, deletedAt: IsNull() },
+    });
+
+    if (!album) {
+      throw new NotFoundException(`Album ${albumId} not found`);
+    }
+
+    if (!file) {
+      throw new BadRequestException('file is required');
+    }
+
+    const upload = await this.storageService.upload(file, {
+      folder: `gia-pha/families/${album.familyId}/albums/${album.id}/media`,
+      resourceType: 'auto',
+    });
+    const type: MediaType = upload.resourceType === 'video' ? 'VIDEO' : 'IMAGE';
+
+    const media = this.albumMediaRepository.create({
+      albumId,
+      uploadedById,
+      type,
+      url: upload.secureUrl,
+      thumbnailUrl: upload.thumbnailUrl ?? null,
+      cloudinaryPublicId: upload.publicId,
+      fileName: file.originalname,
+      description: description?.trim() || null,
       uploadedAt: new Date(),
     });
 

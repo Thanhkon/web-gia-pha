@@ -76,6 +76,9 @@ export class Event {
   @Column({ name: 'coverImageUrl', type: 'varchar', nullable: true })
   coverImageUrl: string | null;
 
+  @Column({ name: 'coverImagePublicId', type: 'varchar', nullable: true })
+  coverImagePublicId: string | null;
+
   @Column({ name: 'isRecurring', default: false })
   isRecurring: boolean;
 

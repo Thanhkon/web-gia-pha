@@ -10,8 +10,12 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 import { CreateAlbumDto } from './dto/create-album.dto';
@@ -66,6 +70,15 @@ export class AlbumsController {
     return this.albumsService.update(id, updateAlbumDto);
   }
 
+  @Post('albums/:id/cover-image')
+  @UseInterceptors(FileInterceptor('image'))
+  uploadCoverImage(
+    @Param('id', ParseIntPipe) albumId: number,
+    @UploadedFile() file?: UploadedStorageFile,
+  ) {
+    return this.albumsService.uploadCoverImage(albumId, file);
+  }
+
   @Delete('albums/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.albumsService.remove(id);
@@ -86,6 +99,22 @@ export class AlbumsController {
       albumId,
       request.user!.id,
       createAlbumMediaDto,
+    );
+  }
+
+  @Post('albums/:id/media/uploads')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadMedia(
+    @Param('id', ParseIntPipe) albumId: number,
+    @Req() request: AuthenticatedRequest,
+    @Body('description') description?: string,
+    @UploadedFile() file?: UploadedStorageFile,
+  ) {
+    return this.albumsService.uploadMedia(
+      albumId,
+      request.user!.id,
+      file,
+      description,
     );
   }
 

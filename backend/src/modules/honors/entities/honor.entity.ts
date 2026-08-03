@@ -55,6 +55,9 @@ export class Honor {
   @Column({ name: 'imageUrl', type: 'varchar', nullable: true })
   imageUrl: string | null;
 
+  @Column({ name: 'imagePublicId', type: 'varchar', nullable: true })
+  imagePublicId: string | null;
+
   @Column({ name: 'documentUrl', type: 'varchar', nullable: true })
   documentUrl: string | null;
 
