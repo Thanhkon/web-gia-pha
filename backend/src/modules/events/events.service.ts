@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
+import { StorageService } from '../../common/storage/storage.service';
+import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { Family } from '../members/entities/family.entity';
 import { Member } from '../members/entities/member.entity';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -26,6 +28,7 @@ export class EventsService {
     private readonly familiesRepository: Repository<Family>,
     @InjectRepository(Member)
     private readonly membersRepository: Repository<Member>,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(
@@ -143,6 +146,30 @@ export class EventsService {
     }
 
     this.validateDateRange(event.startAt, event.endAt);
+
+    return this.eventsRepository.save(event);
+  }
+
+  async uploadCoverImage(eventId: number, file?: UploadedStorageFile) {
+    const event = await this.eventsRepository.findOne({
+      where: { id: eventId, deletedAt: IsNull() },
+    });
+
+    if (!event) {
+      throw new NotFoundException(`Event ${eventId} not found`);
+    }
+
+    if (!file) {
+      throw new BadRequestException('image is required');
+    }
+
+    const upload = await this.storageService.upload(file, {
+      folder: `gia-pha/families/${event.familyId}/events/${event.id}/cover`,
+      resourceType: 'image',
+    });
+
+    event.coverImageUrl = upload.secureUrl;
+    event.coverImagePublicId = upload.publicId;
 
     return this.eventsRepository.save(event);
   }

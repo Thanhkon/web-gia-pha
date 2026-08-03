@@ -11,6 +11,7 @@ export class CreateEventDto {
   endAt?: string | Date | null;
   location?: string | null;
   coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
   isRecurring?: boolean;
   recurrenceRule?: string | null;
 }

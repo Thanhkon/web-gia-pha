@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { StorageModule } from './common/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MembersModule } from './modules/members/members.module';
@@ -33,6 +34,7 @@ import { AlbumsModule } from './modules/albums/albums.module';
         ),
       }),
     }),
+    StorageModule,
     UsersModule,
     AuthModule,
     MembersModule,

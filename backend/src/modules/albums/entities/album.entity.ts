@@ -46,6 +46,9 @@ export class Album {
   @Column({ name: 'coverImage', type: 'text', nullable: true })
   coverImage: string | null;
 
+  @Column({ name: 'coverImagePublicId', type: 'varchar', nullable: true })
+  coverImagePublicId: string | null;
+
   @Column({ default: 'INTERNAL' })
   visibility: AlbumVisibility;
 

@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
 import { IsNull, Not, Repository } from 'typeorm';
+import { StorageService } from '../../common/storage/storage.service';
+import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { Family } from '../members/entities/family.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -21,21 +21,6 @@ import {
   PostVisibility,
 } from './entities/post.entity';
 
-type PostUploadFile = {
-  originalname: string;
-  mimetype: string;
-  buffer: Buffer;
-  size: number;
-};
-
-const POST_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
-const POST_IMAGE_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-]);
-
 @Injectable()
 export class PostsService {
   constructor(
@@ -43,9 +28,14 @@ export class PostsService {
     private readonly postsRepository: Repository<Post>,
     @InjectRepository(Family)
     private readonly familiesRepository: Repository<Family>,
+    private readonly storageService: StorageService,
   ) {}
 
-  async create(familyId: number, authorId: number, createPostDto: CreatePostDto) {
+  async create(
+    familyId: number,
+    authorId: number,
+    createPostDto: CreatePostDto,
+  ) {
     await this.ensureFamilyExists(familyId);
     this.validateCreatePayload(createPostDto);
 
@@ -55,8 +45,12 @@ export class PostsService {
       familyId,
       authorId,
       status,
-      visibility: this.normalizeVisibility(createPostDto.visibility ?? 'FAMILY'),
-      slug: this.normalizeSlug(createPostDto.slug) || this.slugify(createPostDto.title),
+      visibility: this.normalizeVisibility(
+        createPostDto.visibility ?? 'FAMILY',
+      ),
+      slug:
+        this.normalizeSlug(createPostDto.slug) ||
+        this.slugify(createPostDto.title),
       publishedAt:
         status === 'PUBLISHED'
           ? (this.normalizeDate(createPostDto.publishedAt) ?? new Date())
@@ -105,28 +99,21 @@ export class PostsService {
     return post;
   }
 
-  async uploadImage(file?: PostUploadFile) {
+  async uploadImage(file?: UploadedStorageFile) {
     if (!file) {
       throw new BadRequestException('image is required');
     }
 
-    if (!POST_IMAGE_MIME_TYPES.has(file.mimetype)) {
-      throw new BadRequestException('Only JPG, PNG and WEBP images are allowed');
-    }
-
-    if (file.size > POST_IMAGE_MAX_SIZE) {
-      throw new BadRequestException('Image must be smaller than 5 MB');
-    }
-
-    const extension = this.getImageExtension(file);
-    const fileName = `${Date.now()}-${randomUUID()}${extension}`;
-    const uploadDir = join(process.cwd(), 'uploads', 'posts');
-
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(join(uploadDir, fileName), file.buffer);
+    const result = await this.storageService.upload(file, {
+      folder: 'gia-pha/posts',
+      resourceType: 'image',
+    });
 
     return {
-      url: `/uploads/posts/${fileName}`,
+      url: result.secureUrl,
+      secureUrl: result.secureUrl,
+      publicId: result.publicId,
+      thumbnailUrl: result.thumbnailUrl,
     };
   }
 
@@ -205,7 +192,9 @@ export class PostsService {
   }
 
   private async ensureFamilyExists(familyId: number) {
-    const exists = await this.familiesRepository.exists({ where: { id: familyId } });
+    const exists = await this.familiesRepository.exists({
+      where: { id: familyId },
+    });
     if (!exists) {
       throw new NotFoundException(`Family ${familyId} not found`);
     }
@@ -222,13 +211,28 @@ export class PostsService {
   }
 
   private normalizePostInput(dto: CreatePostDto | UpdatePostDto) {
-    const { coverImage, publishedAt, slug, status, visibility, ...rest } = dto;
+    const {
+      coverImage,
+      coverImagePublicId,
+      publishedAt,
+      slug,
+      status,
+      visibility,
+      ...rest
+    } = dto;
     const data = { ...rest } as Partial<Post> & {
       content?: PostContentBlock[] | string;
     };
 
     if (data.thumbnailUrl === undefined && coverImage !== undefined) {
       data.thumbnailUrl = coverImage;
+    }
+
+    if (
+      data.thumbnailPublicId === undefined &&
+      coverImagePublicId !== undefined
+    ) {
+      data.thumbnailPublicId = coverImagePublicId;
     }
 
     if (typeof data.title === 'string') {
@@ -255,6 +259,10 @@ export class PostsService {
 
     if (typeof data.thumbnailUrl === 'string') {
       data.thumbnailUrl = data.thumbnailUrl.trim() || null;
+    }
+
+    if (typeof data.thumbnailPublicId === 'string') {
+      data.thumbnailPublicId = data.thumbnailPublicId.trim() || null;
     }
 
     return data;
@@ -287,9 +295,10 @@ export class PostsService {
         throw new BadRequestException('content block must be an object');
       }
 
-      const id = typeof block.id === 'string' && block.id.trim()
-        ? block.id.trim()
-        : randomUUID();
+      const id =
+        typeof block.id === 'string' && block.id.trim()
+          ? block.id.trim()
+          : randomUUID();
 
       if (block.type === 'HEADING' || block.type === 'PARAGRAPH') {
         const text = typeof block.text === 'string' ? block.text.trim() : '';
@@ -297,12 +306,12 @@ export class PostsService {
       }
 
       if (block.type === 'IMAGE') {
-        const imageUrl = typeof block.imageUrl === 'string'
-          ? block.imageUrl.trim()
-          : '';
-        const caption = typeof block.caption === 'string'
-          ? block.caption.trim()
-          : '';
+        const imageUrl =
+          typeof block.imageUrl === 'string' ? block.imageUrl.trim() : '';
+        const caption =
+          typeof block.caption === 'string' ? block.caption.trim() : '';
+        const publicId =
+          typeof block.publicId === 'string' ? block.publicId.trim() : '';
 
         return imageUrl
           ? [
@@ -310,6 +319,7 @@ export class PostsService {
                 id,
                 type: 'IMAGE',
                 imageUrl,
+                ...(publicId ? { publicId } : {}),
                 ...(caption ? { caption } : {}),
               } as PostContentBlock,
             ]
@@ -317,7 +327,9 @@ export class PostsService {
       }
 
       const invalidBlock = block as { type?: unknown };
-      throw new BadRequestException(`Invalid content block type: ${String(invalidBlock.type)}`);
+      throw new BadRequestException(
+        `Invalid content block type: ${String(invalidBlock.type)}`,
+      );
     });
   }
 
@@ -381,16 +393,4 @@ export class PostsService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
   }
-
-  private getImageExtension(file: PostUploadFile) {
-    const extension = extname(file.originalname).toLowerCase();
-    if (['.jpg', '.jpeg', '.png', '.webp'].includes(extension)) {
-      return extension;
-    }
-
-    if (file.mimetype === 'image/png') return '.png';
-    if (file.mimetype === 'image/webp') return '.webp';
-    return '.jpg';
-  }
 }
-

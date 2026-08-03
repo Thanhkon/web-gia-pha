@@ -60,6 +60,9 @@ export class Member {
   @Column({ name: 'avatarUrl', type: 'varchar', nullable: true })
   avatarUrl: string | null;
 
+  @Column({ name: 'avatarPublicId', type: 'varchar', nullable: true })
+  avatarPublicId: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   education: string | null;
 
