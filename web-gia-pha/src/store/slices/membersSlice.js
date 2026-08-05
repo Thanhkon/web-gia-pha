@@ -90,6 +90,25 @@ export const softDeleteMember = createAsyncThunk(
   }
 );
 
+export const uploadMemberAvatar = createAsyncThunk(
+  'members/uploadAvatar',
+  async ({ memberId, file }, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await apiClient.post(`/members/${memberId}/avatar`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data; // This is the updated member object with avatarUrl
+    } catch (error) {
+      console.error('Failed to upload member avatar:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to upload member avatar');
+    }
+  }
+);
+
 export const addParentChildRelation = createAsyncThunk(
   'members/addParentChild',
   async (relationData, { rejectWithValue }) => {
@@ -198,6 +217,13 @@ const membersSlice = createSlice({
         const id = action.payload;
         state.persons = state.persons.filter(p => p.id !== id);
         state.relationships = state.relationships.filter(r => r.person_a !== id && r.person_b !== id);
+      })
+      .addCase(uploadMemberAvatar.fulfilled, (state, action) => {
+        const updatedMember = action.payload;
+        const index = state.persons.findIndex(p => p.id === updatedMember.id);
+        if (index !== -1) {
+          state.persons[index].avatarUrl = updatedMember.avatarUrl;
+        }
       });
   }
 });

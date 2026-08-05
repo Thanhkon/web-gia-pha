@@ -12,7 +12,8 @@ import {
   addMemberToFamily,
   addParentChildRelation,
   addMarriageRelation,
-  selectFamilyTreeGraphData
+  selectFamilyTreeGraphData,
+  uploadMemberAvatar
 } from '../store/slices/membersSlice';
 import { buildAdjacencyLists } from '../utils/familyTreeUtils';
 import TreeToolbar from '../components/FamilyTree/TreeToolbar';
@@ -179,6 +180,10 @@ const FamilyTree = () => {
         })).unwrap();
       }
 
+      if (submittedData.avatarFile) {
+        try { await dispatch(uploadMemberAvatar({ memberId: newId, file: submittedData.avatarFile })).unwrap(); } catch (e) { console.error('Upload avatar failed', e); }
+      }
+
       setIsModalOpen(false);
       setNewMember(EMPTY_MEMBER);
       toast.success('Thêm thành viên thành công!');
@@ -252,7 +257,7 @@ const FamilyTree = () => {
 
   const filterExportNodes = (node) => {
     if (node.classList && (
-      node.classList.contains('toggle-collapse-btn') || 
+      node.classList.contains('toggle-collapse-btn') ||
       node.classList.contains('node-add-btn-wrapper')
     )) {
       return false;
@@ -266,15 +271,15 @@ const FamilyTree = () => {
     try {
       setIsExporting(true);
       toast.loading('Đang xử lý hình ảnh...', { id: 'exporting' });
-      
-      const dataUrl = await toPng(el, { 
+
+      const dataUrl = await toPng(el, {
         cacheBust: true,
         backgroundColor: '#ffffff',
         width: el.scrollWidth,
         height: el.scrollHeight,
         filter: filterExportNodes
       });
-      
+
       const link = document.createElement('a');
       link.download = `So_Do_Gia_Pha.png`;
       link.href = dataUrl;
@@ -294,24 +299,24 @@ const FamilyTree = () => {
     try {
       setIsExporting(true);
       toast.loading('Đang tạo PDF...', { id: 'exporting' });
-      
-      const dataUrl = await toPng(el, { 
+
+      const dataUrl = await toPng(el, {
         cacheBust: true,
         backgroundColor: '#ffffff',
         width: el.scrollWidth,
         height: el.scrollHeight,
         filter: filterExportNodes
       });
-      
+
       const pdf = new jsPDF({
         orientation: el.scrollWidth > el.scrollHeight ? 'landscape' : 'portrait',
         unit: 'px',
         format: [Math.max(el.scrollWidth, 100), Math.max(el.scrollHeight, 100)]
       });
-      
+
       pdf.addImage(dataUrl, 'PNG', 0, 0, el.scrollWidth, el.scrollHeight);
       pdf.save('So_Do_Gia_Pha.pdf');
-      
+
       toast.success('Xuất tài liệu PDF thành công!', { id: 'exporting' });
     } catch (err) {
       console.error(err);
@@ -347,18 +352,18 @@ const FamilyTree = () => {
 
   return (
     <div className="tree-page">
-        <TreeToolbar
-          filters={filters}
-          setFilters={setFilters}
-          zoomIn={zoomIn}
-          zoomOut={zoomOut}
-          centerTree={centerTree}
-          isKinshipMode={isKinshipMode}
-          onToggleKinshipMode={handleToggleKinshipMode}
-          onToggleStats={() => setShowStats(!showStats)}
-          onExportPNG={handleExportPNG}
-          onExportPDF={handleExportPDF}
-        />
+      <TreeToolbar
+        filters={filters}
+        setFilters={setFilters}
+        zoomIn={zoomIn}
+        zoomOut={zoomOut}
+        centerTree={centerTree}
+        isKinshipMode={isKinshipMode}
+        onToggleKinshipMode={handleToggleKinshipMode}
+        onToggleStats={() => setShowStats(!showStats)}
+        onExportPNG={handleExportPNG}
+        onExportPDF={handleExportPDF}
+      />
 
       {showStats && (
         <MemberStatisticsWidget

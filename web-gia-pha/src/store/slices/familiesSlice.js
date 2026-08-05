@@ -131,6 +131,25 @@ export const updateFamily = createAsyncThunk(
   }
 );
 
+export const uploadFamilyCoverImage = createAsyncThunk(
+  'families/uploadCover',
+  async ({ familyId, file }, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await apiClient.post(`/families/${familyId}/cover-image`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data; // This is the updated family object with coverImageUrl
+    } catch (error) {
+      console.error('Failed to upload family cover:', error);
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 export const deleteFamily = createAsyncThunk(
   'families/delete',
   async (id, { rejectWithValue }) => {
@@ -194,6 +213,22 @@ const familiesSlice = createSlice({
       // Delete Family
       .addCase(deleteFamily.fulfilled, (state, action) => {
         state.list = state.list.filter(f => f.id !== action.payload);
+      })
+
+      // Upload Cover Image
+      .addCase(uploadFamilyCoverImage.fulfilled, (state, action) => {
+        const updatedFamily = action.payload;
+        // Update in Redux state
+        const index = state.list.findIndex(f => f.id === updatedFamily.id);
+        if (index !== -1) {
+          state.list[index].coverImg = updatedFamily.coverImageUrl;
+        }
+        // Update in mock local storage
+        const mockIndex = mockFamilies.findIndex(f => f.id === updatedFamily.id);
+        if (mockIndex !== -1) {
+          mockFamilies[mockIndex].coverImg = updatedFamily.coverImageUrl;
+          saveMockFamilies();
+        }
       });
   },
 });

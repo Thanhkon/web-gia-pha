@@ -16,7 +16,8 @@ import {
   addMarriageRelation,
   updateMemberToFamily,
   deleteMemberFromFamily,
-  softDeleteMember
+  softDeleteMember,
+  uploadMemberAvatar
 } from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
 import { useFamily } from '../../hooks/useFamily';
@@ -133,6 +134,10 @@ const AdminMembers = () => {
           try { await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: editingId })).unwrap(); } catch (e) { console.error(e); }
         }
 
+        if (submittedData.avatarFile) {
+          try { await dispatch(uploadMemberAvatar({ memberId: editingId, file: submittedData.avatarFile })).unwrap(); } catch (e) { console.error('Upload avatar failed', e); }
+        }
+
         toast.success('Cập nhật thành công!');
       } else {
         const newMember = await dispatch(addMemberToFamily({
@@ -167,6 +172,10 @@ const AdminMembers = () => {
         }
         if (submittedData.spouseId) {
           await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: newId })).unwrap();
+        }
+
+        if (submittedData.avatarFile) {
+          try { await dispatch(uploadMemberAvatar({ memberId: newId, file: submittedData.avatarFile })).unwrap(); } catch (e) { console.error('Upload avatar failed', e); }
         }
       }
 
