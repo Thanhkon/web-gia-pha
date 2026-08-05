@@ -70,7 +70,7 @@ const Home = () => {
   // Custom hero for this family, or default
   const familyHeroSettings = familiesSettings[familyId]?.hero;
   const hero = {
-    title: familyHeroSettings?.title || (activeFamily ? `Gia Phả ${activeFamily.name}` : defaultHero.title),
+    title: familyHeroSettings?.title || (activeFamily ? `${activeFamily.name}` : defaultHero.title),
     subtitle: familyHeroSettings?.subtitle || defaultHero.subtitle,
     bgImage: familyHeroSettings?.bgImage || defaultHero.bgImage,
   };

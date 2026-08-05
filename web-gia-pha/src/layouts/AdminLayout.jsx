@@ -15,12 +15,19 @@ const AdminLayout = () => {
   const pendingRequestsCount = useSelector(selectPendingCount);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const location = window.location;
 
   React.useEffect(() => {
     if (familyId) {
       dispatch(fetchRequests(familyId));
     }
   }, [dispatch, familyId]);
+
+  // Đóng sidebar trên mobile khi chuyển trang
+  React.useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -29,9 +36,23 @@ const AdminLayout = () => {
 
   return (
     <div className={`admin-layout ${isCollapsed ? 'collapsed' : ''}`}>
-      <aside className="admin-sidebar">
+      {/* Mobile Header */}
+      <div className="admin-mobile-header">
+        <button className="mobile-toggle-btn" onClick={() => setIsMobileOpen(true)} type="button">
+          <Menu size={24} />
+        </button>
+        <span className="mobile-header-title">Bảng điều khiển</span>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      <div 
+        className={`admin-sidebar-overlay ${isMobileOpen ? 'show' : ''}`}
+        onClick={() => setIsMobileOpen(false)}
+      ></div>
+
+      <aside className={`admin-sidebar ${isMobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-brand">
-          <button className="toggle-sidebar-btn" onClick={() => setIsCollapsed(!isCollapsed)} type="button">
+          <button className="toggle-sidebar-btn hide-mobile" onClick={() => setIsCollapsed(!isCollapsed)} type="button">
             <Menu size={24} />
           </button>
           {!isCollapsed && <span>Bảng điều khiển</span>}
