@@ -11,7 +11,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserRole } from './entities/user.entity';
 
-type SafeUser = Omit<User, 'passwordHash' | 'name'> & {
+type SafeUser = Omit<User, 'passwordHash' | 'name' | 'isAdmin'> & {
   name: string | null;
 };
 
