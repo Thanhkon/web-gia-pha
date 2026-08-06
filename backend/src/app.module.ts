@@ -12,6 +12,7 @@ import { PostsModule } from './modules/posts/posts.module';
 import { EventsModule } from './modules/events/events.module';
 import { HonorsModule } from './modules/honors/honors.module';
 import { AlbumsModule } from './modules/albums/albums.module';
+import { MemberAttachmentsModule } from './modules/attachment/member-attachments.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AlbumsModule } from './modules/albums/albums.module';
     EventsModule,
     HonorsModule,
     AlbumsModule,
+    MemberAttachmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
