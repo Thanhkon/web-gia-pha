@@ -378,3 +378,33 @@ SELECT setval(pg_get_serial_sequence('public.albums', 'id'), COALESCE((SELECT MA
 SELECT setval(pg_get_serial_sequence('public.album_media', 'id'), COALESCE((SELECT MAX(id) FROM public.album_media), 1), true);
 
 COMMIT;
+
+
+-- add
+CREATE TYPE "member_attachments_role_enum" AS ENUM ('editor', 'viewer');
+CREATE TABLE "member_attachments" (
+    "id"          SERIAL PRIMARY KEY,
+    "memberId"    INTEGER NOT NULL,
+    "userId"      INTEGER NOT NULL,
+    "role"        "member_attachments_role_enum" NOT NULL DEFAULT 'viewer',
+    "createdAt"   TIMESTAMP NOT NULL DEFAULT now(),
+    "updatedAt"   TIMESTAMP NOT NULL DEFAULT now(),
+
+    CONSTRAINT "UQ_member_attachments_memberId" UNIQUE ("memberId"),
+
+    CONSTRAINT "FK_member_attachments_memberId"
+        FOREIGN KEY ("memberId") REFERENCES "members"("id") ON DELETE CASCADE,
+
+    CONSTRAINT "FK_member_attachments_userId"
+        FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE
+);
+
+CREATE INDEX "IDX_member_attachments_userId" ON "member_attachments" ("userId");
+
+--sua users
+CREATE TYPE users_role_enum AS ENUM ('admin', 'user');
+ALTER TABLE users
+  ADD COLUMN phone VARCHAR NULL,
+  ADD COLUMN address VARCHAR NULL,
+  ADD COLUMN "dateOfBirth" DATE NULL,
+  ADD COLUMN role users_role_enum NOT NULL DEFAULT 'user';
