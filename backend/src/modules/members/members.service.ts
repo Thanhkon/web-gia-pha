@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { StorageService } from '../../common/storage/storage.service';
 import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
+import { PermissionsService } from '../permissions/permissions.service';
+import { MemberAttachmentsService } from '../attachment/member-attachments.service';
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 import { CreateMarriageDto } from './dto/create-marriage.dto';
@@ -31,9 +33,17 @@ export class MembersService {
     @InjectRepository(Marriage)
     private readonly marriagesRepository: Repository<Marriage>,
     private readonly storageService: StorageService,
+    private readonly permissionsService: PermissionsService,
+    private readonly memberAttachmentsService: MemberAttachmentsService,
   ) {}
 
-  async createFamily(createFamilyDto: CreateFamilyDto) {
+  async findAllFamilies() {
+    return this.familiesRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async createFamily(createFamilyDto: CreateFamilyDto, userId: number) {
     if (!createFamilyDto.name?.trim()) {
       throw new BadRequestException('Family name is required');
     }
@@ -43,7 +53,16 @@ export class MembersService {
       name: createFamilyDto.name.trim(),
     });
 
-    return this.familiesRepository.save(family);
+    const savedFamily = await this.familiesRepository.save(family);
+
+    // Gán người tạo làm editor cấp family, để họ có quyền thao tác tiếp
+    // (thêm member, sửa family, v.v.) ngay sau khi tạo.
+    await this.memberAttachmentsService.createFamilyEditor(
+      savedFamily.id,
+      userId,
+    );
+
+    return savedFamily;
   }
 
   async findOneFamily(id: number) {
@@ -54,8 +73,14 @@ export class MembersService {
     return family;
   }
 
-  async updateFamily(id: number, updateFamilyDto: UpdateFamilyDto) {
+  async updateFamily(
+    id: number,
+    userId: number,
+    updateFamilyDto: UpdateFamilyDto,
+  ) {
     const family = await this.findOneFamily(id);
+
+    await this.permissionsService.assertFamilyEditor(userId, id);
 
     if (updateFamilyDto.name !== undefined && !updateFamilyDto.name.trim()) {
       throw new BadRequestException('Family name cannot be empty');
@@ -71,8 +96,14 @@ export class MembersService {
     return this.familiesRepository.save(family);
   }
 
-  async uploadFamilyCover(familyId: number, file?: UploadedStorageFile) {
+  async uploadFamilyCover(
+    familyId: number,
+    userId: number,
+    file?: UploadedStorageFile,
+  ) {
     const family = await this.findOneFamily(familyId);
+
+    await this.permissionsService.assertFamilyEditor(userId, familyId); 
 
     if (!file) {
       throw new BadRequestException('image is required');
@@ -89,8 +120,10 @@ export class MembersService {
     return this.familiesRepository.save(family);
   }
 
-  async removeFamily(id: number) {
+  async removeFamily(id: number, userId: number) {
     await this.findOneFamily(id);
+
+    await this.permissionsService.assertFamilyEditor(userId, id); 
 
     const memberCount = await this.membersRepository.count({
       where: { familyId: id },
@@ -106,8 +139,13 @@ export class MembersService {
     return { deleted: true, id };
   }
 
-  async createMember(familyId: number, createMemberDto: CreateMemberDto) {
+  async createMember(
+    familyId: number,
+    userId: number,
+    createMemberDto: CreateMemberDto,
+  ) {
     await this.ensureFamilyExists(familyId);
+    await this.permissionsService.assertFamilyEditor(userId, familyId);
 
     if (!createMemberDto.fullName?.trim()) {
       throw new BadRequestException('Member fullName is required');
@@ -191,11 +229,17 @@ export class MembersService {
     return this.findOneMember(member.id);
   }
 
-  async updateMember(id: number, updateMemberDto: UpdateMemberDto) {
+  async updateMember(
+    id: number,
+    userId: number,
+    updateMemberDto: UpdateMemberDto,
+  ) {
     const member = await this.membersRepository.findOne({ where: { id } });
     if (!member) {
       throw new NotFoundException(`Member ${id} not found`);
     }
+
+    await this.permissionsService.assertFamilyEditor(userId, member.familyId); 
 
     if (updateMemberDto.familyId !== undefined) {
       await this.ensureFamilyExists(updateMemberDto.familyId);
@@ -215,7 +259,11 @@ export class MembersService {
     return this.membersRepository.save(member);
   }
 
-  async uploadMemberAvatar(memberId: number, file?: UploadedStorageFile) {
+  async uploadMemberAvatar(
+    memberId: number,
+    userId: number,
+    file?: UploadedStorageFile,
+  ) {
     const member = await this.membersRepository.findOne({
       where: { id: memberId },
     });
@@ -223,6 +271,8 @@ export class MembersService {
     if (!member) {
       throw new NotFoundException(`Member ${memberId} not found`);
     }
+
+    await this.permissionsService.assertFamilyEditor(userId, member.familyId); // 👈
 
     if (!file) {
       throw new BadRequestException('image is required');
@@ -239,17 +289,22 @@ export class MembersService {
     return this.membersRepository.save(member);
   }
 
-  async removeMember(id: number) {
+  async removeMember(id: number, userId: number) {
     const member = await this.membersRepository.findOne({ where: { id } });
     if (!member) {
       throw new NotFoundException(`Member ${id} not found`);
     }
 
+    await this.permissionsService.assertFamilyEditor(userId, member.familyId); 
+
     await this.membersRepository.remove(member);
     return { deleted: true, id };
   }
 
-  async createParentChildRelation(dto: CreateParentChildRelationDto) {
+  async createParentChildRelation(
+    dto: CreateParentChildRelationDto,
+    userId: number,
+  ) {
     if (dto.parentId === dto.childId) {
       throw new BadRequestException(
         'Parent and child must be different members',
@@ -262,6 +317,8 @@ export class MembersService {
     ]);
 
     this.ensureSameFamily(parent, child);
+
+    await this.permissionsService.assertFamilyEditor(userId, parent.familyId); 
 
     const exists = await this.parentChildRepository.findOne({
       where: { parentId: dto.parentId, childId: dto.childId },
@@ -280,7 +337,7 @@ export class MembersService {
     return this.parentChildRepository.save(relation);
   }
 
-  async createMarriage(dto: CreateMarriageDto) {
+  async createMarriage(dto: CreateMarriageDto, userId: number) {
     if (dto.memberAId === dto.memberBId) {
       throw new BadRequestException('Marriage members must be different');
     }
@@ -291,6 +348,8 @@ export class MembersService {
     ]);
 
     this.ensureSameFamily(memberA, memberB);
+
+    await this.permissionsService.assertFamilyEditor(userId, memberA.familyId); 
 
     const exists = await this.marriagesRepository.findOne({
       where: [
@@ -328,7 +387,6 @@ export class MembersService {
     if (!member) {
       throw new NotFoundException(`Member ${id} not found`);
     }
-
     return member;
   }
 
@@ -363,16 +421,13 @@ export class MembersService {
     if (value === undefined) {
       return undefined;
     }
-
     if (value === null || value === '') {
       return null;
     }
-
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) {
       throw new BadRequestException('Invalid date value');
     }
-
     return date;
   }
 }

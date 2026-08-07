@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException, // 👈 thêm
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -33,7 +34,10 @@ export class EventsController {
     @Req() request: AuthenticatedRequest,
     @Body() createEventDto: CreateEventDto,
   ) {
-    return this.eventsService.create(familyId, request.user!.id, createEventDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.eventsService.create(familyId, request.user.id, createEventDto);
   }
 
   @Get('families/:familyId/events')
@@ -61,27 +65,47 @@ export class EventsController {
   @Patch('events/:id')
   update(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest, // 👈 thêm
     @Body() updateEventDto: UpdateEventDto,
   ) {
-    return this.eventsService.update(id, updateEventDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.eventsService.update(id, request.user.id, updateEventDto); // 👈
   }
 
   @Post('events/:id/cover-image')
   @UseInterceptors(FileInterceptor('image'))
   uploadCoverImage(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest, // 👈 thêm
     @UploadedFile() file?: UploadedStorageFile,
   ) {
-    return this.eventsService.uploadCoverImage(id, file);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.eventsService.uploadCoverImage(id, request.user.id, file);
   }
 
   @Delete('events/:id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.eventsService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.eventsService.remove(id, request.user.id);
   }
 
   @Patch('events/:id/restore')
-  restore(@Param('id', ParseIntPipe) id: number) {
-    return this.eventsService.restore(id);
+  restore(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.eventsService.restore(id, request.user.id);
   }
 }

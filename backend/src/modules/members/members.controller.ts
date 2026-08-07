@@ -7,13 +7,16 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
   UploadedFile,
+  UnauthorizedException,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
+import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { UpdateFamilyDto } from './dto/update-family.dto';
 import { CreateMarriageDto } from './dto/create-marriage.dto';
@@ -28,8 +31,21 @@ export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
   @Post('families')
-  createFamily(@Body() createFamilyDto: CreateFamilyDto) {
-    return this.membersService.createFamily(createFamilyDto);
+  createFamily(
+    @Req() request: AuthenticatedRequest,
+    @Body() createFamilyDto: CreateFamilyDto,
+  ) {
+    // AccessTokenGuard đã đảm bảo user đã login. userId ở đây dùng để
+    // gán người tạo làm editor cấp family ngay sau khi tạo xong.
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.createFamily(createFamilyDto, request.user.id);
+  }
+
+  @Get('families')
+  findAllFamilies() {
+    return this.membersService.findAllFamilies();
   }
 
   @Get('families/:familyId')
@@ -40,23 +56,45 @@ export class MembersController {
   @Patch('families/:familyId')
   updateFamily(
     @Param('familyId', ParseIntPipe) familyId: number,
+    @Req() request: AuthenticatedRequest,
     @Body() updateFamilyDto: UpdateFamilyDto,
   ) {
-    return this.membersService.updateFamily(familyId, updateFamilyDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.updateFamily(
+      familyId,
+      request.user.id,
+      updateFamilyDto,
+    );
   }
 
   @Post('families/:familyId/cover-image')
   @UseInterceptors(FileInterceptor('image'))
   uploadFamilyCover(
     @Param('familyId', ParseIntPipe) familyId: number,
+    @Req() request: AuthenticatedRequest,
     @UploadedFile() file?: UploadedStorageFile,
   ) {
-    return this.membersService.uploadFamilyCover(familyId, file);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.uploadFamilyCover(
+      familyId,
+      request.user.id,
+      file,
+    );
   }
 
   @Delete('families/:familyId')
-  removeFamily(@Param('familyId', ParseIntPipe) familyId: number) {
-    return this.membersService.removeFamily(familyId);
+  removeFamily(
+    @Param('familyId', ParseIntPipe) familyId: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.removeFamily(familyId, request.user.id);
   }
 
   @Get('families/:familyId/members')
@@ -67,9 +105,17 @@ export class MembersController {
   @Post('families/:familyId/members')
   createMember(
     @Param('familyId', ParseIntPipe) familyId: number,
+    @Req() request: AuthenticatedRequest,
     @Body() createMemberDto: CreateMemberDto,
   ) {
-    return this.membersService.createMember(familyId, createMemberDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.createMember(
+      familyId,
+      request.user.id,
+      createMemberDto,
+    );
   }
 
   @Get('families/:familyId/members/:memberId')
@@ -88,32 +134,62 @@ export class MembersController {
   @Patch('members/:id')
   updateMember(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
     @Body() updateMemberDto: UpdateMemberDto,
   ) {
-    return this.membersService.updateMember(id, updateMemberDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.updateMember(
+      id,
+      request.user.id,
+      updateMemberDto,
+    );
   }
 
   @Post('members/:id/avatar')
   @UseInterceptors(FileInterceptor('image'))
   uploadMemberAvatar(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
     @UploadedFile() file?: UploadedStorageFile,
   ) {
-    return this.membersService.uploadMemberAvatar(id, file);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.uploadMemberAvatar(id, request.user.id, file);
   }
 
   @Delete('members/:id')
-  removeMember(@Param('id', ParseIntPipe) id: number) {
-    return this.membersService.removeMember(id);
+  removeMember(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.removeMember(id, request.user.id);
   }
 
   @Post('parent-child-relations')
-  createParentChildRelation(@Body() dto: CreateParentChildRelationDto) {
-    return this.membersService.createParentChildRelation(dto);
+  createParentChildRelation(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: CreateParentChildRelationDto,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.createParentChildRelation(dto, request.user.id);
   }
 
   @Post('marriages')
-  createMarriage(@Body() dto: CreateMarriageDto) {
-    return this.membersService.createMarriage(dto);
+  createMarriage(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: CreateMarriageDto,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.createMarriage(dto, request.user.id);
   }
 }
