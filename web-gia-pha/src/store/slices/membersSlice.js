@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import apiClient from '../../utils/apiClient';
-import { getTreeData, buildAdjacencyLists } from '../../utils/familyTreeUtils';
+import { buildAdjacencyLists } from '../../utils/familyTreeUtils';
 
 // Thunks
 export const fetchFamilyTree = createAsyncThunk(
@@ -234,13 +234,6 @@ export const { setNodeCollapse, updateMemberSync, deleteMemberSync } = membersSl
 export const selectPersons = (state) => state.members.persons;
 export const selectRelationships = (state) => state.members.relationships;
 
-// createSelector sẽ memoize kết quả dựa trên persons và relationships
-export const selectTreeData = createSelector(
-  [selectPersons, selectRelationships],
-  (persons, relationships) => {
-    return getTreeData(persons, relationships);
-  }
-);
 
 export const selectFamilyTreeGraphData = createSelector(
   [selectPersons, selectRelationships],

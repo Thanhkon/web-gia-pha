@@ -123,12 +123,12 @@ export const selectAllRequests = state => state.editRequests.items;
 
 export const selectPendingRequests = createSelector(
   [selectAllRequests],
-  (items) => items.filter(r => r.status === 'pending').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  (items) => items.filter(r => r.status?.toLowerCase() === 'pending').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 );
 
 export const selectProcessedRequests = createSelector(
   [selectAllRequests],
-  (items) => items.filter(r => r.status !== 'pending').sort((a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt))
+  (items) => items.filter(r => r.status?.toLowerCase() !== 'pending').sort((a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt))
 );
 
 export const selectPendingCount = createSelector(

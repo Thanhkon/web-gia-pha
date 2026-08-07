@@ -44,6 +44,7 @@ const createResponse = <T>(data: T): ApiResponse<T> => ({
 
 const normalizeRole = (role?: string | UserRole) => {
   const normalizedRole = String(role || '').toUpperCase();
+  if (normalizedRole === UserRole.ADMIN) return UserRole.ADMIN;
   if (normalizedRole === UserRole.FAMILY_HEAD) return UserRole.FAMILY_HEAD;
   if (normalizedRole === UserRole.MEMBER) return UserRole.MEMBER;
   return UserRole.GUEST;
@@ -261,7 +262,7 @@ export function getEventActor(user?: AuthUser | null, isAuthenticated = Boolean(
 }
 
 export function canManageEvent(user: MockCurrentUser | null | undefined, event?: Event | null) {
-  if (!user || user.role !== UserRole.FAMILY_HEAD || !user.familyId) {
+  if (!user || (user.role !== UserRole.FAMILY_HEAD && user.role !== UserRole.ADMIN) || !user.familyId) {
     return false;
   }
 

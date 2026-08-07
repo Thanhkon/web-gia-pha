@@ -6,8 +6,15 @@ import '../css/pages/PublicHome.css';
 const PublicHome = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
+  const { list: userFamilies } = useSelector((state) => state.families);
+  const { primaryFamilyId } = useSelector((state) => state.settings);
+
   if (isAuthenticated) {
-    return <Navigate to="/home" replace />;
+    const activeFamilyId = primaryFamilyId || (userFamilies?.length > 0 ? userFamilies[0].id : null);
+    if (activeFamilyId) {
+      return <Navigate to={`/${activeFamilyId}/home`} replace />;
+    }
+    return <Navigate to="/admin/families" replace />;
   }
 
   return (

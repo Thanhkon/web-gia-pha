@@ -2,8 +2,11 @@ import React from 'react';
 import { X } from 'lucide-react';
 import '../../css/components/KinshipModal.css';
 
+import avatarMale from '../../assets/avatar-male.svg';
+import avatarFemale from '../../assets/avatar-female.svg';
+
 const getAvatarPlaceholder = (gender) => {
-  return gender === 'female' ? '/src/assets/avatar-female.svg' : '/src/assets/avatar-male.svg';
+  return gender === 'female' ? avatarFemale : avatarMale;
 };
 
 const KinshipModal = ({ isOpen, onClose, kinshipResult, personA, personB }) => {

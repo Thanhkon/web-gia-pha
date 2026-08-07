@@ -30,7 +30,7 @@ const EditRequests = () => {
   // Để đơn giản, ta sẽ lưu lại tên những người gửi trong tab hiện tại.
   const myRequests = allRequests.filter(r => currentUserNames.has(r.submittedByName)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   
-  const myPendingCount = myRequests.filter(r => r.status === 'PENDING').length;
+  const myPendingCount = myRequests.filter(r => r.status?.toLowerCase() === 'pending').length;
 
   const handleSubmit = async (requestData) => {
     try {

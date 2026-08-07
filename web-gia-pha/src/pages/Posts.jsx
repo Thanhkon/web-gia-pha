@@ -3,7 +3,7 @@ import { FileText, Loader2, PlusCircle } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import ConfirmModal from '../components/common/ConfirmModal';
-import Pagination from '../components/Pagination';
+import Pagination from '../components/common/Pagination';
 import PostCard from '../components/Posts/PostCard';
 import PostFilters from '../components/Posts/PostFilters';
 import { canCreatePost, getPostActor, isPostManager, postService } from '../services/postService';

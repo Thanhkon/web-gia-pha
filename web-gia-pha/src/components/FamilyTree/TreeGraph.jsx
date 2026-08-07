@@ -41,7 +41,9 @@ const TreeNode = React.memo(({
     dispatch(setNodeCollapse({ personId, isCollapsed: !isCollapsed }));
   };
 
-  const treeData = getTreeData(personId, personsMap, adj, filters);
+  const treeData = useMemo(() => {
+    return getTreeData(personId, personsMap, adj, filters);
+  }, [personId, personsMap, adj, filters]);
   if (!treeData) return null;
 
   const { person, spouses, children, hasAnyChildren } = treeData;

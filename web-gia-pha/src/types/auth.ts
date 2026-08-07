@@ -2,6 +2,7 @@ export enum UserRole {
   GUEST = 'GUEST',
   MEMBER = 'MEMBER',
   FAMILY_HEAD = 'FAMILY_HEAD',
+  ADMIN = 'ADMIN',
 }
 
 export interface AuthPermissions {

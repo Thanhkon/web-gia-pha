@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Menu, X } from 'lucide-react';
-import '../css/components/Navbar.css';
+import '../../css/components/Navbar.css';
 
 const PublicNavbar = () => {
   const navigate = useNavigate();

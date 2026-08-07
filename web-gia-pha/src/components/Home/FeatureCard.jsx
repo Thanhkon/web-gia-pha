@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../css/components/FeatureCard.css';
+import '../../css/components/FeatureCard.css';
 
 const FeatureCard = ({ title, description, icon: Icon, path, color = 'var(--primary)' }) => {
   return (

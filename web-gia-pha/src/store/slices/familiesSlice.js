@@ -221,13 +221,7 @@ const familiesSlice = createSlice({
         // Update in Redux state
         const index = state.list.findIndex(f => f.id === updatedFamily.id);
         if (index !== -1) {
-          state.list[index].coverImg = updatedFamily.coverImageUrl;
-        }
-        // Update in mock local storage
-        const mockIndex = mockFamilies.findIndex(f => f.id === updatedFamily.id);
-        if (mockIndex !== -1) {
-          mockFamilies[mockIndex].coverImg = updatedFamily.coverImageUrl;
-          saveMockFamilies();
+          state.list[index].coverImageUrl = updatedFamily.coverImageUrl;
         }
       });
   },

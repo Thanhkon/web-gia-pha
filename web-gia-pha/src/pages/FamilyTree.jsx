@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { toPng } from 'html-to-image';
-import { jsPDF } from 'jspdf';
+
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useLocation } from 'react-router-dom';
 import { useFamily } from '../hooks/useFamily';
 import { usePanZoom } from '../hooks/usePanZoom';
-import MemberForm from '../components/Admin/MemberForm/MemberForm';
+import MemberForm from '../components/Members/MemberForm/MemberForm';
 import {
   fetchFamilyTree,
   addMemberToFamily,
@@ -18,11 +17,13 @@ import {
 import { buildAdjacencyLists } from '../utils/familyTreeUtils';
 import TreeToolbar from '../components/FamilyTree/TreeToolbar';
 import TreeGraph from '../components/FamilyTree/TreeGraph';
-import MemberProfileModal from '../components/MemberProfileModal';
+import MemberProfileModal from '../components/Members/MemberProfileModal';
 import KinshipModal from '../components/FamilyTree/KinshipModal';
-import MemberStatisticsWidget from '../components/Admin/MemberStatisticsWidget';
-import FeatureState from '../components/common/FeatureState';
+import MemberStatisticsWidget from '../components/Members/MemberStatisticsWidget';
 import { getTreeData } from '../utils/familyTreeUtils';
+import FeatureState from '../components/common/FeatureState';
+import { buildMemberPayload } from '../utils/memberPayload';
+import { useTreeExport } from '../hooks/useTreeExport';
 import { computeKinship } from '../utils/kinshipHelpers';
 import '../css/pages/FamilyTree.css';
 
@@ -136,24 +137,7 @@ const FamilyTree = () => {
       // Gọi API thêm member
       const newMember = await dispatch(addMemberToFamily({
         familyId: familyId,
-        memberData: {
-          fullName: submittedData.fullName,
-          otherName: submittedData.otherName,
-          gender: submittedData.gender,
-          generation: submittedData.generation,
-          role: submittedData.role || null,
-          isInLaw: submittedData.isInLaw || false,
-          dateOfBirth: submittedData.dateOfBirth || null,
-          isDeceased: submittedData.isDeceased || false,
-          dateOfDeath: submittedData.dateOfDeath || null,
-          placeOfBirth: submittedData.placeOfBirth || null,
-          currentAddress: submittedData.currentAddress || null,
-          education: submittedData.education || null,
-          occupation: submittedData.occupation || null,
-          biography: submittedData.biography || null,
-          note: submittedData.note || null,
-          avatarUrl: submittedData.avatarUrl || null,
-        }
+        memberData: buildMemberPayload(submittedData)
       })).unwrap();
 
       const newId = newMember.id;
@@ -253,7 +237,7 @@ const FamilyTree = () => {
     }
   };
 
-  const [isExporting, setIsExporting] = useState(false);
+  const { isExporting, handleExportPNG: exportPNG, handleExportPDF: exportPDF } = useTreeExport();
 
   const filterExportNodes = (node) => {
     if (node.classList && (
@@ -265,66 +249,8 @@ const FamilyTree = () => {
     return true;
   };
 
-  const handleExportPNG = async () => {
-    const el = document.getElementById('exportable-tree-container');
-    if (!el) return;
-    try {
-      setIsExporting(true);
-      toast.loading('Đang xử lý hình ảnh...', { id: 'exporting' });
-
-      const dataUrl = await toPng(el, {
-        cacheBust: true,
-        backgroundColor: '#ffffff',
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-        filter: filterExportNodes
-      });
-
-      const link = document.createElement('a');
-      link.download = `So_Do_Gia_Pha.png`;
-      link.href = dataUrl;
-      link.click();
-      toast.success('Xuất ảnh thành công!', { id: 'exporting' });
-    } catch (err) {
-      console.error(err);
-      toast.error('Có lỗi xảy ra khi xuất ảnh', { id: 'exporting' });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleExportPDF = async () => {
-    const el = document.getElementById('exportable-tree-container');
-    if (!el) return;
-    try {
-      setIsExporting(true);
-      toast.loading('Đang tạo PDF...', { id: 'exporting' });
-
-      const dataUrl = await toPng(el, {
-        cacheBust: true,
-        backgroundColor: '#ffffff',
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-        filter: filterExportNodes
-      });
-
-      const pdf = new jsPDF({
-        orientation: el.scrollWidth > el.scrollHeight ? 'landscape' : 'portrait',
-        unit: 'px',
-        format: [Math.max(el.scrollWidth, 100), Math.max(el.scrollHeight, 100)]
-      });
-
-      pdf.addImage(dataUrl, 'PNG', 0, 0, el.scrollWidth, el.scrollHeight);
-      pdf.save('So_Do_Gia_Pha.pdf');
-
-      toast.success('Xuất tài liệu PDF thành công!', { id: 'exporting' });
-    } catch (err) {
-      console.error(err);
-      toast.error('Có lỗi xảy ra khi xuất PDF', { id: 'exporting' });
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const handleExportPNG = () => exportPNG('exportable-tree-container', filterExportNodes);
+  const handleExportPDF = () => exportPDF('exportable-tree-container', filterExportNodes);
 
   // Căn giữa lần đầu render
   useEffect(() => {
