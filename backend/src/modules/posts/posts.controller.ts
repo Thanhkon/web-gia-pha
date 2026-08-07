@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -33,7 +34,10 @@ export class PostsController {
     @Req() request: AuthenticatedRequest,
     @Body() createPostDto: CreatePostDto,
   ) {
-    return this.postsService.create(familyId, request.user!.id, createPostDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.postsService.create(familyId, request.user.id, createPostDto);
   }
 
   @Post('posts/uploads/images')
@@ -68,16 +72,31 @@ export class PostsController {
     @Req() request: AuthenticatedRequest,
     @Body() updatePostDto: UpdatePostDto,
   ) {
-    return this.postsService.update(id, request.user!.id, updatePostDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.postsService.update(id, request.user.id, updatePostDto);
   }
 
   @Delete('posts/:id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.postsService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.postsService.remove(id, request.user.id);
   }
 
   @Patch('posts/:id/restore')
-  restore(@Param('id', ParseIntPipe) id: number) {
-    return this.postsService.restore(id);
+  restore(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.postsService.restore(id, request.user.id);
   }
 }

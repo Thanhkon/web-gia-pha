@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { StorageService } from '../../common/storage/storage.service';
 import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
+import { PermissionsService } from '../permissions/permissions.service';
 import { Family } from '../members/entities/family.entity';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
@@ -35,6 +36,7 @@ export class AlbumsService {
     @InjectRepository(Family)
     private readonly familiesRepository: Repository<Family>,
     private readonly storageService: StorageService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async create(
@@ -43,6 +45,7 @@ export class AlbumsService {
     createAlbumDto: CreateAlbumDto,
   ) {
     await this.ensureFamilyExists(familyId);
+    await this.permissionsService.assertFamilyEditor(createdById, familyId);
     this.validateCreatePayload(createAlbumDto);
 
     const album = this.albumsRepository.create({
@@ -66,6 +69,7 @@ export class AlbumsService {
       includeDeleted?: boolean;
     },
   ) {
+    // GET - không cần check quyền editor, ai login cũng xem được
     await this.ensureFamilyExists(familyId);
 
     return this.albumsRepository.find({
@@ -85,6 +89,7 @@ export class AlbumsService {
   }
 
   async findOne(id: number, options?: { includeDeletedMedia?: boolean }) {
+    // GET - không cần check quyền editor
     const album = await this.albumsRepository.findOne({
       where: { id, deletedAt: IsNull() },
       relations: { family: true, createdBy: true, media: true },
@@ -101,7 +106,7 @@ export class AlbumsService {
     return album;
   }
 
-  async update(id: number, updateAlbumDto: UpdateAlbumDto) {
+  async update(id: number, userId: number, updateAlbumDto: UpdateAlbumDto) {
     const album = await this.albumsRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -109,6 +114,8 @@ export class AlbumsService {
     if (!album) {
       throw new NotFoundException(`Album ${id} not found`);
     }
+
+    await this.permissionsService.assertFamilyEditor(userId, album.familyId);
 
     this.albumsRepository.merge(
       album,
@@ -126,7 +133,11 @@ export class AlbumsService {
     return this.albumsRepository.save(album);
   }
 
-  async uploadCoverImage(albumId: number, file?: UploadedStorageFile) {
+  async uploadCoverImage(
+    albumId: number,
+    userId: number,
+    file?: UploadedStorageFile,
+  ) {
     const album = await this.albumsRepository.findOne({
       where: { id: albumId, deletedAt: IsNull() },
     });
@@ -134,6 +145,8 @@ export class AlbumsService {
     if (!album) {
       throw new NotFoundException(`Album ${albumId} not found`);
     }
+
+    await this.permissionsService.assertFamilyEditor(userId, album.familyId);
 
     if (!file) {
       throw new BadRequestException('image is required');
@@ -150,7 +163,7 @@ export class AlbumsService {
     return this.albumsRepository.save(album);
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId: number) {
     const album = await this.albumsRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -159,13 +172,15 @@ export class AlbumsService {
       throw new NotFoundException(`Album ${id} not found`);
     }
 
+    await this.permissionsService.assertFamilyEditor(userId, album.familyId);
+
     album.deletedAt = new Date();
     await this.albumsRepository.save(album);
 
     return { deleted: true, id };
   }
 
-  async restore(id: number) {
+  async restore(id: number, userId: number) {
     const album = await this.albumsRepository.findOne({
       where: { id, deletedAt: Not(IsNull()) },
     });
@@ -173,6 +188,8 @@ export class AlbumsService {
     if (!album) {
       throw new NotFoundException(`Deleted album ${id} not found`);
     }
+
+    await this.permissionsService.assertFamilyEditor(userId, album.familyId);
 
     album.deletedAt = null;
     return this.albumsRepository.save(album);
@@ -183,7 +200,11 @@ export class AlbumsService {
     uploadedById: number,
     createAlbumMediaDto: CreateAlbumMediaDto,
   ) {
-    await this.ensureAlbumExists(albumId);
+    const album = await this.ensureAlbumExists(albumId);
+    await this.permissionsService.assertFamilyEditor(
+      uploadedById,
+      album.familyId,
+    );
     this.validateMediaPayload(createAlbumMediaDto);
 
     const media = this.albumMediaRepository.create({
@@ -213,6 +234,11 @@ export class AlbumsService {
       throw new NotFoundException(`Album ${albumId} not found`);
     }
 
+    await this.permissionsService.assertFamilyEditor(
+      uploadedById,
+      album.familyId,
+    );
+
     if (!file) {
       throw new BadRequestException('file is required');
     }
@@ -241,8 +267,12 @@ export class AlbumsService {
   async updateMedia(
     albumId: number,
     mediaId: number,
+    userId: number,
     updateAlbumMediaDto: UpdateAlbumMediaDto,
   ) {
+    const album = await this.ensureAlbumExists(albumId);
+    await this.permissionsService.assertFamilyEditor(userId, album.familyId);
+
     const media = await this.albumMediaRepository.findOne({
       where: { id: mediaId, albumId, deletedAt: IsNull() },
     });
@@ -262,7 +292,10 @@ export class AlbumsService {
     return this.albumMediaRepository.save(media);
   }
 
-  async removeMedia(albumId: number, mediaId: number) {
+  async removeMedia(albumId: number, mediaId: number, userId: number) {
+    const album = await this.ensureAlbumExists(albumId);
+    await this.permissionsService.assertFamilyEditor(userId, album.familyId);
+
     const media = await this.albumMediaRepository.findOne({
       where: { id: mediaId, albumId, deletedAt: IsNull() },
     });
@@ -279,7 +312,10 @@ export class AlbumsService {
     return { deleted: true, id: mediaId };
   }
 
-  async restoreMedia(albumId: number, mediaId: number) {
+  async restoreMedia(albumId: number, mediaId: number, userId: number) {
+    const album = await this.ensureAlbumExists(albumId);
+    await this.permissionsService.assertFamilyEditor(userId, album.familyId);
+
     const media = await this.albumMediaRepository.findOne({
       where: { id: mediaId, albumId, deletedAt: Not(IsNull()) },
     });
@@ -303,13 +339,14 @@ export class AlbumsService {
     }
   }
 
-  private async ensureAlbumExists(albumId: number) {
-    const exists = await this.albumsRepository.exists({
+  private async ensureAlbumExists(albumId: number): Promise<Album> {
+    const album = await this.albumsRepository.findOne({
       where: { id: albumId, deletedAt: IsNull() },
     });
-    if (!exists) {
+    if (!album) {
       throw new NotFoundException(`Album ${albumId} not found`);
     }
+    return album;
   }
 
   private validateCreatePayload(dto: CreateAlbumDto) {
@@ -357,9 +394,7 @@ export class AlbumsService {
 
   private normalizeVisibility(visibility: string): AlbumVisibility {
     const normalizedVisibility = visibility.trim().toUpperCase();
-    if (
-      !ALBUM_VISIBILITIES.includes(normalizedVisibility as AlbumVisibility)
-    ) {
+    if (!ALBUM_VISIBILITIES.includes(normalizedVisibility as AlbumVisibility)) {
       throw new BadRequestException(`Invalid album visibility: ${visibility}`);
     }
 

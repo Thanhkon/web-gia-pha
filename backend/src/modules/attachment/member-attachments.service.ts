@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -20,18 +21,30 @@ export class MemberAttachmentsService {
   ) {}
 
   async create(dto: CreateAttachmentDto): Promise<MemberAttachment> {
-    const existing = await this.attachmentRepository.findOne({
-      where: { memberId: dto.memberId },
-    });
+    const hasMemberId = dto.memberId !== undefined && dto.memberId !== null;
+    const hasFamilyId = dto.familyId !== undefined && dto.familyId !== null;
 
-    if (existing) {
-      throw new ConflictException(
-        `Member #${dto.memberId} đã được gán cho user khác quản lý`,
+    if (hasMemberId === hasFamilyId) {
+      throw new BadRequestException(
+        'Provide exactly one of memberId or familyId',
       );
     }
 
+    if (hasMemberId) {
+      const existing = await this.attachmentRepository.findOne({
+        where: { memberId: dto.memberId as number },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          `Member #${dto.memberId} đã được gán cho user khác quản lý`,
+        );
+      }
+    }
+
     const access = this.attachmentRepository.create({
-      memberId: dto.memberId,
+      memberId: hasMemberId ? dto.memberId! : null,
+      familyId: hasFamilyId ? dto.familyId! : null,
       userId: dto.userId,
       role: dto.role ?? MemberAttachmentRole.VIEWER,
     });
@@ -74,13 +87,50 @@ export class MemberAttachmentsService {
     await this.attachmentRepository.remove(access);
   }
 
-  // Helper dùng ở các module khác (ví dụ members.service.ts) để kiểm tra
-  // 1 user có quyền EDITOR trên 1 member cụ thể hay không trước khi cho sửa.
   async canEdit(userId: number, memberId: number): Promise<boolean> {
     const access = await this.attachmentRepository.findOne({
       where: { memberId, userId },
     });
 
     return !!access && access.role === MemberAttachmentRole.EDITOR;
+  }
+
+  async hasAccess(userId: number, memberId: number): Promise<boolean> {
+    const access = await this.attachmentRepository.findOne({
+      where: { memberId, userId },
+    });
+
+    return !!access; // có bản ghi là được, không quan tâm role gì
+  }
+
+  // Tương đương canEdit/hasAccess nhưng ở cấp family (memberId = null)
+  async canEditFamily(userId: number, familyId: number): Promise<boolean> {
+    const access = await this.attachmentRepository.findOne({
+      where: { familyId, userId },
+    });
+
+    return !!access && access.role === MemberAttachmentRole.EDITOR;
+  }
+
+  async hasAccessFamily(userId: number, familyId: number): Promise<boolean> {
+    const access = await this.attachmentRepository.findOne({
+      where: { familyId, userId },
+    });
+
+    return !!access;
+  }
+
+  async createFamilyEditor(
+    familyId: number,
+    userId: number,
+  ): Promise<MemberAttachment> {
+    const access = this.attachmentRepository.create({
+      memberId: null,
+      familyId,
+      userId,
+      role: MemberAttachmentRole.EDITOR,
+    });
+
+    return this.attachmentRepository.save(access);
   }
 }

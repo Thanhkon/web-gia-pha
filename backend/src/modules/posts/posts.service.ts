@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { IsNull, Not, Repository } from 'typeorm';
 import { StorageService } from '../../common/storage/storage.service';
 import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
+import { PermissionsService } from '../permissions/permissions.service';
 import { Family } from '../members/entities/family.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -29,6 +30,7 @@ export class PostsService {
     @InjectRepository(Family)
     private readonly familiesRepository: Repository<Family>,
     private readonly storageService: StorageService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async create(
@@ -37,6 +39,8 @@ export class PostsService {
     createPostDto: CreatePostDto,
   ) {
     await this.ensureFamilyExists(familyId);
+    // Ai thuộc gia đình (viewer hoặc editor) cũng được đăng bài
+    await this.permissionsService.assertFamilyMember(authorId, familyId);
     this.validateCreatePayload(createPostDto);
 
     const status = this.normalizeStatus(createPostDto.status ?? 'DRAFT');
@@ -68,6 +72,7 @@ export class PostsService {
       includeDeleted?: boolean;
     },
   ) {
+    // GET - không cần check quyền
     await this.ensureFamilyExists(familyId);
 
     return this.postsRepository.find({
@@ -87,6 +92,7 @@ export class PostsService {
   }
 
   async findOne(id: number) {
+    // GET - không cần check quyền
     const post = await this.postsRepository.findOne({
       where: { id, deletedAt: IsNull() },
       relations: { family: true, author: true },
@@ -163,7 +169,7 @@ export class PostsService {
     return this.postsRepository.save(post);
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId: number) {
     const post = await this.postsRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -172,13 +178,16 @@ export class PostsService {
       throw new NotFoundException(`Post ${id} not found`);
     }
 
+    // Tác giả bài viết HOẶC editor của gia đình mới được xóa
+    await this.assertAuthorOrFamilyEditor(userId, post.authorId, post.familyId);
+
     post.deletedAt = new Date();
     await this.postsRepository.save(post);
 
     return { deleted: true, id };
   }
 
-  async restore(id: number) {
+  async restore(id: number, userId: number) {
     const post = await this.postsRepository.findOne({
       where: { id, deletedAt: Not(IsNull()) },
     });
@@ -187,8 +196,29 @@ export class PostsService {
       throw new NotFoundException(`Deleted post ${id} not found`);
     }
 
+    await this.assertAuthorOrFamilyEditor(userId, post.authorId, post.familyId);
+
     post.deletedAt = null;
     return this.postsRepository.save(post);
+  }
+
+  /** Cho phép nếu userId là tác giả HOẶC là editor của family */
+  private async assertAuthorOrFamilyEditor(
+    userId: number,
+    authorId: number,
+    familyId: number,
+  ) {
+    if (userId === authorId) return;
+
+    const isEditor = await this.permissionsService.isFamilyEditor(
+      userId,
+      familyId,
+    );
+    if (!isEditor) {
+      throw new ForbiddenException(
+        'Only the author or a family editor can perform this action',
+      );
+    }
   }
 
   private async ensureFamilyExists(familyId: number) {

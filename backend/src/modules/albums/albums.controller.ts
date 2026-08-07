@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -35,7 +36,10 @@ export class AlbumsController {
     @Req() request: AuthenticatedRequest,
     @Body() createAlbumDto: CreateAlbumDto,
   ) {
-    return this.albumsService.create(familyId, request.user!.id, createAlbumDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.albumsService.create(familyId, request.user.id, createAlbumDto);
   }
 
   @Get('families/:familyId/albums')
@@ -65,28 +69,48 @@ export class AlbumsController {
   @Patch('albums/:id')
   update(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
     @Body() updateAlbumDto: UpdateAlbumDto,
   ) {
-    return this.albumsService.update(id, updateAlbumDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.albumsService.update(id, request.user.id, updateAlbumDto);
   }
 
   @Post('albums/:id/cover-image')
   @UseInterceptors(FileInterceptor('image'))
   uploadCoverImage(
     @Param('id', ParseIntPipe) albumId: number,
+    @Req() request: AuthenticatedRequest,
     @UploadedFile() file?: UploadedStorageFile,
   ) {
-    return this.albumsService.uploadCoverImage(albumId, file);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.albumsService.uploadCoverImage(albumId, request.user.id, file);
   }
 
   @Delete('albums/:id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.albumsService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.albumsService.remove(id, request.user.id);
   }
 
   @Patch('albums/:id/restore')
-  restore(@Param('id', ParseIntPipe) id: number) {
-    return this.albumsService.restore(id);
+  restore(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.albumsService.restore(id, request.user.id);
   }
 
   @Post('albums/:id/media')
@@ -95,9 +119,12 @@ export class AlbumsController {
     @Req() request: AuthenticatedRequest,
     @Body() createAlbumMediaDto: CreateAlbumMediaDto,
   ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.albumsService.addMedia(
       albumId,
-      request.user!.id,
+      request.user.id,
       createAlbumMediaDto,
     );
   }
@@ -110,9 +137,12 @@ export class AlbumsController {
     @Body('description') description?: string,
     @UploadedFile() file?: UploadedStorageFile,
   ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.albumsService.uploadMedia(
       albumId,
-      request.user!.id,
+      request.user.id,
       file,
       description,
     );
@@ -122,11 +152,16 @@ export class AlbumsController {
   updateMedia(
     @Param('id', ParseIntPipe) albumId: number,
     @Param('mediaId', ParseIntPipe) mediaId: number,
+    @Req() request: AuthenticatedRequest,
     @Body() updateAlbumMediaDto: UpdateAlbumMediaDto,
   ) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.albumsService.updateMedia(
       albumId,
       mediaId,
+      request.user.id,
       updateAlbumMediaDto,
     );
   }
@@ -135,15 +170,23 @@ export class AlbumsController {
   removeMedia(
     @Param('id', ParseIntPipe) albumId: number,
     @Param('mediaId', ParseIntPipe) mediaId: number,
+    @Req() request: AuthenticatedRequest,
   ) {
-    return this.albumsService.removeMedia(albumId, mediaId);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.albumsService.removeMedia(albumId, mediaId, request.user.id);
   }
 
   @Patch('albums/:id/media/:mediaId/restore')
   restoreMedia(
     @Param('id', ParseIntPipe) albumId: number,
     @Param('mediaId', ParseIntPipe) mediaId: number,
+    @Req() request: AuthenticatedRequest,
   ) {
-    return this.albumsService.restoreMedia(albumId, mediaId);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.albumsService.restoreMedia(albumId, mediaId, request.user.id);
   }
 }
