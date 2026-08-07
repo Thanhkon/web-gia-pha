@@ -8,17 +8,17 @@ import { Member } from './entities/member.entity';
 import { ParentChildRelation } from './entities/parent-child-relation.entity';
 import { MembersController } from './members.controller';
 import { MembersService } from './members.service';
+import { PermissionsModule } from '../permissions/permissions.module';
+import { MemberAttachmentsModule } from '../attachment/member-attachments.module';
+// 👆 sửa lại path cho đúng vị trí thực tế nếu khác
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
-    TypeOrmModule.forFeature([
-      Family,
-      Member,
-      ParentChildRelation,
-      Marriage,
-    ]),
+    TypeOrmModule.forFeature([Family, Member, ParentChildRelation, Marriage]),
+    PermissionsModule,
+    MemberAttachmentsModule, // 👈 thêm: MembersService cần MemberAttachmentsService
   ],
   controllers: [MembersController],
   providers: [MembersService],

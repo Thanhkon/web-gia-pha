@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { Family } from '../members/entities/family.entity';
 import { Member } from '../members/entities/member.entity';
 import { UsersModule } from '../users/users.module';
+import { PermissionsModule } from '../permissions/permissions.module'; // 👈 thêm
 import { Event } from './entities/event.entity';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
@@ -13,6 +14,7 @@ import { EventsService } from './events.service';
     AuthModule,
     UsersModule,
     TypeOrmModule.forFeature([Event, Family, Member]),
+    PermissionsModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

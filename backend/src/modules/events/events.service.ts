@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { StorageService } from '../../common/storage/storage.service';
 import { UploadedStorageFile } from '../../common/storage/upload-result.interface';
+import { PermissionsService } from '../permissions/permissions.service';
 import { Family } from '../members/entities/family.entity';
 import { Member } from '../members/entities/member.entity';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -29,6 +30,7 @@ export class EventsService {
     @InjectRepository(Member)
     private readonly membersRepository: Repository<Member>,
     private readonly storageService: StorageService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async create(
@@ -37,13 +39,17 @@ export class EventsService {
     createEventDto: CreateEventDto,
   ) {
     await this.ensureFamilyExists(familyId);
+    await this.permissionsService.assertFamilyEditor(createdById, familyId);
     await this.ensureRelatedMemberBelongsToFamily(
       familyId,
       createEventDto.relatedMemberId,
     );
     this.validateCreatePayload(createEventDto);
 
-    const startAt = this.normalizeRequiredDate(createEventDto.startAt, 'startAt');
+    const startAt = this.normalizeRequiredDate(
+      createEventDto.startAt,
+      'startAt',
+    );
     const endAt = this.normalizeDate(createEventDto.endAt) ?? null;
     this.validateDateRange(startAt, endAt);
 
@@ -54,7 +60,9 @@ export class EventsService {
       relatedMemberId: createEventDto.relatedMemberId ?? null,
       eventType: this.normalizeEventType(createEventDto.eventType),
       status: this.normalizeStatus(createEventDto.status ?? 'UPCOMING'),
-      visibility: this.normalizeVisibility(createEventDto.visibility ?? 'FAMILY'),
+      visibility: this.normalizeVisibility(
+        createEventDto.visibility ?? 'FAMILY',
+      ),
       startAt,
       endAt,
       isRecurring: createEventDto.isRecurring ?? false,
@@ -72,6 +80,7 @@ export class EventsService {
       includeDeleted?: boolean;
     },
   ) {
+    // GET - không cần check quyền editor, ai login cũng xem được
     await this.ensureFamilyExists(familyId);
 
     return this.eventsRepository.find({
@@ -94,6 +103,7 @@ export class EventsService {
   }
 
   async findOne(id: number) {
+    // GET - không cần check quyền editor
     const event = await this.eventsRepository.findOne({
       where: { id, deletedAt: IsNull() },
       relations: { family: true, createdBy: true, relatedMember: true },
@@ -106,7 +116,7 @@ export class EventsService {
     return event;
   }
 
-  async update(id: number, updateEventDto: UpdateEventDto) {
+  async update(id: number, userId: number, updateEventDto: UpdateEventDto) {
     const event = await this.eventsRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -114,6 +124,8 @@ export class EventsService {
     if (!event) {
       throw new NotFoundException(`Event ${id} not found`);
     }
+
+    await this.permissionsService.assertFamilyEditor(userId, event.familyId);
 
     if (updateEventDto.relatedMemberId !== undefined) {
       await this.ensureRelatedMemberBelongsToFamily(
@@ -123,7 +135,10 @@ export class EventsService {
       event.relatedMemberId = updateEventDto.relatedMemberId ?? null;
     }
 
-    this.eventsRepository.merge(event, this.normalizeEventInput(updateEventDto));
+    this.eventsRepository.merge(
+      event,
+      this.normalizeEventInput(updateEventDto),
+    );
 
     if (updateEventDto.eventType !== undefined) {
       event.eventType = this.normalizeEventType(updateEventDto.eventType);
@@ -138,7 +153,10 @@ export class EventsService {
     }
 
     if (updateEventDto.startAt !== undefined) {
-      event.startAt = this.normalizeRequiredDate(updateEventDto.startAt, 'startAt');
+      event.startAt = this.normalizeRequiredDate(
+        updateEventDto.startAt,
+        'startAt',
+      );
     }
 
     if (updateEventDto.endAt !== undefined) {
@@ -150,7 +168,11 @@ export class EventsService {
     return this.eventsRepository.save(event);
   }
 
-  async uploadCoverImage(eventId: number, file?: UploadedStorageFile) {
+  async uploadCoverImage(
+    eventId: number,
+    userId: number,
+    file?: UploadedStorageFile,
+  ) {
     const event = await this.eventsRepository.findOne({
       where: { id: eventId, deletedAt: IsNull() },
     });
@@ -158,6 +180,8 @@ export class EventsService {
     if (!event) {
       throw new NotFoundException(`Event ${eventId} not found`);
     }
+
+    await this.permissionsService.assertFamilyEditor(userId, event.familyId);
 
     if (!file) {
       throw new BadRequestException('image is required');
@@ -174,7 +198,7 @@ export class EventsService {
     return this.eventsRepository.save(event);
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId: number) {
     const event = await this.eventsRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
@@ -183,13 +207,15 @@ export class EventsService {
       throw new NotFoundException(`Event ${id} not found`);
     }
 
+    await this.permissionsService.assertFamilyEditor(userId, event.familyId);
+
     event.deletedAt = new Date();
     await this.eventsRepository.save(event);
 
     return { deleted: true, id };
   }
 
-  async restore(id: number) {
+  async restore(id: number, userId: number) {
     const event = await this.eventsRepository.findOne({
       where: { id, deletedAt: Not(IsNull()) },
     });
@@ -198,12 +224,16 @@ export class EventsService {
       throw new NotFoundException(`Deleted event ${id} not found`);
     }
 
+    await this.permissionsService.assertFamilyEditor(userId, event.familyId);
+
     event.deletedAt = null;
     return this.eventsRepository.save(event);
   }
 
   private async ensureFamilyExists(familyId: number) {
-    const exists = await this.familiesRepository.exists({ where: { id: familyId } });
+    const exists = await this.familiesRepository.exists({
+      where: { id: familyId },
+    });
     if (!exists) {
       throw new NotFoundException(`Family ${familyId} not found`);
     }
@@ -315,7 +345,9 @@ export class EventsService {
 
   private validateDateRange(startAt: Date, endAt: Date | null) {
     if (endAt && endAt.getTime() < startAt.getTime()) {
-      throw new BadRequestException('endAt must be greater than or equal to startAt');
+      throw new BadRequestException(
+        'endAt must be greater than or equal to startAt',
+      );
     }
   }
 }
