@@ -9,9 +9,9 @@ import { promisify } from 'util';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
-type SafeUser = Omit<User, 'passwordHash' | 'name'> & {
+type SafeUser = Omit<User, 'passwordHash' | 'name' | 'isAdmin'> & {
   name: string | null;
 };
 
@@ -38,6 +38,12 @@ export class UsersService {
     const user = this.usersRepository.create({
       email: createUserDto.email,
       name: createUserDto.name,
+      phone: createUserDto.phone,
+      address: createUserDto.address,
+      dateOfBirth: createUserDto.dateOfBirth
+        ? new Date(createUserDto.dateOfBirth)
+        : undefined,
+      role: createUserDto.role ?? UserRole.USER,
       passwordHash: await this.hashPassword(createUserDto.password),
     });
 
@@ -101,7 +107,13 @@ export class UsersService {
       }
     }
 
-    Object.assign(user, updateUserDto);
+    const { dateOfBirth, ...rest } = updateUserDto;
+
+    Object.assign(user, rest);
+
+    if (dateOfBirth) {
+      user.dateOfBirth = new Date(dateOfBirth);
+    }
 
     return this.toPublicUser(await this.usersRepository.save(user));
   }
@@ -118,6 +130,13 @@ export class UsersService {
     user.passwordHash = passwordHash;
 
     return this.usersRepository.save(user);
+  }
+
+  // Kiểm tra nhanh một user có phải admin hay không dựa trên id
+  async isAdmin(id: number): Promise<boolean> {
+    const user = await this.findByIdOrThrow(id);
+
+    return user.role === UserRole.ADMIN;
   }
 
   private async findByIdOrThrow(id: number): Promise<User> {
