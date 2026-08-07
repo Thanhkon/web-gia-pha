@@ -23,13 +23,18 @@ const initialState = {
 const DEFAULT_FAMILY_ID = String(import.meta.env.VITE_DEFAULT_FAMILY_ID || '1');
 
 const inferRole = (user) => {
-  if (user.role) return user.role;
-
   const identity = String(user.username || user.email || user.name || '').toLowerCase();
+  
+  // Ưu tiên email admin@test.com hoặc username admin để test
   if (identity === 'admin' || identity.startsWith('admin@') || identity.includes('trưởng')) {
-    return 'FAMILY_HEAD';
+    return 'ADMIN';
   }
 
+  const backendRole = String(user.role || '').toLowerCase();
+  if (backendRole === 'admin') return 'ADMIN';
+  if (backendRole === 'user') return 'MEMBER';
+  
+  if (user.role) return String(user.role).toUpperCase();
   return 'MEMBER';
 };
 
@@ -53,8 +58,8 @@ const normalizeAuthPayload = (payload) => {
       role,
       familyId: String(familyId),
       memberId: user.memberId ?? null,
-      canCreatePost: user.canCreatePost ?? role === 'FAMILY_HEAD',
-      canManagePosts: user.canManagePosts ?? role === 'FAMILY_HEAD',
+      canCreatePost: user.canCreatePost ?? (role === 'FAMILY_HEAD' || role === 'ADMIN'),
+      canManagePosts: user.canManagePosts ?? (role === 'FAMILY_HEAD' || role === 'ADMIN'),
     },
   };
 };

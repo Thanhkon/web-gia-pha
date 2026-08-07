@@ -405,3 +405,27 @@
   text-align: center;
   padding: 2rem;
 }
+
+@media (max-width: 768px) {
+  .admin-page-header, .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .search-box {
+    width: 100%;
+  }
+  
+  .filter-group {
+    flex-wrap: wrap;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .admin-page {
+    padding: 1rem;
+  }
+}

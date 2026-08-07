@@ -1,12 +1,10 @@
 import { AuthUser, MockAuthState, UserRole } from '../types/auth';
 import { POST_ROLE_LABELS } from '../types/posts';
-
 export const mockRoleLabels = {
   [UserRole.FAMILY_HEAD]: 'Trưởng họ',
   [UserRole.MEMBER]: 'Thành viên',
   [UserRole.GUEST]: 'Khách',
 };
-
 export const mockCurrentUser: AuthUser = {
   id: 'user-family-head-01',
   familyId: 'family-nguyen',

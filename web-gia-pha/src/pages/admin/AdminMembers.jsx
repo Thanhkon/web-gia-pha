@@ -2,13 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
-import MemberForm from '../../components/Admin/MemberForm/MemberForm';
-import MemberProfileModal from '../../components/MemberProfileModal';
-import MembersFilterBar from '../../components/Admin/MembersFilterBar';
-import MembersTable from '../../components/Admin/MembersTable';
-import MemberStatisticsWidget from '../../components/Admin/MemberStatisticsWidget';
-import Pagination from '../../components/Pagination';
+import MemberForm from '../../components/Members/MemberForm/MemberForm';
+import MemberProfileModal from '../../components/Members/MemberProfileModal';
+import MembersFilterBar from '../../components/Members/MembersFilterBar';
+import MembersTable from '../../components/Members/MembersTable';
+import MemberStatisticsWidget from '../../components/Members/MemberStatisticsWidget';
+import Pagination from '../../components/common/Pagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import { buildMemberPayload } from '../../utils/memberPayload';
 import {
   fetchFamilyTree,
   addMemberToFamily,
@@ -16,7 +17,8 @@ import {
   addMarriageRelation,
   updateMemberToFamily,
   deleteMemberFromFamily,
-  softDeleteMember
+  softDeleteMember,
+  uploadMemberAvatar
 } from '../../store/slices/membersSlice';
 import useDebounce from '../../hooks/useDebounce';
 import { useFamily } from '../../hooks/useFamily';
@@ -92,24 +94,7 @@ const AdminMembers = () => {
       if (editingId) {
         await dispatch(updateMemberToFamily({
           memberId: editingId,
-          memberData: {
-            fullName: submittedData.fullName,
-            otherName: submittedData.otherName,
-            gender: submittedData.gender,
-            generation: submittedData.generation,
-            role: submittedData.role || null,
-            isInLaw: submittedData.isInLaw || false,
-            dateOfBirth: submittedData.dateOfBirth || null,
-            isDeceased: submittedData.isDeceased || false,
-            dateOfDeath: submittedData.dateOfDeath || null,
-            placeOfBirth: submittedData.placeOfBirth || null,
-            currentAddress: submittedData.currentAddress || null,
-            education: submittedData.education || null,
-            occupation: submittedData.occupation || null,
-            biography: submittedData.biography || null,
-            note: submittedData.note || null,
-            avatarUrl: submittedData.avatarUrl || null,
-          }
+          memberData: buildMemberPayload(submittedData)
         })).unwrap();
 
         // Frontend patch: Thêm quan hệ cha mẹ/vợ chồng nếu có thay đổi (chỉ thêm mới vì backend không có API xoá)
@@ -133,28 +118,15 @@ const AdminMembers = () => {
           try { await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: editingId })).unwrap(); } catch (e) { console.error(e); }
         }
 
+        if (submittedData.avatarFile) {
+          try { await dispatch(uploadMemberAvatar({ memberId: editingId, file: submittedData.avatarFile })).unwrap(); } catch (e) { console.error('Upload avatar failed', e); }
+        }
+
         toast.success('Cập nhật thành công!');
       } else {
         const newMember = await dispatch(addMemberToFamily({
           familyId: familyId,
-          memberData: {
-            fullName: submittedData.fullName,
-            otherName: submittedData.otherName,
-            gender: submittedData.gender,
-            generation: submittedData.generation,
-            role: submittedData.role || null,
-            isInLaw: submittedData.isInLaw || false,
-            dateOfBirth: submittedData.dateOfBirth || null,
-            isDeceased: submittedData.isDeceased || false,
-            dateOfDeath: submittedData.dateOfDeath || null,
-            placeOfBirth: submittedData.placeOfBirth || null,
-            currentAddress: submittedData.currentAddress || null,
-            education: submittedData.education || null,
-            occupation: submittedData.occupation || null,
-            biography: submittedData.biography || null,
-            note: submittedData.note || null,
-            avatarUrl: submittedData.avatarUrl || null,
-          }
+          memberData: buildMemberPayload(submittedData)
         })).unwrap();
 
         const newId = newMember.id;
@@ -167,6 +139,10 @@ const AdminMembers = () => {
         }
         if (submittedData.spouseId) {
           await dispatch(addMarriageRelation({ memberAId: submittedData.spouseId, memberBId: newId })).unwrap();
+        }
+
+        if (submittedData.avatarFile) {
+          try { await dispatch(uploadMemberAvatar({ memberId: newId, file: submittedData.avatarFile })).unwrap(); } catch (e) { console.error('Upload avatar failed', e); }
         }
       }
 

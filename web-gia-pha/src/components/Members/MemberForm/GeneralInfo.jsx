@@ -41,6 +41,9 @@ const GeneralInfo = ({ formData, onChange, persons }) => {
         onChange('avatarUrl', reader.result);
       };
       reader.readAsDataURL(file);
+      
+      // Pass the raw file up to the parent component
+      onChange('avatarFile', file);
     }
   };
 

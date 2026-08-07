@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import apiClient from '../../utils/apiClient';
-import { getTreeData, buildAdjacencyLists } from '../../utils/familyTreeUtils';
+import { buildAdjacencyLists } from '../../utils/familyTreeUtils';
 
 // Thunks
 export const fetchFamilyTree = createAsyncThunk(
@@ -86,6 +86,25 @@ export const softDeleteMember = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to soft delete member');
+    }
+  }
+);
+
+export const uploadMemberAvatar = createAsyncThunk(
+  'members/uploadAvatar',
+  async ({ memberId, file }, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await apiClient.post(`/members/${memberId}/avatar`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data; // This is the updated member object with avatarUrl
+    } catch (error) {
+      console.error('Failed to upload member avatar:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to upload member avatar');
     }
   }
 );
@@ -198,6 +217,13 @@ const membersSlice = createSlice({
         const id = action.payload;
         state.persons = state.persons.filter(p => p.id !== id);
         state.relationships = state.relationships.filter(r => r.person_a !== id && r.person_b !== id);
+      })
+      .addCase(uploadMemberAvatar.fulfilled, (state, action) => {
+        const updatedMember = action.payload;
+        const index = state.persons.findIndex(p => p.id === updatedMember.id);
+        if (index !== -1) {
+          state.persons[index].avatarUrl = updatedMember.avatarUrl;
+        }
       });
   }
 });
@@ -208,13 +234,6 @@ export const { setNodeCollapse, updateMemberSync, deleteMemberSync } = membersSl
 export const selectPersons = (state) => state.members.persons;
 export const selectRelationships = (state) => state.members.relationships;
 
-// createSelector sẽ memoize kết quả dựa trên persons và relationships
-export const selectTreeData = createSelector(
-  [selectPersons, selectRelationships],
-  (persons, relationships) => {
-    return getTreeData(persons, relationships);
-  }
-);
 
 export const selectFamilyTreeGraphData = createSelector(
   [selectPersons, selectRelationships],

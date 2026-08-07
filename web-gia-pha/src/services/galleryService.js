@@ -11,6 +11,7 @@ const DEFAULT_FAMILY_ID = String(import.meta.env.VITE_DEFAULT_FAMILY_ID || '1');
 
 const normalizeRole = (role) => {
   const normalizedRole = String(role || '').toUpperCase();
+  if (normalizedRole === UserRole.ADMIN) return UserRole.ADMIN;
   if (normalizedRole === UserRole.FAMILY_HEAD) return UserRole.FAMILY_HEAD;
   if (normalizedRole === UserRole.MEMBER) return UserRole.MEMBER;
   return UserRole.GUEST;
@@ -247,7 +248,7 @@ export function getGalleryActor(user, isAuthenticated = Boolean(user), currentFa
 }
 
 export function canManageAlbum(actor, album) {
-  if (!actor || actor.role !== UserRole.FAMILY_HEAD || !actor.familyId) {
+  if (!actor || (actor.role !== UserRole.FAMILY_HEAD && actor.role !== UserRole.ADMIN) || !actor.familyId) {
     return false;
   }
 

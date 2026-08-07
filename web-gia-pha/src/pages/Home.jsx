@@ -5,7 +5,7 @@ import {
   GitMerge, FileText, Image,
   Calendar, BookOpen, Clock, ChevronRight, Edit3
 } from 'lucide-react';
-import MarqueeBanner from '../components/MarqueeBanner';
+import MarqueeBanner from '../components/Home/MarqueeBanner';
 import Skeleton from '../components/common/Skeleton';
 import { getPostActor, postService } from '../services/postService';
 import { eventService, getEventActor } from '../services/eventService';
@@ -70,9 +70,9 @@ const Home = () => {
   // Custom hero for this family, or default
   const familyHeroSettings = familiesSettings[familyId]?.hero;
   const hero = {
-    title: familyHeroSettings?.title || (activeFamily ? `Gia Phả ${activeFamily.name}` : defaultHero.title),
+    title: familyHeroSettings?.title || (activeFamily ? `${activeFamily.name}` : defaultHero.title),
     subtitle: familyHeroSettings?.subtitle || defaultHero.subtitle,
-    bgImage: familyHeroSettings?.bgImage || defaultHero.bgImage,
+    bgImage: familyHeroSettings?.bgImage || activeFamily?.coverImageUrl || activeFamily?.coverImg || defaultHero.bgImage,
   };
 
   // Dữ liệu động từ API (Services)
@@ -87,19 +87,16 @@ const Home = () => {
       try {
         const postActor = toMemberPostActor(getPostActor(user, isAuthenticated, familyId));
         const eventActor = toMemberEventActor(getEventActor(user, isAuthenticated, familyId));
-        const postsRes = await postService.getPosts({
-          actor: postActor,
-          filters: { sortDirection: 'newest' },
-          page: 1,
-          pageSize: 4,
-        });
-        setPosts(postsRes.items);
-
-        const eventsRes = await eventService.getUpcomingEvents(30, {}, eventActor);
-        setEvents(eventsRes.data.slice(0, 3));
-
         const galleryActor = toMemberGalleryActor(getGalleryActor(user, isAuthenticated, familyId));
-        const albumsRes = await galleryService.getAlbums({ actor: galleryActor });
+
+        const [postsRes, eventsRes, albumsRes] = await Promise.all([
+          postService.getPosts({ actor: postActor, filters: { sortDirection: 'newest' }, page: 1, pageSize: 4 }),
+          eventService.getUpcomingEvents(30, {}, eventActor),
+          galleryService.getAlbums({ actor: galleryActor }),
+        ]);
+
+        setPosts(postsRes.items);
+        setEvents(eventsRes.data.slice(0, 3));
         setGalleryAlbums(albumsRes.slice(0, 4));
       } catch (err) {
         console.error("Failed to load dashboard data", err);

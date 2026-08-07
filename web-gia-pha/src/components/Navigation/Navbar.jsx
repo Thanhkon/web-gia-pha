@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useFamily } from '../hooks/useFamily';
+import { useFamily } from '../../hooks/useFamily';
 import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
-import { fetchFamilies } from '../store/slices/familiesSlice';
-import { selectPendingCount, fetchRequests } from '../store/slices/editRequestsSlice';
-import { mockRoleLabels } from '../data/mockAuth';
-import defaultAvatar from '../assets/avatar-female.svg';
-import '../css/components/Navbar.css';
+import { logout } from '../../store/slices/authSlice';
+import { fetchFamilies } from '../../store/slices/familiesSlice';
+import { selectPendingCount, fetchRequests } from '../../store/slices/editRequestsSlice';
+import { mockRoleLabels } from '../../data/mockAuth';
+import defaultAvatar from '../../assets/avatar-female.svg';
+import LogoutConfirmModal from '../common/LogoutConfirmModal';
+import '../../css/components/Navbar.css';
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -271,21 +272,11 @@ const Navbar = () => {
         </div>
       </div>
 
-      {showLogoutConfirm && (
-        <div className="logout-confirm-backdrop" onClick={() => setShowLogoutConfirm(false)}>
-          <div className="logout-confirm-modal" onClick={(event) => event.stopPropagation()}>
-            <p className="logout-confirm-text">Bạn có chắc chắn muốn đăng xuất?</p>
-            <div className="logout-confirm-actions">
-              <button type="button" className="logout-cancel-btn" onClick={() => setShowLogoutConfirm(false)}>
-                Quay lại
-              </button>
-              <button type="button" className="logout-confirm-btn" onClick={handleLogout}>
-                Đăng xuất
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LogoutConfirmModal 
+        show={showLogoutConfirm} 
+        onClose={() => setShowLogoutConfirm(false)} 
+        onConfirm={handleLogout} 
+      />
     </nav>
   );
 };

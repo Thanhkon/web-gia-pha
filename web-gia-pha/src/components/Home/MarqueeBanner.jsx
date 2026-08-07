@@ -1,6 +1,6 @@
 import React from 'react';
 import { Star, Award } from 'lucide-react';
-import '../css/components/MarqueeBanner.css';
+import '../../css/components/MarqueeBanner.css';
 
 const MarqueeBanner = ({ items }) => {
   return (
