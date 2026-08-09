@@ -7,6 +7,7 @@ import { logout } from '../../store/slices/authSlice';
 import { fetchFamilies } from '../../store/slices/familiesSlice';
 import { selectPendingCount, fetchRequests } from '../../store/slices/editRequestsSlice';
 import { mockRoleLabels } from '../../data/mockAuth';
+import { UserRole } from '../../types/auth';
 import defaultAvatar from '../../assets/avatar-female.svg';
 import LogoutConfirmModal from '../common/LogoutConfirmModal';
 import '../../css/components/Navbar.css';

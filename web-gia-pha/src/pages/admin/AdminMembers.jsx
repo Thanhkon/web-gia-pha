@@ -151,7 +151,7 @@ const AdminMembers = () => {
       setNewMember(emptyMember);
     } catch (err) {
       console.error('Lỗi khi thêm:', err);
-      toast.error('Có lỗi xảy ra!');
+      toast.error(err?.message || 'Có lỗi xảy ra! Không có quyền truy cập?');
     }
   };
 
