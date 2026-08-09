@@ -23,31 +23,34 @@ function Register() {
         event.preventDefault();
         setError("");
 
-        if (!registerData.username || !registerData.password || !registerData.confirmPassword) {
-            setError("Không được để trống");
+        if (
+            !registerData.username ||
+            !registerData.password ||
+            !registerData.confirmPassword
+        ) {
+            setError("Nội dung không được để trống!");
             return;
         }
 
         if (registerData.password !== registerData.confirmPassword) {
-            setError("Mật khẩu không trùng khớp");
+            setError("Mật khẩu không trùng khớp!");
             return;
         }
 
         if (registerData.password.length < 6) {
-            setError("Mật khẩu không được ít hơn 6 kí tự");
+            setError("Mật khẩu không được ít hơn 6 kí tự!");
             return;
         }
 
         try {
             await apiClient.post("/auth/register", {
-                email: registerData.username,
+                username: registerData.username,
                 password: registerData.password,
-                name: registerData.username,
             });
             navigate("/login");
-        } catch (requestError) {
-            console.error(requestError);
-            setError(requestError.response?.data?.message || "Đăng ký thất bại");
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || "Đăng ký thất bại");
         }
     };
 
@@ -56,22 +59,21 @@ function Register() {
             <div className="auth-box">
                 <h2>Đăng Ký</h2>
                 <form className="auth-form" onSubmit={handleSubmit}>
-                    {error && (
-                        <p className="auth-error">
-                            {error}
-                        </p>
-                    )}
+                    {error && <p className="auth-error">{error}</p>}
 
                     <div className="input-box">
                         <label className="label-auth">Username</label>
                         <input
                             type="text"
-                            placeholder="Email"
+                            placeholder="Username"
                             name="username"
                             value={registerData.username}
                             autoComplete="off"
                             onChange={(inputEvent) =>
-                                setRegisterData({ ...registerData, username: inputEvent.target.value })
+                                setRegisterData({
+                                    ...registerData,
+                                    username: inputEvent.target.value,
+                                })
                             }
                             required
                         />
@@ -87,7 +89,10 @@ function Register() {
                                 value={registerData.password}
                                 autoComplete="off"
                                 onChange={(inputEvent) =>
-                                    setRegisterData({ ...registerData, password: inputEvent.target.value })
+                                    setRegisterData({
+                                        ...registerData,
+                                        password: inputEvent.target.value,
+                                    })
                                 }
                                 required
                             />
@@ -97,7 +102,11 @@ function Register() {
                                 type="button"
                                 tabIndex={-1}
                             >
-                                {showPass1 ? <EyeOff size={20} /> : <Eye size={20} />}
+                                {showPass1 ? (
+                                    <EyeOff size={20} />
+                                ) : (
+                                    <Eye size={20} />
+                                )}
                             </button>
                         </div>
                     </div>
@@ -112,7 +121,11 @@ function Register() {
                                 value={registerData.confirmPassword}
                                 autoComplete="off"
                                 onChange={(inputEvent) =>
-                                    setRegisterData({ ...registerData, confirmPassword: inputEvent.target.value })
+                                    setRegisterData({
+                                        ...registerData,
+                                        confirmPassword:
+                                            inputEvent.target.value,
+                                    })
                                 }
                                 required
                             />
@@ -122,14 +135,24 @@ function Register() {
                                 type="button"
                                 tabIndex={-1}
                             >
-                                {showPass2 ? <EyeOff size={20} /> : <Eye size={20} />}
+                                {showPass2 ? (
+                                    <EyeOff size={20} />
+                                ) : (
+                                    <Eye size={20} />
+                                )}
                             </button>
                         </div>
                     </div>
 
-                    <p>Đã có tài khoản? <span onClick={() => navigate("/login")}>
-                        Đăng nhập
-                    </span></p>
+                    <p>
+                        Đã có tài khoản?{" "}
+                        <span
+                            style={{ color: "red", cursor: "pointer" }}
+                            onClick={() => navigate("/login")}
+                        >
+                            Đăng nhập
+                        </span>
+                    </p>
 
                     <button type="submit" className="btn-auth">
                         Đăng Ký

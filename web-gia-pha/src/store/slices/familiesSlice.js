@@ -2,107 +2,65 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiClient from '../../utils/apiClient';
 import defaultBg from '../../assets/default-bg.jpg';
 
-// Mock data (thay thế bằng API call thực tế sau này)
-const defaultMock = [
-  {
-    id: 1,
-    name: 'Gia phả họ Nguyễn',
-    membersCount: 45,
-    generations: 4,
-    role: 'admin',
-    description: 'Chi Tôn, gốc ở Hưng Yên, di cư vào Nam năm 1954.',
-    createdAt: '2023-01-15T00:00:00Z',
-  },
-];
-
-const loadMockFamilies = () => {
-  const saved = localStorage.getItem('mockFamilies');
-  if (saved) return JSON.parse(saved);
-  localStorage.setItem('mockFamilies', JSON.stringify(defaultMock));
-  return defaultMock;
-};
-
-let mockFamilies = loadMockFamilies();
-
-const saveMockFamilies = () => {
-  localStorage.setItem('mockFamilies', JSON.stringify(mockFamilies));
-};
-
-// Async Thunks
+// 1. GET: Lấy danh sách gia phả của user
 export const fetchFamilies = createAsyncThunk(
   'families/fetchAll',
   async (_, { rejectWithValue }) => {
-    let dataToProcess = [];
     try {
       const response = await apiClient.get('/families');
-      dataToProcess = response.data;
+      return response.data;
     } catch (error) {
-      console.warn('API /families failed (possibly not implemented yet). Fallback to mock data.', error);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      dataToProcess = [...mockFamilies];
-    }
-
-    // Tạm thời tính toán thống kê (membersCount, generations) ở frontend
-    // Bằng cách gọi API lấy danh sách thành viên của từng gia phả
-    try {
-      const updatedData = await Promise.all(dataToProcess.map(async (family) => {
-        try {
-          const membersRes = await apiClient.get(`/families/${family.id}/members`);
-          const membersData = membersRes.data?.members || [];
-          const membersCount = membersData.length;
-          let maxGen = 1;
-          membersData.forEach(m => {
-            const gen = parseInt(m.generation, 10) || 1;
-            if (gen > maxGen) maxGen = gen;
-          });
-
-          return {
-            ...family,
-            membersCount,
-            generations: maxGen
-          };
-        } catch (err) {
-          // Nếu không lấy được, giữ nguyên số liệu cũ
-          return family;
-        }
-      }));
-      return updatedData;
-    } catch (error) {
-      return dataToProcess;
+      console.warn('API /families failed.', error);
+      return rejectWithValue(
+        error?.response?.data || error.message || 'Failed to fetch families'
+      );
     }
   }
 );
 
+// 2. GET: Tìm kiếm gia phả theo mã familyCode
+export const findFamilyByCode = createAsyncThunk(
+  'families/findByCode',
+  async (code, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get(`/families/code/${code}`);
+      return response.data;
+    } catch (error) {
+      console.warn(`API GET /families/code/${code} failed.`, error);
+      const message =
+        error?.response?.status === 404
+          ? 'Không tìm thấy gia phả với mã đã nhập.'
+          : error?.response?.data || error.message || `Failed to find family by code ${code}`;
+      return rejectWithValue(message);
+    }
+  }
+);
+
+// 3. POST: Tạo gia phả mới
 export const createFamily = createAsyncThunk(
   'families/create',
   async (familyData, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post('/families', familyData);
+      const isFormData = familyData instanceof FormData;
+      const response = await apiClient.post('/families', familyData, {
+        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
+      });
+
+      const coverImageUrl = response.data.coverImageUrl || response.data.coverImg;
+
       const newFamily = {
         ...response.data,
-        membersCount: 0,
-        generations: 1,
-        role: 'admin',
-        coverImg: familyData.coverImg || defaultBg,
+        membersCount: response.data.membersCount ?? 1,
+        generations: response.data.generations ?? 1,
+        role: response.data.role ?? 'admin',
+        coverImg: coverImageUrl || defaultBg,
       };
-      mockFamilies.unshift(newFamily); // Keep mock updated for session
-      saveMockFamilies();
       return newFamily;
     } catch (error) {
-      console.warn('API POST /families failed. Fallback to mock data.', error);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const newFamily = {
-        ...familyData,
-        id: Date.now(),
-        membersCount: 0,
-        generations: 1,
-        role: 'admin',
-        createdAt: new Date().toISOString(),
-        coverImg: familyData.coverImg || defaultBg,
-      };
-      mockFamilies.unshift(newFamily);
-      saveMockFamilies();
-      return newFamily;
+      console.warn('API POST /families failed.', error);
+      return rejectWithValue(
+        error?.response?.data || error.message || 'Failed to create family'
+      );
     }
   }
 );
@@ -112,21 +70,10 @@ export const updateFamily = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await apiClient.patch(`/families/${id}`, data);
-      const index = mockFamilies.findIndex(f => f.id === id);
-      if (index !== -1) {
-        mockFamilies[index] = { ...mockFamilies[index], ...data };
-        saveMockFamilies();
-      }
       return response.data;
     } catch (error) {
-      console.warn(`API PATCH /families/${id} failed. Fallback to mock data.`, error);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const index = mockFamilies.findIndex(f => f.id === id);
-      if (index === -1) throw new Error('Không tìm thấy gia phả');
-
-      mockFamilies[index] = { ...mockFamilies[index], ...data };
-      saveMockFamilies();
-      return mockFamilies[index];
+      console.warn(`API PATCH /families/${id} failed.`, error);
+      return rejectWithValue(error.response?.data || error.message || 'Failed to update family');
     }
   }
 );
@@ -155,15 +102,10 @@ export const deleteFamily = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       await apiClient.delete(`/families/${id}`);
-      mockFamilies = mockFamilies.filter(f => f.id !== id);
-      saveMockFamilies();
       return id;
     } catch (error) {
-      console.warn(`API DELETE /families/${id} failed. Fallback to mock data.`, error);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      mockFamilies = mockFamilies.filter(f => f.id !== id);
-      saveMockFamilies();
-      return id;
+      console.warn(`API DELETE /families/${id} failed.`, error);
+      return rejectWithValue(error.response?.data || error.message || 'Failed to delete family');
     }
   }
 );
@@ -174,8 +116,17 @@ const familiesSlice = createSlice({
     list: [],
     loading: false,
     error: null,
+    searchResult: null,
+    searchLoading: false,
+    searchError: null,
   },
-  reducers: {},
+  reducers: {
+    clearSearch: (state) => {
+      state.searchResult = null;
+      state.searchError = null;
+      state.searchLoading = false;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // Fetch Families
@@ -197,11 +148,22 @@ const familiesSlice = createSlice({
         state.list.unshift(action.payload);
       })
 
-      // Add Family (Fallback for older implementation compatibility)
-      .addCase('families/add/fulfilled', (state, action) => {
-        state.list.push(action.payload);
+      // Find by Code
+      .addCase(findFamilyByCode.pending, (state) => {
+        state.searchLoading = true;
+        state.searchError = null;
+        state.searchResult = null;
       })
-
+      .addCase(findFamilyByCode.fulfilled, (state, action) => {
+        state.searchLoading = false;
+        state.searchResult = action.payload;
+        state.searchError = null;
+      })
+      .addCase(findFamilyByCode.rejected, (state, action) => {
+        state.searchLoading = false;
+        state.searchResult = null;
+        state.searchError = action.payload || action.error?.message;
+      })
       // Update Family
       .addCase(updateFamily.fulfilled, (state, action) => {
         const index = state.list.findIndex(f => f.id === action.payload.id);
@@ -209,16 +171,13 @@ const familiesSlice = createSlice({
           state.list[index] = action.payload;
         }
       })
-
       // Delete Family
       .addCase(deleteFamily.fulfilled, (state, action) => {
         state.list = state.list.filter(f => f.id !== action.payload);
       })
-
       // Upload Cover Image
       .addCase(uploadFamilyCoverImage.fulfilled, (state, action) => {
         const updatedFamily = action.payload;
-        // Update in Redux state
         const index = state.list.findIndex(f => f.id === updatedFamily.id);
         if (index !== -1) {
           state.list[index].coverImageUrl = updatedFamily.coverImageUrl;
@@ -226,5 +185,7 @@ const familiesSlice = createSlice({
       });
   },
 });
+
+export const { clearSearch } = familiesSlice.actions;
 
 export default familiesSlice.reducer;

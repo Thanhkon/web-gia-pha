@@ -1,5 +1,7 @@
+import { CreateMemberDto } from '../../members/dto/create-member.dto';
+
 export class RegisterDto {
-  email!: string;
+  username!: string;
   password!: string;
-  name?: string;
+  member?: CreateMemberDto;
 }

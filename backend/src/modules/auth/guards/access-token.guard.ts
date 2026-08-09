@@ -10,7 +10,7 @@ import { UsersService } from '../../users/users.service';
 
 export type AccessTokenPayload = {
   sub: number;
-  email: string;
+  username?: string;
   iat: number;
   exp: number;
 };
@@ -18,7 +18,6 @@ export type AccessTokenPayload = {
 export type AuthenticatedRequest = Request & {
   user?: {
     id: number;
-    email: string;
     username?: string;
   };
 };
@@ -81,7 +80,7 @@ export class AccessTokenGuard implements CanActivate {
     const payload = this.decodePayload(encodedPayload);
     const nowInSeconds = Math.floor(Date.now() / 1000);
 
-    if (!payload.sub || !payload.email || !payload.exp || payload.exp <= nowInSeconds) {
+    if (!payload.sub || !payload.exp || payload.exp <= nowInSeconds) {
       throw new UnauthorizedException('Invalid or expired access token');
     }
 

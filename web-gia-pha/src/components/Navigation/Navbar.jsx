@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useFamily } from '../../hooks/useFamily';
-import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings } from 'lucide-react';
+import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings, Home } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import { fetchFamilies } from '../../store/slices/familiesSlice';
@@ -9,6 +9,7 @@ import { selectPendingCount, fetchRequests } from '../../store/slices/editReques
 import { mockRoleLabels } from '../../data/mockAuth';
 import { UserRole } from '../../types/auth';
 import defaultAvatar from '../../assets/avatar-female.svg';
+import { getAvatarUrl } from '../../utils/imageHelper';
 import LogoutConfirmModal from '../common/LogoutConfirmModal';
 import '../../css/components/Navbar.css';
 
@@ -224,7 +225,7 @@ const Navbar = () => {
           <div className="user-menu-container" ref={userMenuRef}>
             <button className="avatar-btn" aria-label="Tài khoản" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
               <img
-                src={user?.avatar || defaultAvatar}
+                src={getAvatarUrl(user?.avatar || user?.avatarUrl) || defaultAvatar}
                 alt={user?.name || 'Avatar người dùng'}
                 className="avatar-img"
               />
@@ -259,6 +260,16 @@ const Navbar = () => {
                   }}
                 >
                   <Settings size={17} /> Cài đặt chung
+                </button>
+
+                <button 
+                  className="user-dropdown-item" 
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    navigate('/home');
+                  }}
+                >
+                  <Home size={17} /> Về trang chủ
                 </button>
 
                 <button className="user-dropdown-item text-danger" onClick={() => {

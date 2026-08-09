@@ -1,9 +1,10 @@
 import { UserRole } from '../entities/user.entity';
 
 export class CreateUserDto {
-  email!: string;
+  username!: string;
   password!: string;
-  name?: string;
+  fullName?: string;
+  avatarUser?: string;
   phone?: string;
   address?: string;
   // Định dạng ISO, ví dụ: '1998-05-20'
