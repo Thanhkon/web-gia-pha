@@ -20,26 +20,30 @@ function Login() {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const primaryFamilyId = useSelector(state => state.settings.primaryFamilyId);
+    const primaryFamilyId = useSelector(
+        (state) => state.settings.primaryFamilyId,
+    );
 
     const handleSuccessLogin = () => {
         if (primaryFamilyId) {
             navigate(`/${primaryFamilyId}/home`);
         } else {
-            navigate('/admin/families');
+            navigate("/admin/families");
         }
     };
 
     const handleLocalLogin = (user) => {
-        dispatch(login({
-            id: user.id,
-            username: user.username,
-            role: user.username === "admin" ? "FAMILY_HEAD" : "MEMBER",
-            familyId: "1",
-            memberId: user.username === "admin" ? null : String(user.id),
-            canCreatePost: user.username === "admin",
-            canManagePosts: user.username === "admin",
-        }));
+        dispatch(
+            login({
+                id: user.id,
+                username: user.username,
+                role: user.username === "admin" ? "FAMILY_HEAD" : "MEMBER",
+                familyId: "1",
+                memberId: user.username === "admin" ? null : String(user.id),
+                canCreatePost: user.username === "admin",
+                canManagePosts: user.username === "admin",
+            }),
+        );
         handleSuccessLogin();
     };
 
@@ -53,7 +57,9 @@ function Login() {
         }
 
         const localUser = users.find(
-            (user) => user.username === loginData.username && user.password === loginData.password
+            (user) =>
+                user.username === loginData.username &&
+                user.password === loginData.password,
         );
 
         if (loginData.password.length < 6 && !localUser) {
@@ -63,7 +69,7 @@ function Login() {
 
         try {
             const response = await apiClient.post("/auth/login", {
-                email: loginData.username,
+                username: loginData.username,
                 password: loginData.password,
             });
 
@@ -75,7 +81,9 @@ function Login() {
                 handleLocalLogin(localUser);
                 return;
             }
-            setError(requestError.response?.data?.message || "Đăng nhập thất bại");
+            setError(
+                requestError.response?.data?.message || "Đăng nhập thất bại",
+            );
         }
     };
 
@@ -84,11 +92,7 @@ function Login() {
             <div className="auth-box">
                 <h2>Đăng Nhập</h2>
                 <form className="auth-form" onSubmit={handleSubmit}>
-                    {error && (
-                        <p className="auth-error">
-                            {error}
-                        </p>
-                    )}
+                    {error && <p className="auth-error">{error}</p>}
 
                     <div className="input-box">
                         <label className="label-auth">Username</label>
@@ -99,7 +103,10 @@ function Login() {
                             value={loginData.username}
                             autoComplete="off"
                             onChange={(e) =>
-                                setLoginData({ ...loginData, username: e.target.value })
+                                setLoginData({
+                                    ...loginData,
+                                    username: e.target.value,
+                                })
                             }
                             required
                         />
@@ -115,7 +122,10 @@ function Login() {
                                 value={loginData.password}
                                 autoComplete="off"
                                 onChange={(e) =>
-                                    setLoginData({ ...loginData, password: e.target.value })
+                                    setLoginData({
+                                        ...loginData,
+                                        password: e.target.value,
+                                    })
                                 }
                                 required
                             />
@@ -125,20 +135,27 @@ function Login() {
                                 type="button"
                                 tabIndex={-1}
                             >
-                                {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+                                {showPass ? (
+                                    <EyeOff size={20} />
+                                ) : (
+                                    <Eye size={20} />
+                                )}
                             </button>
                         </div>
                     </div>
 
-                    <p>Chưa có tài khoản?{" "}
+                    <p>
+                        Chưa có tài khoản?{" "}
                         <span
-                            style={{ color: "blue", cursor: "pointer" }}
+                            style={{ color: "red", cursor: "pointer" }}
                             onClick={() => navigate("/register")}
                         >
                             Đăng ký ngay
                         </span>
                     </p>
-                    <button type="submit" className="btn-auth">Đăng Nhập</button>
+                    <button type="submit" className="btn-auth">
+                        Đăng Nhập
+                    </button>
                 </form>
             </div>
         </div>

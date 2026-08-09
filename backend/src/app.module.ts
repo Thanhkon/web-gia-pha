@@ -33,6 +33,9 @@ import { MemberAttachmentsModule } from './modules/attachment/member-attachments
         retryAttempts: Number(
           configService.getOrThrow<string>('DB_RETRY_ATTEMPTS'),
         ),
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
     }),
     StorageModule,

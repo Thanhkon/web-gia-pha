@@ -48,21 +48,36 @@ export class MembersService {
       throw new BadRequestException('Family name is required');
     }
 
-    const family = this.familiesRepository.create({
-      ...createFamilyDto,
-      name: createFamilyDto.name.trim(),
-    });
+    try {
+      const family = this.familiesRepository.create({
+        name: createFamilyDto.name.trim(),
+        originPlace: createFamilyDto.originPlace?.trim() || null,
+        description: createFamilyDto.description?.trim() || null,
+        coverImageUrl: createFamilyDto.coverImageUrl || null,
+      });
 
-    const savedFamily = await this.familiesRepository.save(family);
+      const savedFamily = await this.familiesRepository.save(family);
 
-    // Gán người tạo làm editor cấp family, để họ có quyền thao tác tiếp
-    // (thêm member, sửa family, v.v.) ngay sau khi tạo.
-    await this.memberAttachmentsService.createFamilyEditor(
-      savedFamily.id,
-      userId,
-    );
+      // Gán quyền editor cấp family
+      try {
+        await this.memberAttachmentsService.createFamilyEditor(
+          savedFamily.id,
+          userId,
+        );
+      } catch (editorError) {
+        console.warn(
+          `Could not assign family editor for userId ${userId}:`,
+          (editorError as Error).message,
+        );
+      }
 
-    return savedFamily;
+      return savedFamily;
+    } catch (error) {
+      console.error('Error creating family in database:', error);
+      throw new BadRequestException(
+        (error as Error).message || 'Không thể tạo gia phả mới',
+      );
+    }
   }
 
   async findOneFamily(id: number) {
@@ -103,7 +118,7 @@ export class MembersService {
   ) {
     const family = await this.findOneFamily(familyId);
 
-    await this.permissionsService.assertFamilyEditor(userId, familyId); 
+    await this.permissionsService.assertFamilyEditor(userId, familyId);
 
     if (!file) {
       throw new BadRequestException('image is required');
@@ -123,7 +138,7 @@ export class MembersService {
   async removeFamily(id: number, userId: number) {
     await this.findOneFamily(id);
 
-    await this.permissionsService.assertFamilyEditor(userId, id); 
+    await this.permissionsService.assertFamilyEditor(userId, id);
 
     const memberCount = await this.membersRepository.count({
       where: { familyId: id },
@@ -239,7 +254,7 @@ export class MembersService {
       throw new NotFoundException(`Member ${id} not found`);
     }
 
-    await this.permissionsService.assertFamilyEditor(userId, member.familyId); 
+    await this.permissionsService.assertFamilyEditor(userId, member.familyId!);
 
     if (updateMemberDto.familyId !== undefined) {
       await this.ensureFamilyExists(updateMemberDto.familyId);
@@ -272,7 +287,7 @@ export class MembersService {
       throw new NotFoundException(`Member ${memberId} not found`);
     }
 
-    await this.permissionsService.assertFamilyEditor(userId, member.familyId); // 👈
+    await this.permissionsService.assertFamilyEditor(userId, member.familyId!);
 
     if (!file) {
       throw new BadRequestException('image is required');
@@ -295,7 +310,7 @@ export class MembersService {
       throw new NotFoundException(`Member ${id} not found`);
     }
 
-    await this.permissionsService.assertFamilyEditor(userId, member.familyId); 
+    await this.permissionsService.assertFamilyEditor(userId, member.familyId!);
 
     await this.membersRepository.remove(member);
     return { deleted: true, id };
@@ -318,7 +333,7 @@ export class MembersService {
 
     this.ensureSameFamily(parent, child);
 
-    await this.permissionsService.assertFamilyEditor(userId, parent.familyId); 
+    await this.permissionsService.assertFamilyEditor(userId, parent.familyId!);
 
     const exists = await this.parentChildRepository.findOne({
       where: { parentId: dto.parentId, childId: dto.childId },
@@ -349,7 +364,7 @@ export class MembersService {
 
     this.ensureSameFamily(memberA, memberB);
 
-    await this.permissionsService.assertFamilyEditor(userId, memberA.familyId); 
+    await this.permissionsService.assertFamilyEditor(userId, memberA.familyId!);
 
     const exists = await this.marriagesRepository.findOne({
       where: [

@@ -2,9 +2,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Member } from '../../members/entities/member.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -17,13 +19,16 @@ export class User {
   id!: number;
 
   @Column({ unique: true })
-  email!: string;
+  username!: string;
 
   @Column()
   passwordHash!: string;
 
   @Column({ nullable: true })
-  name?: string;
+  avatarUser?: string;
+
+  @Column({ nullable: true })
+  fullName?: string;
 
   @Column({ nullable: true })
   phone?: string;
@@ -46,6 +51,9 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @OneToOne(() => Member, (member) => member.user)
+  member?: Member;
 
   // Tiện ích để kiểm tra nhanh user có phải admin hay không
   get isAdmin(): boolean {

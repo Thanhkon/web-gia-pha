@@ -1,5 +1,5 @@
 export class ChangePasswordDto {
-  email!: string;
+  username!: string;
   currentPassword!: string;
   newPassword!: string;
 }

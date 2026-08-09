@@ -1,43 +1,65 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import PublicNavbar from './components/PublicNavbar';
-import ProtectedRoute from './components/ProtectedRoute';
-import AdminLayout from './layouts/AdminLayout';
-import ErrorBoundary from './ErrorBoundary';
-import Setting from './pages/Setting';
-import { Toaster } from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
-import './App.css';
+import React, { lazy, Suspense } from "react";
+import {
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Navigate,
+} from "react-router-dom";
+import Navbar from "./components/Navbar";
+import PublicNavbar from "./components/PublicNavbar";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminLayout from "./layouts/AdminLayout";
+import ErrorBoundary from "./ErrorBoundary";
+import Setting from "./pages/setting/Setting";
+import ChangePassword from "./pages/setting/ChangePassword";
+import ForgotPassword from "./pages/setting/ForgotPassword";
+import Privacy from "./pages/setting/Privacy";
+import Notifications from "./pages/setting/Notifications";
+import { Toaster } from "react-hot-toast";
+import { Loader2 } from "lucide-react";
+import "./App.css";
 
 // Lazy load các trang nặng để giảm initial bundle size
-const Home = lazy(() => import('./pages/Home'));
-const PublicHome = lazy(() => import('./pages/PublicHome'));
-const FamilyTree = lazy(() => import('./pages/FamilyTree'));
-const AdminMembers = lazy(() => import('./pages/admin/AdminMembers'));
-const EditRequests = lazy(() => import('./pages/EditRequests'));
-const AdminEditRequests = lazy(() => import('./pages/admin/AdminEditRequests'));
-const AdminDashboardSettings = lazy(() => import('./pages/admin/AdminDashboardSettings'));
-const PublicMembers = lazy(() => import('./pages/PublicMembers'));
-const Posts = lazy(() => import('./pages/Posts'));
-const PostDetail = lazy(() => import('./pages/PostDetail'));
-const PostEditor = lazy(() => import('./pages/PostEditor'));
-const Events = lazy(() => import('./pages/Events'));
-const Gallery = lazy(() => import('./pages/Gallery'));
-const GalleryDetail = lazy(() => import('./pages/GalleryDetail'));
-const KinshipLookup = lazy(() => import('./pages/KinshipLookup'));
-const Login = lazy(() => import('./pages/auth/Login'));
-const Register = lazy(() => import('./pages/auth/Register'));
-const FamilyList = lazy(() => import('./pages/FamilyList'));
-const ProfilePage = lazy(() => import('./pages/Profile'));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const Home = lazy(() => import("./pages/Home"));
+const PublicHome = lazy(() => import("./pages/PublicHome"));
+const FamilyTree = lazy(() => import("./pages/FamilyTree"));
+const AdminMembers = lazy(() => import("./pages/admin/AdminMembers"));
+const EditRequests = lazy(() => import("./pages/EditRequests"));
+const AdminEditRequests = lazy(() => import("./pages/admin/AdminEditRequests"));
+const AdminDashboardSettings = lazy(
+    () => import("./pages/admin/AdminDashboardSettings"),
+);
+const PublicMembers = lazy(() => import("./pages/PublicMembers"));
+const Posts = lazy(() => import("./pages/Posts"));
+const PostDetail = lazy(() => import("./pages/PostDetail"));
+const PostEditor = lazy(() => import("./pages/PostEditor"));
+const Events = lazy(() => import("./pages/Events"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const GalleryDetail = lazy(() => import("./pages/GalleryDetail"));
+const KinshipLookup = lazy(() => import("./pages/KinshipLookup"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const Register = lazy(() => import("./pages/auth/Register"));
+const FamilyList = lazy(() => import("./pages/FamilyList"));
+const ProfilePage = lazy(() => import("./pages/Profile"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 const PageLoader = () => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh', color: 'var(--text-muted)', fontSize: '1rem', gap: '8px' }}>
-    <Loader2 size={24} className="spin-icon" /> Đang tải...
-  </div>
+    <div
+        style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "80vh",
+            color: "var(--text-muted)",
+            fontSize: "1rem",
+            gap: "8px",
+        }}
+    >
+        <Loader2 size={24} className="spin-icon" /> Đang tải...
+    </div>
 );
 
+// prettier-ignore
 const App = () => {
   return (
     <ErrorBoundary>
@@ -80,7 +102,13 @@ const App = () => {
                     <Route path="gallery" element={<Gallery />} />
                     <Route path="dashboard-settings" element={<AdminDashboardSettings />} />
                   </Route>
-                  <Route path="settings" element={<Setting />} />
+                  <Route path="settings" element={<Setting />}>
+                    <Route index element={<Navigate to="security" replace />} />
+                    <Route path="security" element={<ChangePassword />} />
+                    <Route path="forgot" element={<ForgotPassword />} />
+                    <Route path="privacy" element={<Privacy />} />
+                    <Route path="notifications" element={<Notifications />} />
+                  </Route>
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Route>
@@ -177,7 +205,6 @@ const App = () => {
                     <main className="main-content"><KinshipLookup /></main>
                   </>
                 } />
-
 
               </Route>
 

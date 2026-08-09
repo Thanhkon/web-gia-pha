@@ -14,6 +14,7 @@ import {
 } from 'node:crypto';
 import { promisify } from 'node:util';
 import { IsNull, Repository } from 'typeorm';
+import { Member } from '../members/entities/member.entity';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -29,12 +30,15 @@ const scrypt = promisify(scryptCallback);
 const RESET_PASSWORD_TOKEN_TTL_MS = 15 * 60 * 1000;
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+// prettier-ignore
 @Injectable()
 export class AuthService {
   private readonly jwtSecret = process.env.JWT_SECRET ?? 'dev-secret-key';
 
   constructor(
     private readonly usersService: UsersService,
+    @InjectRepository(Member)
+    private readonly memberRepository: Repository<Member>,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
     @InjectRepository(PasswordResetTokenEntity)
@@ -42,40 +46,47 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const email = this.normalizeEmail(registerDto.email);
+    const username = this.normalizeUsername(registerDto.username);
     const password = registerDto.password?.trim();
 
-    if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
+    if (!username || !password) {
+      throw new BadRequestException('Username and password are required');
     }
 
     if (password.length < 6) {
       throw new BadRequestException('Password must be at least 6 characters');
     }
 
-    const existingUser = await this.usersService.findByEmail(email);
+    const existingUser = await this.usersService.findByUsername(username);
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Username already exists');
     }
 
-    const name = this.normalizeUsername(registerDto.name);
+    const defaultFamilyId = Number(process.env.DEFAULT_FAMILY_ID || 1);
+
     const user = await this.usersService.createEntity({
-      email,
+      username,
       password,
-      ...(name ? { name } : {}),
+      member: {
+        fullName: registerDto.member?.fullName?.trim() || username,
+        role: registerDto.member?.role || 'member',
+        ...registerDto.member,
+      },
     });
 
     return this.buildAuthResponse(user);
   }
 
   async login(loginDto: LoginDto) {
-    const email = this.normalizeEmail(loginDto.email);
+    const username = loginDto.username?.trim();
     const password = loginDto.password ?? '';
-    const user = email ? await this.usersService.findByEmail(email) : null;
+    const user = username
+      ? await this.usersService.findByUsername(username)
+      : null;
 
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid username or password');
     }
 
     const isPasswordValid = await this.verifyPassword(
@@ -142,16 +153,17 @@ export class AuthService {
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    const email = this.normalizeEmail(forgotPasswordDto.email);
+    const username = this.normalizeUsername(forgotPasswordDto.username);
 
-    if (!email) {
-      throw new BadRequestException('Valid email is required');
+    if (!username) {
+      throw new BadRequestException('Valid username is required');
     }
 
     const response = {
-      message: 'If the email exists, a password reset token has been created',
+      message:
+        'If the username exists, a password reset token has been created',
     };
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByUsername(username);
 
     if (!user) {
       return response;
@@ -222,17 +234,17 @@ export class AuthService {
   }
 
   async changePassword(changePasswordDto: ChangePasswordDto) {
-    const email = this.normalizeEmail(changePasswordDto.email);
+    const username = this.normalizeUsername(changePasswordDto.username);
     const currentPassword = changePasswordDto.currentPassword ?? '';
     const newPassword = this.normalizePassword(changePasswordDto.newPassword);
 
-    if (!email) {
-      throw new BadRequestException('Valid email is required');
+    if (!username) {
+      throw new BadRequestException('Valid username is required');
     }
 
     this.validateNewPassword(newPassword);
 
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByUsername(username);
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -261,6 +273,9 @@ export class AuthService {
   private async buildAuthResponse(user: User) {
     const refreshToken = randomBytes(32).toString('base64url');
     const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+    const member = await this.memberRepository.findOne({
+      where: { userId: user.id },
+    });
 
     await this.refreshTokenRepository.save(
       this.refreshTokenRepository.create({
@@ -273,11 +288,23 @@ export class AuthService {
     return {
       accessToken: this.signJwt({
         sub: user.id,
-        email: user.email,
+        username: user.username,
       }),
       refreshToken,
       refreshTokenExpiresAt,
-      user: this.usersService.toPublicUser(user),
+      user: {
+        ...this.usersService.toPublicUser(user),
+        memberId: member?.id ?? null,
+        fullName: member?.fullName ?? user.username,
+        otherName: member?.otherName ?? null,
+        gender: member?.gender ?? 'unknown',
+        birthday: member?.dateOfBirth?.toISOString() ?? null,
+        address: member?.currentAddress ?? null,
+        education: member?.education ?? null,
+        occupation: member?.occupation ?? null,
+        note: member?.note ?? null,
+        avatar: member?.avatarUrl ?? null,
+      },
     };
   }
 

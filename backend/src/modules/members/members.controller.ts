@@ -35,8 +35,9 @@ export class MembersController {
     @Req() request: AuthenticatedRequest,
     @Body() createFamilyDto: CreateFamilyDto,
   ) {
-    // AccessTokenGuard đã đảm bảo user đã login. userId ở đây dùng để
-    // gán người tạo làm editor cấp family ngay sau khi tạo xong.
+    const user = request.user as any;
+    const userId = user?.id ?? user?.sub ?? user?.userId;
+
     if (!request.user?.id) {
       throw new UnauthorizedException('User not authenticated');
     }

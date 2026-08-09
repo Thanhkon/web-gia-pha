@@ -68,7 +68,7 @@ export class PermissionsService {
       throw new ForbiddenException(`Member ${memberId} not found`);
     }
 
-    await this.assertFamilyEditor(userId, member.familyId);
+    await this.assertFamilyEditor(userId, member.familyId!);
   }
 
   /** Tiện check nhanh isAdmin ở nơi khác (VD: guard, controller khác) nếu cần */
