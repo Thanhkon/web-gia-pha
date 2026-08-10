@@ -30,12 +30,12 @@ const FamilyList = () => {
 
     const hasFamily = families && families.length > 0;
 
+    // Tự động gọi API lấy danh sách gia phả của User/Member khi truy cập trang
     useEffect(() => {
         dispatch(fetchFamilies());
     }, [dispatch]);
 
     const handleCreate = () => {
-        if (hasFamily) return;
         setIsCreateModalOpen(true);
     };
 
@@ -46,6 +46,10 @@ const FamilyList = () => {
         dispatch(findFamilyByCode(code));
     };
 
+    const handleJoinRequest = (familyId) => {
+        console.log("Đã gửi yêu cầu tham gia gia phả ID:", familyId);
+    };
+
     const renderFamilyCard = (family, isSearchResult = false) => {
         const rawCover = family.coverImageUrl || family.coverImg;
         const coverImage = getAvatarUrl(rawCover);
@@ -54,8 +58,10 @@ const FamilyList = () => {
             <div key={family.id} className="family-card">
                 <div
                     className="family-card-cover"
-                    onClick={() => navigate(`/${family.id}/home`)}
-                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                        if (!isSearchResult) navigate(`/${family.id}/home`);
+                    }}
+                    style={{ cursor: isSearchResult ? "default" : "pointer" }}
                 >
                     <img
                         src={coverImage}
@@ -66,7 +72,7 @@ const FamilyList = () => {
                         }}
                     />
                     <div className="family-card-overlay"></div>
-                    {family.role && (
+                    {!isSearchResult && family.role && (
                         <div className={`family-role-badge ${family.role}`}>
                             {family.role === "admin"
                                 ? "Quản trị"
@@ -78,12 +84,22 @@ const FamilyList = () => {
                 <div className="family-card-body">
                     <h3
                         className="family-card-title"
-                        onClick={() => navigate(`/${family.id}/home`)}
-                        style={{ cursor: "pointer" }}
+                        onClick={() => {
+                            if (!isSearchResult) navigate(`/${family.id}/home`);
+                        }}
+                        style={{
+                            cursor: isSearchResult ? "default" : "pointer",
+                        }}
                     >
                         {family.name}
                     </h3>
-                    <p className="family-card-desc">{family.description}</p>
+
+                    <p className="family-card-code">
+                        Mã gia phả: {family.familyCode}
+                    </p>
+                    <p className="family-card-desc">
+                        Desc: {family.description}
+                    </p>
 
                     <div className="family-stats">
                         <div className="stat-item" title="Số thành viên">
@@ -109,11 +125,12 @@ const FamilyList = () => {
                                 Vào gia phả
                             </button>
                         ) : (
-                            !hasFamily && (
-                                <button className="btn btn-primary">
-                                    Xin gia nhập
-                                </button>
-                            )
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => handleJoinRequest(family.id)}
+                            >
+                                Yêu cầu tham gia
+                            </button>
                         )}
                     </div>
                 </div>
@@ -151,7 +168,13 @@ const FamilyList = () => {
 
             return (
                 <div className="family-list-empty">
-                    <p>{searchError || "Không tìm thấy gia phả với mã này"}</p>
+                    <p>
+                        {typeof searchError === "object"
+                            ? searchError?.message ||
+                              "Không tìm thấy gia phả với mã này"
+                            : searchError ||
+                              "Không tìm thấy gia phả với mã này"}
+                    </p>
                 </div>
             );
         }
@@ -198,7 +221,7 @@ const FamilyList = () => {
                                     dispatch(clearSearch());
                                 }
                             }}
-                            placeholder="Nhập mã gia phả (10 chữ số)"
+                            placeholder="Nhập mã gia phả (6 chữ số)"
                             className="admin-input"
                             style={{ flex: 1 }}
                             onKeyDown={(e) => {
@@ -212,18 +235,25 @@ const FamilyList = () => {
                             Tìm kiếm
                         </button>
                     </div>
+
+                    {hasFamily && !searchAttempted && (
+                        <button
+                            className="btn-add-new-family"
+                            onClick={handleCreate}
+                        >
+                            <Plus size={18} /> Thêm gia phả mới
+                        </button>
+                    )}
                 </div>
 
                 {renderMainContent()}
             </div>
 
-            {!hasFamily && (
-                <CreateFamilyModal
-                    isOpen={isCreateModalOpen}
-                    onClose={() => setIsCreateModalOpen(false)}
-                    onSuccess={() => dispatch(fetchFamilies())}
-                />
-            )}
+            <CreateFamilyModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => dispatch(fetchFamilies())}
+            />
         </div>
     );
 };

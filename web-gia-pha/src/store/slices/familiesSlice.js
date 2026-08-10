@@ -18,20 +18,17 @@ export const fetchFamilies = createAsyncThunk(
   }
 );
 
-// 2. GET: Tìm kiếm gia phả theo mã familyCode
+// 2. GET: Tìm kiếm gia phả theo mã familyCode (Trả về 200 kèm null nếu không tìm thấy)
 export const findFamilyByCode = createAsyncThunk(
   'families/findByCode',
   async (code, { rejectWithValue }) => {
     try {
       const response = await apiClient.get(`/families/code/${code}`);
-      return response.data;
+      return response.data; // nếu backend trả về null thì response.data là null
     } catch (error) {
-      console.warn(`API GET /families/code/${code} failed.`, error);
-      const message =
-        error?.response?.status === 404
-          ? 'Không tìm thấy gia phả với mã đã nhập.'
-          : error?.response?.data || error.message || `Failed to find family by code ${code}`;
-      return rejectWithValue(message);
+      return rejectWithValue(
+        error?.response?.data || error.message || `Failed to find family by code ${code}`
+      );
     }
   }
 );
@@ -112,7 +109,8 @@ const familiesSlice = createSlice({
       .addCase(findFamilyByCode.fulfilled, (state, action) => {
         state.searchLoading = false;
         state.searchResult = action.payload;
-        state.searchError = null;
+        // Nếu payload là null thì gán thông báo không tìm thấy
+        state.searchError = action.payload ? null : 'Không tìm thấy gia phả với mã đã nhập.';
       })
       .addCase(findFamilyByCode.rejected, (state, action) => {
         state.searchLoading = false;

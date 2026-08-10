@@ -100,10 +100,9 @@ export class MemberAttachmentsService {
       where: { memberId, userId },
     });
 
-    return !!access; // có bản ghi là được, không quan tâm role gì
+    return !!access;
   }
 
-  // Tương đương canEdit/hasAccess nhưng ở cấp family (memberId = null)
   async canEditFamily(userId: number, familyId: number): Promise<boolean> {
     const access = await this.attachmentRepository.findOne({
       where: { familyId, userId },
@@ -123,12 +122,29 @@ export class MemberAttachmentsService {
   async createFamilyEditor(
     familyId: number,
     userId: number,
+    memberId?: number,
   ): Promise<MemberAttachment> {
     const access = this.attachmentRepository.create({
-      memberId: null,
+      memberId: memberId || null,
       familyId,
       userId,
       role: MemberAttachmentRole.EDITOR,
+    });
+
+    return this.attachmentRepository.save(access);
+  }
+
+  // Liên kết tài khoản User trực tiếp với Member trong sơ đồ (memberId != null, familyId = null)
+  async createMemberAttachment(
+    memberId: number,
+    userId: number,
+    role: MemberAttachmentRole = MemberAttachmentRole.EDITOR,
+  ): Promise<MemberAttachment> {
+    const access = this.attachmentRepository.create({
+      memberId,
+      familyId: null,
+      userId,
+      role,
     });
 
     return this.attachmentRepository.save(access);

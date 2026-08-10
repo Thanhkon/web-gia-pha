@@ -37,10 +37,47 @@ export class MembersService {
     private readonly memberAttachmentsService: MemberAttachmentsService,
   ) {}
 
-  async findAllFamilies() {
-    return this.familiesRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+  async findAllFamilies(userId: number) {
+    return this.familiesRepository
+      .createQueryBuilder('family')
+      .leftJoin(
+        'member_attachments',
+        'attachment',
+        'attachment.familyId = family.id',
+      )
+      .leftJoin('members', 'member', 'member.familyId = family.id')
+      .where('attachment.userId = :userId OR member.userId = :userId', {
+        userId,
+      })
+      .orderBy('family.createdAt', 'DESC')
+      .distinct(true)
+      .getMany();
+  }
+
+  // Sinh mã gia phả ngẫu nhiên 6 chữ số và đảm bảo không bị trùng trong Database
+  private async generateUniqueFamilyCode(): Promise<string> {
+    let code: string;
+    let isUnique = false;
+    let attempts = 0;
+
+    while (!isUnique && attempts < 10) {
+      code = Math.floor(100000 + Math.random() * 900000).toString();
+
+      const existing = await this.familiesRepository.findOne({
+        where: { familyCode: code },
+      });
+
+      if (!existing) {
+        isUnique = true;
+        return code;
+      }
+
+      attempts++;
+    }
+
+    throw new BadRequestException(
+      'Không thể khởi tạo mã gia phả, vui lòng thử lại',
+    );
   }
 
   async createFamily(createFamilyDto: CreateFamilyDto, userId: number) {
@@ -49,24 +86,40 @@ export class MembersService {
     }
 
     try {
+      // 1. Sinh mã gia phả 6 số ngẫu nhiên duy nhất
+      const familyCode = await this.generateUniqueFamilyCode();
+
+      // 2. Tạo bản ghi Gia phả
       const family = this.familiesRepository.create({
         name: createFamilyDto.name.trim(),
         originPlace: createFamilyDto.originPlace?.trim() || null,
         description: createFamilyDto.description?.trim() || null,
         coverImageUrl: createFamilyDto.coverImageUrl || null,
+        familyCode,
       });
 
       const savedFamily = await this.familiesRepository.save(family);
 
-      // Gán quyền editor cấp family
+      // 3. Tự động tạo bản ghi Thành viên (Đời 1) đại diện cho User tạo gia phả
+      const initialMember = this.membersRepository.create({
+        fullName: `Chủ hộ (${createFamilyDto.name.trim()})`,
+        userId: userId,
+        familyId: savedFamily.id,
+        generation: 1,
+      });
+
+      const savedMember = await this.membersRepository.save(initialMember);
+
+      // 4. Tạo đúng 1 bản ghi phân quyền duy nhất chứa cả familyId và memberId
       try {
         await this.memberAttachmentsService.createFamilyEditor(
           savedFamily.id,
           userId,
+          savedMember.id, // Truyền memberId vào đây
         );
       } catch (editorError) {
         console.warn(
-          `Could not assign family editor for userId ${userId}:`,
+          `Could not assign attachment for userId ${userId}:`,
           (editorError as Error).message,
         );
       }
@@ -78,6 +131,18 @@ export class MembersService {
         (error as Error).message || 'Không thể tạo gia phả mới',
       );
     }
+  }
+
+  async findFamilyByCode(code: string) {
+    const family = await this.familiesRepository.findOne({
+      where: { familyCode: code.trim() },
+    });
+
+    if (!family) {
+      throw new NotFoundException(`Không tìm thấy gia phả với mã ${code}`);
+    }
+
+    return family || null;
   }
 
   async findOneFamily(id: number) {
@@ -166,6 +231,8 @@ export class MembersService {
       throw new BadRequestException('Member fullName is required');
     }
 
+    // Các member mới được thêm thủ công (người thân, người đã mất...)
+    // thì userId sẽ bị null, hoàn toàn khớp với định nghĩa nghiệp vụ
     const member = this.membersRepository.create({
       ...this.normalizeMemberInput(createMemberDto),
       familyId,
