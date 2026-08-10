@@ -39,6 +39,14 @@ export const fetchFamilyTree = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch family tree');
     }
+  },
+  {
+    condition: (familyId, { getState }) => {
+      const { members } = getState();
+      if (members.loading) {
+        return false;
+      }
+    }
   }
 );
 

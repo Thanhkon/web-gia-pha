@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { addRequest, fetchRequests, selectAllRequests } from '../store/slices/editRequestsSlice';
@@ -23,7 +23,8 @@ const EditRequests = () => {
     }
   }, [dispatch, familyId]);
   
-  const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
+  const allPersons = useSelector(state => state.members.persons);
+  const persons = useMemo(() => allPersons.filter(p => !p.isDeleted), [allPersons]);
   const allRequests = useSelector(selectAllRequests);
   
   // Lọc ra các request do người dùng hiện tại (trên trình duyệt này) vừa gửi

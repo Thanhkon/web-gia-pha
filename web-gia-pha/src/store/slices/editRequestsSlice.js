@@ -10,6 +10,14 @@ export const fetchRequests = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch requests');
     }
+  },
+  {
+    condition: (familyId, { getState }) => {
+      const { editRequests } = getState();
+      if (editRequests.loading) {
+        return false;
+      }
+    }
   }
 );
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import logoImg from '../../assets/logo.png';
 import '../../css/components/Navbar.css';
 
 const PublicNavbar = () => {
@@ -20,7 +21,7 @@ const PublicNavbar = () => {
         </button>
 
         <Link to="/" className="nav-logo" onClick={() => setIsMobileMenuOpen(false)}>
-          <BookOpen size={24} />
+          <img src={logoImg} alt="Logo" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
           <span>Web Gia Phả</span>
         </Link>
 

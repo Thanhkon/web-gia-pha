@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   GitMerge, FileText, Image,
-  Calendar, BookOpen, Clock, ChevronRight, Edit3
+  Calendar, Clock, ChevronRight, Edit3
 } from 'lucide-react';
 import MarqueeBanner from '../components/Home/MarqueeBanner';
 import Skeleton from '../components/common/Skeleton';
@@ -11,6 +11,9 @@ import { getPostActor, postService } from '../services/postService';
 import { eventService, getEventActor } from '../services/eventService';
 import { POST_ROLES } from '../types/posts';
 import { galleryService, getGalleryActor } from '../services/galleryService';
+import FamilyCouncil from '../components/Home/FamilyCouncil';
+import Footer from '../components/Navigation/Footer';
+import logoImg from '../assets/logo.png';
 import '../css/pages/Home.css';
 
 const toMemberPostActor = (actor) => {
@@ -122,7 +125,7 @@ const Home = () => {
       >
         <div className="container hero-content">
           <div className="hero-logo">
-            <BookOpen size={48} />
+            <img src={logoImg} alt="Logo" style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
           </div>
           <h1 className="hero-title">{hero.title}</h1>
           <p className="hero-subtitle">
@@ -148,6 +151,8 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Family Council Section */}
+      <FamilyCouncil familyId={familyId} />
 
       {/* Main Content Dashboard */}
       <section className="content-section">
@@ -271,6 +276,7 @@ const Home = () => {
         </div>
       </section>
 
+      <Footer />
     </div>
   );
 };

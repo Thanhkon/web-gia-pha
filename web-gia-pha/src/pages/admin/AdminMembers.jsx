@@ -34,7 +34,8 @@ const AdminMembers = () => {
     }
   }, [dispatch, familyId]);
 
-  const persons = useSelector(state => state.members.persons.filter(p => !p.isDeleted));
+  const allPersons = useSelector(state => state.members.persons);
+  const persons = useMemo(() => allPersons.filter(p => !p.isDeleted), [allPersons]);
   const relationships = useSelector(state => state.members.relationships);
 
   const [viewMode, setViewMode] = useState('table');

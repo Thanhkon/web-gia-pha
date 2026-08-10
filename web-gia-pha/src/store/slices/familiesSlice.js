@@ -15,6 +15,14 @@ export const fetchFamilies = createAsyncThunk(
         error?.response?.data || error.message || 'Failed to fetch families'
       );
     }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { families } = getState();
+      if (families.loading) {
+        return false;
+      }
+    }
   }
 );
 

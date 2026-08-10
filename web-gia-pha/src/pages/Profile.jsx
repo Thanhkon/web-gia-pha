@@ -265,7 +265,7 @@ const ProfilePage = () => {
                                 <input
                                     className="profile-input"
                                     type="text"
-                                    value={formData.fullName}
+                                    value={formData.fullName || ''}
                                     placeholder="Full name"
                                     onChange={handleFieldChange("fullName")}
                                     readOnly={!isEditing}
@@ -278,7 +278,7 @@ const ProfilePage = () => {
                                 <input
                                     className="profile-input"
                                     type="text"
-                                    value={formData.phone}
+                                    value={formData.phone || ''}
                                     placeholder="Phone number"
                                     onChange={handleFieldChange("phone")}
                                     readOnly={!isEditing}
@@ -291,7 +291,7 @@ const ProfilePage = () => {
                                 <input
                                     className="profile-input"
                                     type="text"
-                                    value={formData.address}
+                                    value={formData.address || ''}
                                     placeholder="Address"
                                     onChange={handleFieldChange("address")}
                                     readOnly={!isEditing}
@@ -304,7 +304,7 @@ const ProfilePage = () => {
                                 <input
                                     className="profile-input"
                                     type="date"
-                                    value={formData.dateOfBirth}
+                                    value={formData.dateOfBirth || ''}
                                     onChange={handleFieldChange("dateOfBirth")}
                                     readOnly={!isEditing}
                                     tabIndex={!isEditing ? -1 : 0}

@@ -181,3 +181,17 @@ textarea.form-control {
     transform: translateY(0) scale(1);
   }
 }
+
+/* Confirm Modal Specific Styles */
+.confirm-modal { padding: 32px 24px 24px; text-align: center; }
+.confirm-modal-header { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.confirm-icon-wrapper { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.confirm-icon-danger { background-color: #fee2e2; color: #dc2626; }
+.confirm-icon-warning { background-color: #fef3c7; color: #d97706; }
+.confirm-modal-title { font-size: 1.25rem; font-weight: 600; color: #111827; margin: 0; }
+.confirm-modal-message { font-size: 0.95rem; color: #4b5563; line-height: 1.5; margin: 0; }
+.confirm-modal-actions { margin-top: 32px; display: flex; justify-content: center; gap: 12px; }
+.btn-danger { background-color: #dc2626; border: 1px solid #dc2626; color: #ffffff; }
+.btn-danger:hover:not(:disabled) { background-color: #b91c1c; border-color: #b91c1c; }
+.btn-secondary { background-color: #f3f4f6; border: 1px solid #d1d5db; color: #374151; }
+.btn-secondary:hover:not(:disabled) { background-color: #e5e7eb; }

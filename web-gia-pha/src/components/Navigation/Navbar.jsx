@@ -11,6 +11,7 @@ import { UserRole } from '../../types/auth';
 import defaultAvatar from '../../assets/avatar-female.svg';
 import { getAvatarUrl } from '../../utils/imageHelper';
 import LogoutConfirmModal from '../common/LogoutConfirmModal';
+import logoImg from '../../assets/logo.png';
 import '../../css/components/Navbar.css';
 
 const Navbar = () => {
@@ -118,7 +119,7 @@ const Navbar = () => {
         </button>
 
         <div className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px' }}>
-          <BookOpen size={24} />
+          <img src={logoImg} alt="Logo" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
           {userFamilies?.length > 1 ? (
             <div 
               className="nav-dropdown" 
@@ -266,7 +267,7 @@ const Navbar = () => {
                   className="user-dropdown-item" 
                   onClick={() => {
                     setIsUserMenuOpen(false);
-                    navigate('/home');
+                    navigate('/');
                   }}
                 >
                   <Home size={17} /> Về trang chủ
