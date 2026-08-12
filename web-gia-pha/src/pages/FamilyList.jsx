@@ -59,7 +59,7 @@ const FamilyList = () => {
                 <div
                     className="family-card-cover"
                     onClick={() => {
-                        if (!isSearchResult) navigate(`/${family.id}/home`);
+                        if (!isSearchResucdlt) navigate(`/${family.id}/home`);
                     }}
                     style={{ cursor: isSearchResult ? "default" : "pointer" }}
                 >
@@ -171,9 +171,9 @@ const FamilyList = () => {
                     <p>
                         {typeof searchError === "object"
                             ? searchError?.message ||
-                              "Không tìm thấy gia phả với mã này"
+                            "Không tìm thấy gia phả với mã này"
                             : searchError ||
-                              "Không tìm thấy gia phả với mã này"}
+                            "Không tìm thấy gia phả với mã này"}
                     </p>
                 </div>
             );

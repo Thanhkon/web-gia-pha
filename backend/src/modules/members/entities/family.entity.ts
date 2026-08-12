@@ -37,6 +37,9 @@ export class Family {
   @Column({ name: 'coverImagePublicId', type: 'varchar', nullable: true })
   coverImagePublicId?: string | null;
 
+  @Column({ type: 'jsonb', nullable: true })
+  settings?: any;
+
   @CreateDateColumn({ name: 'createdAt', type: 'timestamp' })
   createdAt!: Date;
 

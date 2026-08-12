@@ -7,4 +7,5 @@ export class UpdateFamilyDto {
   membersCount?: number;
 
   coverImageUrl?: string | null;
+  settings?: any;
 }

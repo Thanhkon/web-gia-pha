@@ -1,34 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useFamily } from '../../hooks/useFamily';
-import { updateFamilyHero } from '../../store/slices/settingsSlice';
-import { uploadFamilyCoverImage } from '../../store/slices/familiesSlice';
-import { Save, Image as ImageIcon, Loader } from 'lucide-react';
+import { updateFamily, uploadFamilyCoverImage } from '../../store/slices/familiesSlice';
+import { Save, Image as ImageIcon, Loader, Plus, Trash2 } from 'lucide-react';
 import '../../css/pages/Setting.css';
 
 const AdminDashboardSettings = () => {
   const dispatch = useDispatch();
   const familyId = useFamily();
-  const { familiesSettings, hero: defaultHero } = useSelector((state) => state.settings);
+  
+  const { list: userFamilies } = useSelector((state) => state.families);
+  const activeFamily = userFamilies?.find(f => f.id === Number(familyId));
+  const { hero: defaultHero, marqueeItems: defaultMarqueeItems } = useSelector((state) => state.settings);
   
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
     bgImage: ''
   });
+  
+  const [marqueeItems, setMarqueeItems] = useState([]);
+  
   const [imageFile, setImageFile] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Load current settings for this family, fallback to default hero
-    const currentSettings = familiesSettings[familyId]?.hero || defaultHero;
+    // Load current settings for this family from backend settings or fallback to default
+    const currentSettings = activeFamily?.settings || {};
+    const heroSettings = currentSettings.hero || defaultHero;
+    const marqueeSettings = currentSettings.marqueeItems || defaultMarqueeItems || [];
+    
     setFormData({
-      title: currentSettings.title || '',
-      subtitle: currentSettings.subtitle || '',
-      bgImage: currentSettings.bgImage || ''
+      title: heroSettings.title || '',
+      subtitle: heroSettings.subtitle || '',
+      bgImage: heroSettings.bgImage || activeFamily?.coverImageUrl || activeFamily?.coverImg || ''
     });
-  }, [familyId, familiesSettings, defaultHero]);
+    setMarqueeItems([...marqueeSettings]);
+  }, [familyId, activeFamily, defaultHero, defaultMarqueeItems]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,6 +54,20 @@ const AdminDashboardSettings = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleAddMarqueeItem = () => {
+    setMarqueeItems([...marqueeItems, '']);
+  };
+
+  const handleRemoveMarqueeItem = (index) => {
+    setMarqueeItems(marqueeItems.filter((_, i) => i !== index));
+  };
+
+  const handleMarqueeChange = (index, value) => {
+    const newItems = [...marqueeItems];
+    newItems[index] = value;
+    setMarqueeItems(newItems);
   };
 
   const handleSubmit = async (e) => {
@@ -66,7 +89,12 @@ const AdminDashboardSettings = () => {
       }
     }
 
-    dispatch(updateFamilyHero({ familyId, hero: { ...formData, bgImage: finalBgImage } }));
+    const settingsToSave = {
+      hero: { ...formData, bgImage: finalBgImage },
+      marqueeItems: marqueeItems.filter(item => item.trim() !== '')
+    };
+
+    await dispatch(updateFamily({ id: familyId, data: { settings: settingsToSave } }));
     
     setIsSaving(false);
     setIsSaved(true);
@@ -77,13 +105,55 @@ const AdminDashboardSettings = () => {
     <div className="setting-page animate-fade-in">
       <div className="setting-container">
         <div className="setting-header">
-          <h2>Cấu hình Trang chủ (Hero Banner)</h2>
-          <p>Tuỳ chỉnh giao diện trang tổng quan cho gia phả này.</p>
+          <h2>Cấu hình Trang chủ (Bảng tin)</h2>
+          <p>Tuỳ chỉnh nội dung thông báo và giao diện trang tổng quan.</p>
         </div>
 
-        <div className="setting-content" style={{ display: 'block', padding: '2rem' }}>
+        <div className="setting-content" style={{ display: 'block', padding: '2rem', overflowY: 'auto' }}>
           <form onSubmit={handleSubmit} className="setting-section active">
-            <h3 className="section-title">Nội dung Banner (Hero)</h3>
+            
+            <h3 className="section-title">Thanh Thông Báo (Marquee Banner)</h3>
+            <div className="form-group" style={{ marginBottom: '2rem' }}>
+              <p className="text-muted" style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
+                Các dòng thông báo sẽ chạy ngang ở phần trên cùng của trang chủ.
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {marqueeItems.map((item, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => handleMarqueeChange(index, e.target.value)}
+                      placeholder="Nhập nội dung thông báo..."
+                      className="form-control"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => handleRemoveMarqueeItem(index)}
+                      className="btn btn-danger"
+                      style={{ padding: '8px', minWidth: '40px' }}
+                      title="Xóa thông báo này"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <button 
+                type="button" 
+                onClick={handleAddMarqueeItem}
+                className="btn btn-outline"
+                style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Plus size={16} /> Thêm thông báo mới
+              </button>
+            </div>
+
+            <hr style={{ margin: '2rem 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
+
+            <h3 className="section-title">Nội dung Banner Chính (Hero)</h3>
             
             <div className="form-group">
               <label>Tiêu đề chính</label>

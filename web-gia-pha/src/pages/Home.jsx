@@ -63,15 +63,18 @@ const Home = () => {
   const { familyId } = useParams();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
-  // Lấy cấu hình tuỳ chỉnh (Settings) từ Redux
-  const { familiesSettings, hero: defaultHero, marqueeItems } = useSelector((state) => state.settings);
+  // Lấy cấu hình tuỳ chỉnh (Settings) mặc định từ Redux
+  const { hero: defaultHero, marqueeItems } = useSelector((state) => state.settings);
   const { list: userFamilies } = useSelector((state) => state.families);
 
   // Find current family to display dynamic name
   const activeFamily = userFamilies?.find(f => f.id === Number(familyId));
 
-  // Custom hero for this family, or default
-  const familyHeroSettings = familiesSettings[familyId]?.hero;
+  // Dữ liệu cài đặt từ backend (hoặc mặc định)
+  const currentSettings = activeFamily?.settings || {};
+  const familyHeroSettings = currentSettings.hero || defaultHero;
+  const familyMarqueeItems = currentSettings.marqueeItems || marqueeItems || [];
+
   const hero = {
     title: familyHeroSettings?.title || (activeFamily ? `${activeFamily.name}` : defaultHero.title),
     subtitle: familyHeroSettings?.subtitle || defaultHero.subtitle,
@@ -114,8 +117,8 @@ const Home = () => {
     <div className="home-page animate-fade-in">
 
       {/* Marquee Banner */}
-      {marqueeItems && marqueeItems.length > 0 && (
-        <MarqueeBanner items={marqueeItems} />
+      {familyMarqueeItems && familyMarqueeItems.length > 0 && (
+        <MarqueeBanner items={familyMarqueeItems} />
       )}
 
       {/* Hero Section */}
