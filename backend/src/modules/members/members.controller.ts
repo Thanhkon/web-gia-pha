@@ -35,9 +35,6 @@ export class MembersController {
     @Req() request: AuthenticatedRequest,
     @Body() createFamilyDto: CreateFamilyDto,
   ) {
-    const user = request.user as any;
-    const userId = user?.id ?? user?.sub ?? user?.userId;
-
     if (!request.user?.id) {
       throw new UnauthorizedException('User not authenticated');
     }
@@ -45,8 +42,16 @@ export class MembersController {
   }
 
   @Get('families')
-  findAllFamilies() {
-    return this.membersService.findAllFamilies();
+  findAllFamilies(@Req() request: AuthenticatedRequest) {
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.membersService.findAllFamilies(request.user.id);
+  }
+
+  @Get('families/code/:code')
+  findFamilyByCode(@Param('code') code: string) {
+    return this.membersService.findFamilyByCode(code);
   }
 
   @Get('families/:familyId')

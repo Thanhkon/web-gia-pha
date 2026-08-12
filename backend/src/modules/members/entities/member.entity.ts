@@ -5,7 +5,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -98,7 +97,7 @@ export class Member {
   @OneToMany(() => Marriage, (marriage) => marriage.memberB)
   marriagesAsB!: Marriage[];
 
-  @OneToOne(() => User, (user) => user.member)
+  @ManyToOne(() => User, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'userId' })
   user?: User;
 }

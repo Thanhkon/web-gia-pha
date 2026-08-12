@@ -1,5 +1,4 @@
 import {
-  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -7,29 +6,25 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { Member } from '../../members/entities/member.entity';
 import { Family } from '../../members/entities/family.entity';
 import { User } from '../../users/entities/user.entity';
-// TODO: sửa lại đường dẫn import ở trên cho đúng vị trí thực tế trong project
 
 export enum MemberAttachmentRole {
-  EDITOR = 'editor', // được sửa thông tin member này / gia đình này
-  VIEWER = 'viewer', // chỉ được xem
+  EDITOR = 'editor',
+  VIEWER = 'viewer',
 }
 
 @Entity('member_attachments')
-@Check(
-  `("memberId" IS NOT NULL AND "familyId" IS NULL) OR ("memberId" IS NULL AND "familyId" IS NOT NULL)`,
-)
+@Unique(['familyId', 'userId'])
 export class MemberAttachment {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  // 1 member chỉ được gán cho đúng 1 user quản lý -> unique
-  // null khi đây là attachment cấp family (xem familyId bên dưới)
-  @Column({ name: 'memberId', unique: true, nullable: true })
+  @Column({ name: 'memberId', nullable: true })
   memberId: number | null = null;
 
   @ManyToOne(() => Member, { onDelete: 'CASCADE' })
@@ -44,7 +39,6 @@ export class MemberAttachment {
   @JoinColumn({ name: 'familyId' })
   family!: Family;
 
-  // 1 user có thể quản lý nhiều member -> không unique
   @Index()
   @Column({ name: 'userId' })
   userId!: number;

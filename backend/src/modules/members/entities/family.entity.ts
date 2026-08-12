@@ -16,6 +16,9 @@ export class Family {
   @Column()
   name!: string;
 
+  @Column({ type: 'varchar', length: 6, unique: true, nullable: true })
+  familyCode?: string | null;
+
   @Column({ name: 'originPlace', type: 'varchar', nullable: true })
   originPlace?: string | null;
 
