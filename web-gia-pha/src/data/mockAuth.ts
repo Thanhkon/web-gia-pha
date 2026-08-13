@@ -4,6 +4,8 @@ export const mockRoleLabels = {
   [UserRole.FAMILY_HEAD]: 'Trưởng họ',
   [UserRole.MEMBER]: 'Thành viên',
   [UserRole.GUEST]: 'Khách',
+  'editor': 'Biên tập viên',
+  'viewer': 'Người xem',
 };
 export const mockCurrentUser: AuthUser = {
   id: 'user-family-head-01',

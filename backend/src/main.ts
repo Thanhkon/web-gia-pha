@@ -2,12 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix('api');
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Khởi tạo các thư mục lưu file tĩnh
   const uploadAvatarDir = join(process.cwd(), 'uploads', 'avatars');

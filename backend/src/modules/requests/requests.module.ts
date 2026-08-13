@@ -5,14 +5,17 @@ import { Family } from '../members/entities/family.entity';
 import { Member } from '../members/entities/member.entity';
 import { UsersModule } from '../users/users.module';
 import { EditRequest } from './entities/edit-request.entity';
+import { JoinRequest } from './entities/join-request.entity';
 import { RequestsController } from './requests.controller';
 import { RequestsService } from './requests.service';
+import { MemberAttachmentsModule } from '../attachment/member-attachments.module';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
-    TypeOrmModule.forFeature([EditRequest, Family, Member]),
+    MemberAttachmentsModule,
+    TypeOrmModule.forFeature([EditRequest, JoinRequest, Family, Member]),
   ],
   controllers: [RequestsController],
   providers: [RequestsService],

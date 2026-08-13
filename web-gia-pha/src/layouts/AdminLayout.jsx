@@ -93,6 +93,9 @@ const AdminLayout = () => {
                   <span className="sidebar-badge-dot"></span>
                 )}
               </NavLink>
+              <NavLink to={`/admin/families/${familyId}/join-requests`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Yêu cầu tham gia">
+                <BookOpen size={18} /> {!isCollapsed && <span>Yêu cầu tham gia</span>}
+              </NavLink>
               <NavLink to={`/admin/families/${familyId}/events`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Quản lý sự kiện">
                 <CalendarDays size={18} /> {!isCollapsed && <span>Quản lý sự kiện</span>}
               </NavLink>

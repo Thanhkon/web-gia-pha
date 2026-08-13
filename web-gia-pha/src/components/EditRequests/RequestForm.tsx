@@ -3,6 +3,27 @@ import { Send, AlertCircle, Plus, X } from 'lucide-react';
 import SearchableSelect from '../common/SearchableSelect';
 import AlertModal from '../common/AlertModal';
 
+interface Person {
+  id: string;
+  fullName: string;
+  otherName: string;
+  gender: string;
+  dateOfBirth: string;
+  birthLunarDate: string;
+  birthYear: string;
+  isDeceased: boolean;
+  dateOfDeath: string;
+  deathLunarDate: string;
+  placeOfBirth: string;
+  occupation: string;
+  currentAddress: string;
+  phone: number;
+  email: string;
+  note: string;
+  role: string;
+  generation: number;
+}
+
 export const FIELD_DICT = {
   fullName: 'Họ và tên',
   otherName: 'Tên gọi khác',
@@ -23,13 +44,19 @@ export const FIELD_DICT = {
   generation: 'Đời thứ mấy'
 };
 
-const RequestForm = ({ persons, onSubmit, pendingCount }) => {
+interface RequestFromProps {
+  persons: Person[];
+  onSubmit: (request: any) => Promise<void>;
+  pendingCount: number;
+}
+
+const RequestForm = ({ persons, onSubmit, pendingCount }: RequestFromProps) => {
   const [selectedPersonId, setSelectedPersonId] = useState('');
-  const [changes, setChanges] = useState({});
+  const [changes, setChanges] = useState<Record<string, { old: string; new: string }>>({});
   const [reason, setReason] = useState('');
   const [submitterName, setSubmitterName] = useState('');
   const [submitterPhone, setSubmitterPhone] = useState('');
-  
+
   const [selectedFieldToAdd, setSelectedFieldToAdd] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,17 +64,17 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
 
   const selectedPerson = persons.find(p => p.id === selectedPersonId);
 
-  const handleFieldChange = (field, newValue) => {
+  const handleFieldChange = (field: string, newValue: any) => {
     setChanges(prev => ({
       ...prev,
-      [field]: { old: selectedPerson[field] || '', new: newValue }
+      [field]: { old: String(selectedPerson?.[field as keyof Person] || ''), new: newValue }
     }));
   };
 
-  const handleRemoveField = (field) => {
+  const handleRemoveField = (field: string) => {
     setChanges(prev => {
       const newChanges = { ...prev };
-      delete newChanges[field];
+      delete newChanges[field as keyof typeof FIELD_DICT];
       return newChanges;
     });
   };
@@ -56,16 +83,15 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
     if (selectedFieldToAdd && !changes[selectedFieldToAdd]) {
       setChanges(prev => ({
         ...prev,
-        [selectedFieldToAdd]: { old: selectedPerson[selectedFieldToAdd] || '', new: '' }
+        [selectedFieldToAdd]: { old: String(selectedPerson?.[selectedFieldToAdd as keyof Person] || ''), new: '' }
       }));
     }
     setSelectedFieldToAdd('');
   };
 
-  const handlePreview = (e) => {
+  const handlePreview = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!e.target.checkValidity()) {
+    if (!e.currentTarget.checkValidity()) {
       setValidationAlert({
         isOpen: true,
         message: 'Vui lòng điền đầy đủ các trường thông tin bắt buộc có dấu (*) trước khi tiếp tục.'
@@ -81,7 +107,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
       setValidationAlert({ isOpen: true, message: 'Vui lòng chọn thành viên, nhập thông tin thay đổi, lý do và tên người gửi.' });
       return;
     }
-    
+
     const emptyFields = Object.values(changes).filter(c => String(c.new).trim() === '');
     if (emptyFields.length > 0) {
       setValidationAlert({ isOpen: true, message: 'Vui lòng nhập giá trị mới cho tất cả các trường bạn muốn thay đổi, hoặc xóa trường đó đi nếu không cần thiết.' });
@@ -97,12 +123,12 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
       await onSubmit({
         type: 'edit_member',
         targetMemberId: selectedPersonId,
-        targetMemberName: selectedPerson.fullName,
+        targetMemberName: selectedPerson?.fullName || '',
         changes,
-        reason,
+        reason: reason || '',
         submittedBy: {
-          name: submitterName,
-          phone: submitterPhone
+          name: submitterName || '',
+          phone: submitterPhone || ''
         }
       });
 
@@ -129,7 +155,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
     .filter(key => !changes[key])
     .map(key => ({
       value: key,
-      label: FIELD_DICT[key]
+      label: FIELD_DICT[key as keyof typeof FIELD_DICT]
     }));
 
   return (
@@ -144,7 +170,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
             <span>Bạn đã đạt giới hạn 5 yêu cầu đang chờ duyệt. Vui lòng đợi.</span>
           </div>
         )}
-        
+
         <form onSubmit={handlePreview} noValidate className="request-form">
           <div className="form-group">
             <label>Chọn thành viên cần sửa <span className="required">*</span></label>
@@ -164,19 +190,19 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
             <div className="changes-section">
               <h4>Thông tin muốn thay đổi</h4>
               <p className="changes-help">Thêm các trường bạn muốn sửa và nhập thông tin mới.</p>
-              
+
               <div className="changes-grid">
                 {Object.keys(changes).map(field => (
                   <div key={field} className="change-field-row">
                     <label>
-                      {FIELD_DICT[field]} 
-                      <span className="current-val-text"> (Hiện tại: {String(selectedPerson[field] || 'Trống')})</span>
+                      {FIELD_DICT[field as keyof typeof FIELD_DICT]}
+                      <span className="current-val-text"> (Hiện tại: {String(selectedPerson?.[field as keyof Person] || 'Trống')})</span>
                     </label>
                     <div className="change-input-group">
                       <input
                         type="text"
                         className="form-control flex-1"
-                        placeholder={`Nhập ${FIELD_DICT[field].toLowerCase()} mới...`}
+                        placeholder={`Nhập ${FIELD_DICT[field as keyof typeof FIELD_DICT].toLowerCase()} mới...`}
                         value={changes[field].new}
                         onChange={(e) => handleFieldChange(field, e.target.value)}
                         disabled={pendingCount >= 5}
@@ -191,9 +217,9 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
 
               {availableFieldOptions.length > 0 && (
                 <div className="add-field-control">
-                  <select 
-                    className="form-control" 
-                    value={selectedFieldToAdd} 
+                  <select
+                    className="form-control"
+                    value={selectedFieldToAdd}
                     onChange={e => setSelectedFieldToAdd(e.target.value)}
                     disabled={pendingCount >= 5}
                   >
@@ -263,8 +289,8 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
               <button type="button" className="icon-btn" onClick={() => setShowPreview(false)}><X size={20} /></button>
             </div>
             <div className="modal-body">
-              <p>Bạn đang gửi yêu cầu sửa đổi thông tin cho thành viên <strong>{selectedPerson.fullName}</strong>.</p>
-              
+              <p>Bạn đang gửi yêu cầu sửa đổi thông tin cho thành viên <strong>{selectedPerson?.fullName}</strong>.</p>
+
               <div className="diff-section my-4">
                 <h4>Các thay đổi đề xuất:</h4>
                 <table className="diff-table">
@@ -278,7 +304,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
                   <tbody>
                     {Object.keys(changes).map(field => (
                       <tr key={field}>
-                        <td className="field-name">{FIELD_DICT[field] || field}</td>
+                        <td className="field-name">{FIELD_DICT[field as keyof typeof FIELD_DICT] || field}</td>
                         <td className="old-val"><del>{String(changes[field].old) || '(Trống)'}</del></td>
                         <td className="new-val"><ins>{String(changes[field].new) || '(Trống)'}</ins></td>
                       </tr>
@@ -291,7 +317,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
                 <p><strong>Lý do:</strong> {reason}</p>
                 <p><strong>Người gửi:</strong> {submitterName} {submitterPhone ? `(${submitterPhone})` : ''}</p>
               </div>
-              
+
               <div className="alert-warning mt-4">
                 Lưu ý: Yêu cầu của bạn sẽ được gửi đến Quản trị viên để kiểm tra và phê duyệt trước khi áp dụng vào gia phả.
               </div>
@@ -305,7 +331,7 @@ const RequestForm = ({ persons, onSubmit, pendingCount }) => {
           </div>
         </div>
       )}
-      
+
       <AlertModal
         isOpen={validationAlert.isOpen}
         title="Lỗi nhập liệu"

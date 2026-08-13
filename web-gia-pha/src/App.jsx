@@ -22,6 +22,7 @@ const FamilyTree = lazy(() => import("./pages/FamilyTree"));
 const AdminMembers = lazy(() => import("./pages/admin/AdminMembers"));
 const EditRequests = lazy(() => import("./pages/EditRequests"));
 const AdminEditRequests = lazy(() => import("./pages/admin/AdminEditRequests"));
+const AdminJoinRequests = lazy(() => import("./pages/admin/AdminJoinRequests"));
 const AdminDashboardSettings = lazy(
     () => import("./pages/admin/AdminDashboardSettings"),
 );
@@ -93,6 +94,7 @@ const App = () => {
                     <Route path="members" element={<AdminMembers />} />
                     <Route path="tree" element={<FamilyTree />} />
                     <Route path="requests" element={<AdminEditRequests />} />
+                    <Route path="join-requests" element={<AdminJoinRequests />} />
                     <Route path="events" element={<Events />} />
                     <Route path="posts" element={<Posts />} />
                     <Route path="gallery" element={<Gallery />} />

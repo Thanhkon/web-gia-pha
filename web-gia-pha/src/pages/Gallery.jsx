@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useFamilyActor } from '../hooks/useFamilyActor';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   EyeOff,
@@ -52,19 +52,10 @@ const Gallery = () => {
   const location = useLocation();
   const { familyId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  const viewActor = useMemo(() => {
-    if (isAdminRoute || !actor?.familyId) {
-      return actor;
-    }
-
-    return {
-      ...actor,
-      role: 'MEMBER',
-    };
-  }, [actor, isAdminRoute]);
+  const authUser = useFamilyActor();
+  const isAuthenticated = Boolean(authUser);
+  const actor = useMemo(() => getGalleryActor(authUser, isAuthenticated, familyId), [authUser, isAuthenticated, familyId]);
+  const viewActor = actor;
   const filters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
   const [albums, setAlbums] = useState([]);
   const [albumForm, setAlbumForm] = useState(null);

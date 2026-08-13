@@ -1,0 +1,1 @@
+const { Client } = require('pg'); const c = new Client({user: 'postgres', password: 'password123', database: 'gia_pha_db', port: 5432}); c.connect().then(()=>c.query('UPDATE families SET settings = \ WHERE id = 5', [JSON.stringify({hero: {title: 'DB Title'}, marqueeItems: ['DB Marquee']})])).then(r=>console.log(r.rowCount)).finally(()=>c.end())

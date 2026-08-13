@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarDays, Edit3, EyeOff, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useFamilyActor } from '../hooks/useFamilyActor';
 import ConfirmModal from '../components/common/ConfirmModal';
 import PostBadge from '../components/Posts/PostBadge';
 import { POST_CONTENT_BLOCK, POST_ROLES, POST_STATUS } from '../types/posts';
@@ -182,24 +182,14 @@ const PostDetail = () => {
   const { familyId, id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
+  const authUser = useFamilyActor();
+  const isAuthenticated = Boolean(authUser);
+  const actor = useMemo(() => getPostActor(authUser, isAuthenticated, familyId), [authUser, isAuthenticated, familyId]);
   const publicHomePath = familyId ? `/${familyId}/home` : '/';
   const publicPostsPath = familyId ? `/${familyId}/posts` : '/posts';
   const backTarget = location.state?.fromList || publicPostsPath;
   const isAdminContext = String(backTarget).startsWith('/admin');
-  const viewActor = useMemo(() => {
-    if (isAdminContext || !actor?.familyId || actor.role === POST_ROLES.GUEST) {
-      return actor;
-    }
-
-    return {
-      ...actor,
-      role: POST_ROLES.MEMBER,
-      canCreatePost: false,
-      canManagePosts: false,
-    };
-  }, [actor, isAdminContext]);
+  const viewActor = actor;
   const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
 
   const [post, setPost] = useState(null);

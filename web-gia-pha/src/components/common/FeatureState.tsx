@@ -2,7 +2,15 @@ import React from 'react';
 import { Loader2, AlertCircle, Inbox } from 'lucide-react';
 import '../../css/components/FeatureState.css';
 
-const FeatureState = ({ status, error, emptyMessage, onRetry, children }) => {
+interface FeatureStateProps {
+  status: 'loading' | 'error' | 'empty' | 'success';
+  error?: string;
+  emptyMessage?: string;
+  onRetry?: () => void;
+  children?: React.ReactNode;
+}
+
+const FeatureState: React.FC<FeatureStateProps> = ({ status, error, emptyMessage, onRetry, children }) => {
   if (status === 'loading') {
     return (
       <div className="feature-state-container loading">

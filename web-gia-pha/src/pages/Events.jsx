@@ -11,6 +11,7 @@ import {
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
+import { useFamilyActor } from '../hooks/useFamilyActor';
 import EventActionDialog from '../components/Events/EventActionDialog';
 import EventDetailModal from '../components/Events/EventDetailModal';
 import EventFormModal from '../components/Events/EventFormModal';
@@ -103,7 +104,8 @@ const EventSearchResults = ({ groups, emptyText, onView }) => (
 const Events = () => {
   const location = useLocation();
   const { familyId } = useParams();
-  const { user: authUser, isAuthenticated } = useSelector((state) => state.auth);
+  const authUser = useFamilyActor();
+  const isAuthenticated = Boolean(authUser);
   const isAdminRoute = location.pathname.startsWith('/admin');
   const [currentUser, setCurrentUser] = useState(null);
   const [monthDate, setMonthDate] = useState(() => new Date());
@@ -131,18 +133,8 @@ const Events = () => {
   const hasOpenModal = Boolean(selectedEvent || isFormOpen || cancelTarget || deleteTarget);
 
   const getViewUser = useCallback((actor) => {
-    if (isAdminRoute || !actor || actor.role === 'GUEST') {
-      return actor;
-    }
-
-    return {
-      ...actor,
-      role: 'MEMBER',
-      permissions: {},
-      canCreatePost: false,
-      canManagePosts: false,
-    };
-  }, [isAdminRoute]);
+    return actor;
+  }, []);
 
   const loadEvents = useCallback(async () => {
     setIsLoading(true);

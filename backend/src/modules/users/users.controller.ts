@@ -12,6 +12,8 @@ import {
   UseGuards,
   UploadedFile,
   UseInterceptors,
+  ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,6 +30,18 @@ export class UsersController {
   @Post('upload-avatar')
   @UseInterceptors(
     FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+      },
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+          return callback(
+            new BadRequestException('Only image files are allowed!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
       storage: diskStorage({
         destination: './uploads/avatarUser',
         filename: (req, file, callback) => {
@@ -40,6 +54,7 @@ export class UsersController {
     }),
   )
   async uploadAvatar(@UploadedFile() file: any) {
+    if (!file) throw new BadRequestException('No file uploaded');
     const url = await this.usersService.saveAvatarFile(file);
     return { url };
   }
@@ -80,12 +95,36 @@ export class UsersController {
 
   @Put(':id')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const userId = req.user.sub || req.user.id;
+    if (
+      userId !== +id &&
+      req.user.role !== 'admin' &&
+      req.user.role !== 'ADMIN'
+    ) {
+      throw new ForbiddenException(
+        'Bạn không có quyền thực hiện hành động này',
+      );
+    }
     return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Req() req, @Param('id') id: string) {
+    const userId = req.user.sub || req.user.id;
+    if (
+      userId !== +id &&
+      req.user.role !== 'admin' &&
+      req.user.role !== 'ADMIN'
+    ) {
+      throw new ForbiddenException(
+        'Bạn không có quyền thực hiện hành động này',
+      );
+    }
     return this.usersService.remove(+id);
   }
 }

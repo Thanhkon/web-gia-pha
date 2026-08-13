@@ -10,10 +10,15 @@ import { Family } from '../members/entities/family.entity';
 import { Member } from '../members/entities/member.entity';
 import { CreateEditRequestDto } from './dto/create-edit-request.dto';
 import { ReviewEditRequestDto } from './dto/review-edit-request.dto';
+import { CreateJoinRequestDto } from './dto/create-join-request.dto';
+import { ReviewJoinRequestDto } from './dto/review-join-request.dto';
 import {
   EditRequest,
   EditRequestChanges,
 } from './entities/edit-request.entity';
+import { JoinRequest } from './entities/join-request.entity';
+import { MemberAttachmentsService } from '../attachment/member-attachments.service';
+import { UsersService } from '../users/users.service';
 
 const ALLOWED_MEMBER_CHANGE_FIELDS = new Set<keyof Member>([
   'fullName',
@@ -37,11 +42,15 @@ export class RequestsService {
   constructor(
     @InjectRepository(EditRequest)
     private readonly editRequestsRepository: Repository<EditRequest>,
+    @InjectRepository(JoinRequest)
+    private readonly joinRequestsRepository: Repository<JoinRequest>,
     @InjectRepository(Family)
     private readonly familiesRepository: Repository<Family>,
     @InjectRepository(Member)
     private readonly membersRepository: Repository<Member>,
     private readonly dataSource: DataSource,
+    private readonly memberAttachmentsService: MemberAttachmentsService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(familyId: number, dto: CreateEditRequestDto) {
@@ -261,5 +270,153 @@ export class RequestsService {
     }
 
     return typeof value === 'string' ? value.trim() : value;
+  }
+
+  // --- JOIN REQUESTS METHODS ---
+
+  async createJoinRequest(userId: number, dto: CreateJoinRequestDto) {
+    await this.ensureFamilyExists(dto.familyId);
+
+    const member = await this.membersRepository.findOne({
+      where: { id: dto.targetMemberId, familyId: dto.familyId },
+    });
+
+    if (!member) {
+      throw new NotFoundException(
+        `Member ${dto.targetMemberId} not found in family ${dto.familyId}`,
+      );
+    }
+
+    const existingRequest = await this.joinRequestsRepository.findOne({
+      where: { userId, familyId: dto.familyId, status: 'PENDING' },
+    });
+
+    if (existingRequest) {
+      throw new ConflictException(
+        'You already have a pending join request for this family',
+      );
+    }
+
+    const request = this.joinRequestsRepository.create({
+      familyId: dto.familyId,
+      userId,
+      targetMemberId: dto.targetMemberId,
+      note: dto.note?.trim() || null,
+    });
+
+    return this.joinRequestsRepository.save(request);
+  }
+
+  async findJoinRequestsByFamily(familyId: number, status?: string) {
+    await this.ensureFamilyExists(familyId);
+
+    return this.joinRequestsRepository.find({
+      where: {
+        familyId,
+        ...(status ? { status: status.toUpperCase() } : {}),
+      },
+      relations: { user: true, targetMember: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async approveJoinRequest(
+    id: number,
+    reviewerId: number,
+    dto: ReviewJoinRequestDto,
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const joinRepo = manager.getRepository(JoinRequest);
+      const memberRepo = manager.getRepository(Member);
+
+      const request = await joinRepo.findOne({
+        where: { id },
+      });
+
+      if (!request) {
+        throw new NotFoundException(`Join request ${id} not found`);
+      }
+
+      if (request.status !== 'PENDING') {
+        throw new ConflictException('Only pending requests can be approved');
+      }
+
+      // Automatically assign the user to the member node with appropriate role
+      if (dto.role === 'editor') {
+        await this.memberAttachmentsService.createFamilyEditor(
+          request.familyId,
+          request.userId,
+          request.targetMemberId,
+        );
+      } else {
+        await this.memberAttachmentsService.createFamilyViewer(
+          request.familyId,
+          request.userId,
+          request.targetMemberId,
+        );
+      }
+
+      // Sync Member info to User info if User fields are empty
+      try {
+        const user = await this.usersService.findById(request.userId);
+        const member = await memberRepo.findOne({
+          where: { id: request.targetMemberId },
+        });
+
+        if (user && member) {
+          const updatePayload: Partial<
+            import('../users/dto/update-user.dto').UpdateUserDto
+          > = {};
+          if (!user.fullName && member.fullName) {
+            updatePayload.fullName = member.fullName;
+          }
+          if (!user.dateOfBirth && member.dateOfBirth) {
+            updatePayload.dateOfBirth = member.dateOfBirth
+              .toISOString()
+              .split('T')[0];
+          }
+          if (!user.address && member.currentAddress) {
+            updatePayload.address = member.currentAddress;
+          }
+          if (Object.keys(updatePayload).length > 0) {
+            await this.usersService.update(user.id, updatePayload);
+          }
+        }
+      } catch (e) {
+        console.error('Error syncing user info:', e);
+      }
+
+      request.status = 'APPROVED';
+      request.adminNote = dto.adminNote?.trim() || null;
+      request.reviewedBy = reviewerId.toString();
+      request.reviewedAt = new Date();
+
+      return joinRepo.save(request);
+    });
+  }
+
+  async rejectJoinRequest(
+    id: number,
+    reviewerId: number,
+    dto: ReviewJoinRequestDto,
+  ) {
+    const request = await this.joinRequestsRepository.findOne({
+      where: { id },
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Join request ${id} not found`);
+    }
+
+    if (request.status !== 'PENDING') {
+      throw new ConflictException('Only pending requests can be rejected');
+    }
+
+    request.status = 'REJECTED';
+    request.adminNote = dto.adminNote?.trim() || null;
+    request.reviewedBy = reviewerId.toString();
+    request.reviewedAt = new Date();
+
+    return this.joinRequestsRepository.save(request);
   }
 }

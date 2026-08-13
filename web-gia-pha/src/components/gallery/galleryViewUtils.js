@@ -15,7 +15,7 @@ export const isImageSource = (value) => (
 
 export const getActorText = (actor) => {
   if (!actor) return 'Bạn đang xem với quyền khách.';
-  return actor.role === UserRole.FAMILY_HEAD
-    ? 'Bạn đang quản lý với quyền Trưởng họ.'
-    : 'Bạn đang xem với quyền Thành viên.';
+  if (actor.role === UserRole.FAMILY_HEAD) return 'Bạn đang quản lý với quyền Trưởng họ.';
+  if (actor.role === UserRole.ADMIN || actor.role === 'ADMIN') return 'Bạn đang quản lý với quyền Biên tập viên.';
+  return 'Bạn đang xem với quyền Thành viên.';
 };

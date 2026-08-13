@@ -1,6 +1,11 @@
 import React from 'react';
+interface LogoutConfirmModalProps {
+  show: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
 
-const LogoutConfirmModal = ({ show, onClose, onConfirm }) => {
+const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({ show, onClose, onConfirm }) => {
   if (!show) return null;
   return (
     <div className="logout-confirm-backdrop" onClick={onClose}>

@@ -2,21 +2,30 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import '../../css/components/SearchableSelect.css';
 
-const SearchableSelect = ({ 
+interface SearchableSelectProps {
+  options: Array<{ value: string; label: string; group?: string }>;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}
+
+const SearchableSelect: React.FC<SearchableSelectProps> = ({
   options, // Array of { value, label, group (optional) }
-  value, 
-  onChange, 
-  placeholder = '-- Chọn --', 
+  value,
+  onChange,
+  placeholder = '-- Chọn --',
   disabled = false,
   className = ''
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const wrapperRef = useRef(null);
-  const inputRef = useRef(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Hàm loại bỏ dấu tiếng Việt để tìm kiếm mượt hơn
-  const removeAccents = (str) => {
+  const removeAccents = (str: string) => {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
   };
 
@@ -25,7 +34,7 @@ const SearchableSelect = ({
     const labelRaw = opt.label.toLowerCase();
     const searchRaw = searchTerm.toLowerCase();
     if (labelRaw.includes(searchRaw)) return true;
-    
+
     // Tìm kiếm không dấu
     const labelNoAccents = removeAccents(labelRaw);
     const searchNoAccents = removeAccents(searchRaw);
@@ -33,13 +42,17 @@ const SearchableSelect = ({
   });
 
   // Phân nhóm (nếu có group)
+  type SelectOption = { value: string; label: string; group?: string };
   const groupedOptions = filteredOptions.reduce((acc, opt) => {
+    type GroupedOptions = {
+      [key: string]: SelectOption[];
+    };
     const group = opt.group || 'Khác';
     if (!acc[group]) acc[group] = [];
     acc[group].push(opt);
     return acc;
-  }, {});
-  
+  }, {} as Record<string, SelectOption[]>);
+
   // Xác định xem có sử dụng group không
   const hasGroups = options.some(opt => opt.group);
 
@@ -49,8 +62,8 @@ const SearchableSelect = ({
 
   // Handle click outside to close dropdown
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
@@ -73,15 +86,15 @@ const SearchableSelect = ({
     if (!disabled) setIsOpen(!isOpen);
   };
 
-  const handleSelect = (val) => {
+  const handleSelect = (val: string) => {
     onChange(val);
     setIsOpen(false);
   };
 
   return (
     <div className={`searchable-select ${disabled ? 'disabled' : ''} ${className}`} ref={wrapperRef}>
-      <div 
-        className={`searchable-select-header ${isOpen ? 'open' : ''}`} 
+      <div
+        className={`searchable-select-header ${isOpen ? 'open' : ''}`}
         onClick={toggleDropdown}
       >
         <div className={`selected-value ${!selectedOption ? 'placeholder' : ''}`}>
@@ -105,13 +118,13 @@ const SearchableSelect = ({
           </div>
 
           <div className="searchable-select-list">
-            <div 
+            <div
               className={`searchable-select-option ${value === '' ? 'selected' : ''}`}
               onClick={() => handleSelect('')}
             >
               -- Không chọn / Trống --
             </div>
-            
+
             {filteredOptions.length === 0 ? (
               <div className="searchable-select-no-results">Không tìm thấy kết quả</div>
             ) : (
@@ -121,8 +134,8 @@ const SearchableSelect = ({
                     <div key={group} className="searchable-select-group">
                       <div className="searchable-select-group-title">{group}</div>
                       {opts.map(opt => (
-                        <div 
-                          key={opt.value} 
+                        <div
+                          key={opt.value}
                           className={`searchable-select-option ${value === opt.value ? 'selected' : ''}`}
                           onClick={() => handleSelect(opt.value)}
                         >
@@ -134,8 +147,8 @@ const SearchableSelect = ({
                 ))
               ) : (
                 filteredOptions.map(opt => (
-                  <div 
-                    key={opt.value} 
+                  <div
+                    key={opt.value}
                     className={`searchable-select-option ${value === opt.value ? 'selected' : ''}`}
                     onClick={() => handleSelect(opt.value)}
                   >

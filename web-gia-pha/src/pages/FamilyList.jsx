@@ -8,6 +8,7 @@ import {
 } from "../store/slices/familiesSlice";
 import { Plus, Users, GitMerge, Loader2 } from "lucide-react";
 import CreateFamilyModal from "../components/Admin/CreateFamilyModal";
+import JoinRequestModal from "../components/FamilyList/JoinRequestModal";
 import { getAvatarUrl } from "../utils/imageHelper";
 import "../css/pages/FamilyList.css";
 
@@ -24,6 +25,7 @@ const FamilyList = () => {
     } = useSelector((state) => state.families);
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [joinRequestModalData, setJoinRequestModalData] = useState({ isOpen: false, familyId: null, familyName: "" });
     const [searchCode, setSearchCode] = useState("");
     const [searchAttempted, setSearchAttempted] = useState(false);
     const searchInputRef = useRef(null);
@@ -46,8 +48,12 @@ const FamilyList = () => {
         dispatch(findFamilyByCode(code));
     };
 
-    const handleJoinRequest = (familyId) => {
-        console.log("Đã gửi yêu cầu tham gia gia phả ID:", familyId);
+    const handleJoinRequest = (family) => {
+        setJoinRequestModalData({
+            isOpen: true,
+            familyId: family.id,
+            familyName: family.name
+        });
     };
 
     const renderFamilyCard = (family, isSearchResult = false) => {
@@ -59,7 +65,7 @@ const FamilyList = () => {
                 <div
                     className="family-card-cover"
                     onClick={() => {
-                        if (!isSearchResucdlt) navigate(`/${family.id}/home`);
+                        if (!isSearchResult) navigate(`/${family.id}/home`);
                     }}
                     style={{ cursor: isSearchResult ? "default" : "pointer" }}
                 >
@@ -74,7 +80,7 @@ const FamilyList = () => {
                     <div className="family-card-overlay"></div>
                     {!isSearchResult && family.role && (
                         <div className={`family-role-badge ${family.role}`}>
-                            {family.role === "admin"
+                            {family.role === "admin" || family.role === "editor"
                                 ? "Quản trị"
                                 : "Thành viên"}
                         </div>
@@ -127,7 +133,7 @@ const FamilyList = () => {
                         ) : (
                             <button
                                 className="btn btn-primary"
-                                onClick={() => handleJoinRequest(family.id)}
+                                onClick={() => handleJoinRequest(family)}
                             >
                                 Yêu cầu tham gia
                             </button>
@@ -253,6 +259,13 @@ const FamilyList = () => {
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onSuccess={() => dispatch(fetchFamilies())}
+            />
+
+            <JoinRequestModal
+                isOpen={joinRequestModalData.isOpen}
+                onClose={() => setJoinRequestModalData({ isOpen: false, familyId: null, familyName: "" })}
+                familyId={joinRequestModalData.familyId}
+                familyName={joinRequestModalData.familyName}
             />
         </div>
     );

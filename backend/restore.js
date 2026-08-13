@@ -1,0 +1,1 @@
+const { Client } = require("pg"); const c = new Client({user: "postgres", password: "password123", database: "gia_pha_db", port: 5432}); c.connect().then(()=>c.query("INSERT INTO member_attachments (\"familyId\", \"userId\", role) VALUES (5, 2, 'editor') ON CONFLICT DO NOTHING")).then(r=>console.log(r.rowCount)).catch(e=>console.error(e)).finally(()=>c.end());

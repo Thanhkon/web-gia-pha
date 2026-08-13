@@ -236,7 +236,7 @@ const Navbar = () => {
               <div className="user-dropdown-menu">
                 <div className="user-dropdown-header">
                   <strong>{user?.name || `${user?.lastName || ''} ${user?.firstName || ''}`}</strong>
-                  <span>{mockRoleLabels[user?.role] || user?.role || 'Khách'}</span>
+                  <span>{mockRoleLabels[activeFamily?.role || user?.role] || activeFamily?.role || user?.role || 'Khách'}</span>
                 </div>
                 
                 <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin/families'); }}>

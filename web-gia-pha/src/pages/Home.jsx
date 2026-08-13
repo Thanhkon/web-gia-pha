@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useFamilyActor } from '../hooks/useFamilyActor';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -16,43 +17,6 @@ import Footer from '../components/Navigation/Footer';
 import logoImg from '../assets/logo.png';
 import '../css/pages/Home.css';
 
-const toMemberPostActor = (actor) => {
-  if (!actor?.familyId || actor.role === POST_ROLES.GUEST) {
-    return actor;
-  }
-
-  return {
-    ...actor,
-    role: POST_ROLES.MEMBER,
-    canCreatePost: false,
-    canManagePosts: false,
-  };
-};
-
-const toMemberEventActor = (actor) => {
-  if (!actor || actor.role === 'GUEST') {
-    return actor;
-  }
-
-  return {
-    ...actor,
-    role: 'MEMBER',
-    permissions: {},
-    canCreatePost: false,
-    canManagePosts: false,
-  };
-};
-
-const toMemberGalleryActor = (actor) => {
-  if (!actor?.familyId) {
-    return actor;
-  }
-
-  return {
-    ...actor,
-    role: 'MEMBER',
-  };
-};
 
 const Home = () => {
   useEffect(() => {
@@ -61,9 +25,8 @@ const Home = () => {
 
   const navigate = useNavigate();
   const { familyId } = useParams();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-
-  // Lấy cấu hình tuỳ chỉnh (Settings) mặc định từ Redux
+  const authUser = useFamilyActor();
+  const isAuthenticated = Boolean(authUser);
   const { hero: defaultHero, marqueeItems } = useSelector((state) => state.settings);
   const { list: userFamilies } = useSelector((state) => state.families);
 
@@ -91,9 +54,9 @@ const Home = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const postActor = toMemberPostActor(getPostActor(user, isAuthenticated, familyId));
-        const eventActor = toMemberEventActor(getEventActor(user, isAuthenticated, familyId));
-        const galleryActor = toMemberGalleryActor(getGalleryActor(user, isAuthenticated, familyId));
+        const postActor = getPostActor(authUser, isAuthenticated, familyId);
+        const eventActor = getEventActor(authUser, isAuthenticated, familyId);
+        const galleryActor = getGalleryActor(authUser, isAuthenticated, familyId);
 
         const [postsRes, eventsRes, albumsRes] = await Promise.all([
           postService.getPosts({ actor: postActor, filters: { sortDirection: 'newest' }, page: 1, pageSize: 4 }),
@@ -111,7 +74,7 @@ const Home = () => {
       }
     };
     fetchData();
-  }, [user, isAuthenticated, familyId]);
+  }, [authUser, isAuthenticated, familyId]);
 
   return (
     <div className="home-page animate-fade-in">

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText, Loader2, PlusCircle } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useFamilyActor } from '../hooks/useFamilyActor';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Pagination from '../components/common/Pagination';
 import PostCard from '../components/Posts/PostCard';
@@ -25,21 +25,10 @@ const Posts = () => {
   const location = useLocation();
   const { familyId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  const viewActor = useMemo(() => {
-    if (isAdminRoute || !actor?.familyId || actor.role === POST_ROLES.GUEST) {
-      return actor;
-    }
-
-    return {
-      ...actor,
-      role: POST_ROLES.MEMBER,
-      canCreatePost: false,
-      canManagePosts: false,
-    };
-  }, [actor, isAdminRoute]);
+  const authUser = useFamilyActor();
+  const isAuthenticated = Boolean(authUser);
+  const actor = useMemo(() => getPostActor(authUser, isAuthenticated, familyId), [authUser, isAuthenticated, familyId]);
+  const viewActor = actor;
   const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
 
   const [posts, setPosts] = useState([]);

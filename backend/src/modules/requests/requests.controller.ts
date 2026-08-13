@@ -8,11 +8,16 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
+import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 import { CreateEditRequestDto } from './dto/create-edit-request.dto';
 import { ReviewEditRequestDto } from './dto/review-edit-request.dto';
+import { CreateJoinRequestDto } from './dto/create-join-request.dto';
+import { ReviewJoinRequestDto } from './dto/review-join-request.dto';
 import { RequestsService } from './requests.service';
 
 @UseGuards(AccessTokenGuard)
@@ -60,5 +65,58 @@ export class RequestsController {
   @Delete('edit-requests/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.requestsService.remove(id);
+  }
+
+  // --- JOIN REQUESTS ENDPOINTS ---
+
+  @Post('join-requests')
+  createJoinRequest(
+    @Req() request: AuthenticatedRequest,
+    @Body() createJoinRequestDto: CreateJoinRequestDto,
+  ) {
+    if (!request.user?.id)
+      throw new UnauthorizedException('User not authenticated');
+    return this.requestsService.createJoinRequest(
+      request.user.id,
+      createJoinRequestDto,
+    );
+  }
+
+  @Get('families/:familyId/join-requests')
+  findJoinRequestsByFamily(
+    @Param('familyId', ParseIntPipe) familyId: number,
+    @Query('status') status?: string,
+  ) {
+    return this.requestsService.findJoinRequestsByFamily(familyId, status);
+  }
+
+  @Patch('join-requests/:id/approve')
+  approveJoinRequest(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() reviewJoinRequestDto: ReviewJoinRequestDto,
+  ) {
+    if (!request.user?.id)
+      throw new UnauthorizedException('User not authenticated');
+    return this.requestsService.approveJoinRequest(
+      id,
+      request.user.id,
+      reviewJoinRequestDto,
+    );
+  }
+
+  @Patch('join-requests/:id/reject')
+  rejectJoinRequest(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() reviewJoinRequestDto: ReviewJoinRequestDto,
+  ) {
+    if (!request.user?.id)
+      throw new UnauthorizedException('User not authenticated');
+    return this.requestsService.rejectJoinRequest(
+      id,
+      request.user.id,
+      reviewJoinRequestDto,
+    );
   }
 }

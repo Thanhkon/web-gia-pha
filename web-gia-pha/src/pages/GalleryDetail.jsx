@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useFamilyActor } from '../hooks/useFamilyActor';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -54,8 +54,9 @@ const GalleryDetail = () => {
   const { familyId, albumId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getGalleryActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
+  const authUser = useFamilyActor();
+  const isAuthenticated = Boolean(authUser);
+  const actor = useMemo(() => getGalleryActor(authUser, isAuthenticated, familyId), [authUser, isAuthenticated, familyId]);
   const [album, setAlbum] = useState(null);
   const [albumForm, setAlbumForm] = useState(null);
   const [uploadAlbum, setUploadAlbum] = useState(null);
@@ -71,16 +72,7 @@ const GalleryDetail = () => {
   const publicGalleryPath = familyId ? `/${familyId}/gallery` : '/gallery';
   const backUrl = location.state?.from || `${publicGalleryPath}${location.search || ''}`;
   const isAdminContext = String(backUrl).startsWith('/admin');
-  const viewActor = useMemo(() => {
-    if (isAdminContext || !actor?.familyId) {
-      return actor;
-    }
-
-    return {
-      ...actor,
-      role: 'MEMBER',
-    };
-  }, [actor, isAdminContext]);
+  const viewActor = actor;
   const isManager = canManageAlbum(viewActor, album);
   const imageItems = useMemo(() => (
     album?.media.filter((item) => item.type === MEDIA_TYPE.IMAGE) || []

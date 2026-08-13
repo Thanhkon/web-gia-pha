@@ -1,0 +1,1 @@
+const { Client } = require('pg'); const c = new Client({user: 'postgres', password: 'password123', database: 'gia_pha_db', port: 5432}); c.connect().then(()=>c.query('SELECT f.id, f.name FROM families f')).then(r=>console.table(r.rows)).then(()=>c.query('SELECT * FROM member_attachments')).then(r=>console.table(r.rows)).finally(()=>c.end());

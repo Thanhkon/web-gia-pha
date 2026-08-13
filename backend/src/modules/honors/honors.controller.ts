@@ -33,7 +33,11 @@ export class HonorsController {
     @Req() request: AuthenticatedRequest,
     @Body() createHonorDto: CreateHonorDto,
   ) {
-    return this.honorsService.create(familyId, request.user!.id, createHonorDto);
+    return this.honorsService.create(
+      familyId,
+      request.user!.id,
+      createHonorDto,
+    );
   }
 
   @Get('families/:familyId/honors')

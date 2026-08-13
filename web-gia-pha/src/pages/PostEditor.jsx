@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FilePenLine, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useFamilyActor } from '../hooks/useFamilyActor';
 import ConfirmModal from '../components/common/ConfirmModal';
 import PostForm from '../components/Posts/PostForm';
 import { canCreatePost, canUpdatePost, getPostActor, postService } from '../services/postService';
@@ -11,8 +11,9 @@ const PostEditor = ({ mode = 'create' }) => {
   const { familyId, id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const actor = useMemo(() => getPostActor(user, isAuthenticated, familyId), [user, isAuthenticated, familyId]);
+  const authUser = useFamilyActor();
+  const isAuthenticated = Boolean(authUser);
+  const actor = useMemo(() => getPostActor(authUser, isAuthenticated, familyId), [authUser, isAuthenticated, familyId]);
 
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(mode === 'edit');

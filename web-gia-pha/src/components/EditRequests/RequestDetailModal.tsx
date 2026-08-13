@@ -4,9 +4,26 @@ import toast from 'react-hot-toast';
 import { FIELD_DICT } from './RequestForm';
 import ConfirmModal from '../common/ConfirmModal';
 
-const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
+interface RequestDetailModalProps {
+  request: {
+    id: string;
+    targetMember?: { fullName: string };
+    targetMemberName?: string;
+    submittedByName?: string;
+    submittedBy?: { name: string; phone: number };
+    submittedByPhone?: number;
+    reason: string;
+    changes: Record<string, { old: any; new: any }>;
+    adminNote?: string;
+  };
+  onClose: () => void;
+  onApprove: (id: string, adminNote: string) => void;
+  onReject: (id: string, adminNote: string) => void;
+}
+
+const RequestDetailModal: React.FC<RequestDetailModalProps> = ({ request, onClose, onApprove, onReject }) => {
   const [adminNote, setAdminNote] = useState('');
-  const [confirmType, setConfirmType] = useState(null); // 'approve' | 'reject' | null
+  const [confirmType, setConfirmType] = useState<'approve' | 'reject' | null>(null);
 
   if (!request) return null;
 
@@ -60,7 +77,7 @@ const RequestDetailModal = ({ request, onClose, onApprove, onReject }) => {
               <tbody>
                 {Object.entries(request.changes).map(([field, vals]) => (
                   <tr key={field}>
-                    <td className="field-name">{FIELD_DICT[field] || field}</td>
+                    <td className="field-name">{FIELD_DICT[field as keyof typeof FIELD_DICT] || field}</td>
                     <td className="old-val"><del>{String(vals.old) || '(Trống)'}</del></td>
                     <td className="new-val"><ins>{String(vals.new) || '(Trống)'}</ins></td>
                   </tr>

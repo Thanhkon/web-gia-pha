@@ -244,10 +244,10 @@ export class PostsService {
     const {
       coverImage,
       coverImagePublicId,
-      publishedAt,
-      slug,
-      status,
-      visibility,
+      publishedAt: _publishedAt,
+      slug: _slug,
+      status: _status,
+      visibility: _visibility,
       ...rest
     } = dto;
     const data = { ...rest } as Partial<Post> & {
@@ -273,10 +273,11 @@ export class PostsService {
     }
 
     if (data.content !== undefined) {
-      data.content = this.normalizeContentBlocks(data.content);
-      if (data.content.length === 0) {
+      const normalizedContent = this.normalizeContentBlocks(data.content);
+      if (normalizedContent.length === 0) {
         throw new BadRequestException('content cannot be empty');
       }
+      data.content = normalizedContent;
     }
 
     if (typeof data.summary === 'string') {
@@ -298,7 +299,9 @@ export class PostsService {
     return data;
   }
 
-  private normalizeContentBlocks(content?: PostContentBlock[] | string) {
+  private normalizeContentBlocks(
+    content?: PostContentBlock[] | string,
+  ): PostContentBlock[] {
     if (content === undefined) {
       return [];
     }
@@ -320,7 +323,7 @@ export class PostsService {
       throw new BadRequestException('content must be an array');
     }
 
-    return content.flatMap((block) => {
+    return content.flatMap((block): PostContentBlock[] => {
       if (!block || typeof block !== 'object') {
         throw new BadRequestException('content block must be an object');
       }
@@ -332,9 +335,8 @@ export class PostsService {
 
       if (block.type === 'HEADING' || block.type === 'PARAGRAPH') {
         const text = typeof block.text === 'string' ? block.text.trim() : '';
-        return text ? [{ id, type: block.type, text } as PostContentBlock] : [];
+        return text ? [{ id, type: block.type, text }] : [];
       }
-
       if (block.type === 'IMAGE') {
         const imageUrl =
           typeof block.imageUrl === 'string' ? block.imageUrl.trim() : '';
@@ -351,7 +353,7 @@ export class PostsService {
                 imageUrl,
                 ...(publicId ? { publicId } : {}),
                 ...(caption ? { caption } : {}),
-              } as PostContentBlock,
+              },
             ]
           : [];
       }

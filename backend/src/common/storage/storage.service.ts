@@ -65,9 +65,10 @@ export class StorageService {
     options: UploadOptions,
   ): Promise<UploadResult> {
     const detectedType = this.validateFile(file);
-    const resourceType = options.resourceType === 'auto'
-      ? detectedType
-      : (options.resourceType ?? detectedType);
+    const resourceType =
+      options.resourceType === 'auto'
+        ? detectedType
+        : (options.resourceType ?? detectedType);
 
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
@@ -119,7 +120,7 @@ export class StorageService {
       url: result.url,
       secureUrl: result.secure_url,
       publicId: result.public_id,
-      resourceType: result.resource_type as UploadResult['resourceType'],
+      resourceType: result.resource_type,
       format: result.format,
       bytes: result.bytes,
       width: result.width,

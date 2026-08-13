@@ -2,7 +2,22 @@ import React from 'react';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
 import { FIELD_DICT } from './RequestForm';
 
-const RequestCard = ({ request }) => {
+interface RequestCardProps {
+  request: {
+    status?: string;
+    targetMember?: { fullName: string };
+    targetMemberName?: string;
+    submittedByName?: string;
+    submittedBy?: { name: string };
+    createdAt: string;
+    reason: string;
+    changes: Record<string, { old: any; new: any }>;
+    adminNote?: string;
+    reviewedAt?: string;
+  };
+}
+
+const RequestCard: React.FC<RequestCardProps> = ({ request }) => {
   const getStatusBadge = () => {
     switch (request.status?.toLowerCase()) {
       case 'pending':
@@ -16,7 +31,7 @@ const RequestCard = ({ request }) => {
     }
   };
 
-  const formatDate = (isoString) => {
+  const formatDate = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   };
@@ -37,13 +52,13 @@ const RequestCard = ({ request }) => {
 
       <div className="request-card-body">
         <p className="request-reason"><strong>Lý do:</strong> {request.reason}</p>
-        
+
         <div className="request-changes-summary">
           <strong>Các thay đổi:</strong>
           <ul>
             {Object.entries(request.changes).map(([field, vals]) => (
               <li key={field}>
-                <strong>{FIELD_DICT[field] || field}</strong>: <del>{String(vals.old) || '(Trống)'}</del> <span>→</span> <ins>{String(vals.new) || '(Trống)'}</ins>
+                <strong>{FIELD_DICT[field as keyof typeof FIELD_DICT] || field}</strong>: <del>{String(vals.old) || '(Trống)'}</del> <span>→</span> <ins>{String(vals.new) || '(Trống)'}</ins>
               </li>
             ))}
           </ul>
@@ -54,7 +69,7 @@ const RequestCard = ({ request }) => {
             <strong>Ghi chú từ Admin:</strong> {request.adminNote}
           </div>
         )}
-        
+
         {request.status?.toLowerCase() === 'approved' && request.reviewedAt && (
           <div className="request-approve-info">
             Duyệt vào lúc {formatDate(request.reviewedAt)} bởi Admin.

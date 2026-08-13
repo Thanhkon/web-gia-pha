@@ -38,7 +38,7 @@ export class MembersService {
   ) {}
 
   async findAllFamilies(userId: number) {
-    return this.familiesRepository
+    const families = await this.familiesRepository
       .createQueryBuilder('family')
       .leftJoin(
         'member_attachments',
@@ -52,6 +52,15 @@ export class MembersService {
       .orderBy('family.createdAt', 'DESC')
       .distinct(true)
       .getMany();
+
+    const attachments =
+      await this.memberAttachmentsService.findAllByUser(userId);
+    const roleMap = new Map(attachments.map((a) => [a.familyId, a.role]));
+
+    return families.map((family) => ({
+      ...family,
+      role: roleMap.get(family.id) || 'viewer',
+    }));
   }
 
   // Sinh mã gia phả ngẫu nhiên 6 chữ số và đảm bảo không bị trùng trong Database

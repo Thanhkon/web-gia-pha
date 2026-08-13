@@ -134,6 +134,21 @@ export class MemberAttachmentsService {
     return this.attachmentRepository.save(access);
   }
 
+  async createFamilyViewer(
+    familyId: number,
+    userId: number,
+    memberId?: number,
+  ): Promise<MemberAttachment> {
+    const access = this.attachmentRepository.create({
+      memberId: memberId || null,
+      familyId,
+      userId,
+      role: MemberAttachmentRole.VIEWER,
+    });
+
+    return this.attachmentRepository.save(access);
+  }
+
   // Liên kết tài khoản User trực tiếp với Member trong sơ đồ (memberId != null, familyId = null)
   async createMemberAttachment(
     memberId: number,
