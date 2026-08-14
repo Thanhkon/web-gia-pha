@@ -23,9 +23,7 @@ const AdminMembers = lazy(() => import("./pages/admin/AdminMembers"));
 const EditRequests = lazy(() => import("./pages/EditRequests"));
 const AdminEditRequests = lazy(() => import("./pages/admin/AdminEditRequests"));
 const AdminJoinRequests = lazy(() => import("./pages/admin/AdminJoinRequests"));
-const AdminDashboardSettings = lazy(
-    () => import("./pages/admin/AdminDashboardSettings"),
-);
+const AdminDashboardSettings = lazy(() => import("./pages/admin/AdminDashboardSettings"));
 const PublicMembers = lazy(() => import("./pages/PublicMembers"));
 const Posts = lazy(() => import("./pages/Posts"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
@@ -41,19 +39,19 @@ const ProfilePage = lazy(() => import("./pages/Profile"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 const PageLoader = () => (
-    <div
-        style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "80vh",
-            color: "var(--text-muted)",
-            fontSize: "1rem",
-            gap: "8px",
-        }}
-    >
-        <Loader2 size={24} className="spin-icon" /> Đang tải...
-    </div>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "80vh",
+      color: "var(--text-muted)",
+      fontSize: "1rem",
+      gap: "8px",
+    }}
+  >
+    <Loader2 size={24} className="spin-icon" /> Đang tải...
+  </div>
 );
 
 // prettier-ignore
