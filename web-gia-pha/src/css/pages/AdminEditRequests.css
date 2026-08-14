@@ -242,4 +242,16 @@
     overflow-x: auto;
     white-space: nowrap;
   }
+  
+  .admin-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .admin-request-actions .btn,
+  .admin-action-section .btn {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    min-height: 40px;
+  }
 }

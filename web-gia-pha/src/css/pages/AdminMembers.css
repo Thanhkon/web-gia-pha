@@ -414,6 +414,20 @@
     gap: 1rem;
   }
   
+  .admin-header-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-header-actions .btn,
+  .admin-toolbar .btn,
+  .action-buttons .btn,
+  .action-buttons .btn-icon {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    min-height: 36px;
+  }
+  
   .search-box {
     width: 100%;
   }

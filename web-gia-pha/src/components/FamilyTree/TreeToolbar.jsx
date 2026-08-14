@@ -66,9 +66,12 @@ const TreeToolbar = ({
       <button
         className={`btn ${isKinshipMode ? 'btn-primary' : 'btn-outline'}`}
         onClick={onToggleKinshipMode}
+        title={isKinshipMode ? 'Hủy tra cứu' : 'Tra cứu quan hệ'}
       >
-        <Users size={16} style={{ display: 'inline', marginRight: '4px' }} />
-        {isKinshipMode ? 'Hủy tra cứu' : 'Tra cứu quan hệ'}
+        <Users size={16} style={{ display: 'inline' }} />
+        <span className="hide-mobile" style={{ marginLeft: '4px' }}>
+          {isKinshipMode ? 'Hủy tra cứu' : 'Tra cứu quan hệ'}
+        </span>
       </button>
 
       <button className="btn btn-secondary" onClick={centerTree}>
