@@ -365,3 +365,16 @@
   padding: 1rem;
   border-radius: 8px;
 }
+
+/* MOBILE OPTIMIZATION */
+@media (max-width: 768px) {
+  .edit-request-form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .preview-modal .diff-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

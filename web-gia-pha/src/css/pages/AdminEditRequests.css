@@ -229,3 +229,17 @@
 .btn-danger:hover {
   background-color: #c53030;
 }
+
+/* MOBILE OPTIMIZATION */
+@media (max-width: 768px) {
+  .diff-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .admin-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
