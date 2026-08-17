@@ -35,7 +35,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; connect-src 'self' https://gia-pha-api-qvef.onrender.com https://api.cloudinary.com https://res.cloudinary.com;"
+          "value": "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://rsms.me; font-src 'self' data: https:; connect-src 'self' https://gia-pha-api-qvef.onrender.com https://api.cloudinary.com https://res.cloudinary.com;"
         }
       ]
     }
