@@ -19,6 +19,7 @@ import {
   EventStatus,
   EventVisibility,
 } from './entities/event.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class EventsService {
@@ -31,6 +32,7 @@ export class EventsService {
     private readonly membersRepository: Repository<Member>,
     private readonly storageService: StorageService,
     private readonly permissionsService: PermissionsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -68,7 +70,33 @@ export class EventsService {
       isRecurring: createEventDto.isRecurring ?? false,
     });
 
-    return this.eventsRepository.save(event);
+    await this.eventsRepository.save(event);
+
+    let sendNotification = true;
+    if (createEventDto.recurrenceRule) {
+      try {
+        const meta = JSON.parse(createEventDto.recurrenceRule) as {
+          sendNotification?: boolean;
+        };
+        if (meta.sendNotification === false) {
+          sendNotification = false;
+        }
+      } catch {
+        // Bỏ qua nếu lỗi parse JSON
+      }
+    }
+
+    if (sendNotification) {
+      await this.notificationsService.createForFamily(
+        familyId,
+        'NEW_EVENT',
+        'Sự kiện gia đình sắp tới',
+        `Sự kiện "${event.title}" sắp diễn ra.`,
+        event.id,
+      );
+    }
+
+    return event;
   }
 
   async findByFamily(

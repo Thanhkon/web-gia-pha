@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  IsObject,
+  IsInt,
+} from 'class-validator';
 import { UserRole } from '../entities/user.entity';
 
 export class UpdateUserDto {
@@ -30,4 +37,12 @@ export class UpdateUserDto {
   @IsEnum(UserRole)
   @IsOptional()
   role?: UserRole;
+
+  @IsObject()
+  @IsOptional()
+  notificationSettings?: any;
+
+  @IsInt()
+  @IsOptional()
+  preferredFamilyId?: number | null;
 }

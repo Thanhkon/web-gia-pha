@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { Key, HelpCircle, Eye, Bell } from "lucide-react";
+import { Key, HelpCircle, Star, Bell } from "lucide-react";
 import "../../css/pages/Setting.css";
 
 const Setting = () => {
@@ -24,9 +24,9 @@ const Setting = () => {
                             <span>Quên Mật Khẩu</span>
                         </NavLink>
 
-                        <NavLink to="privacy" className="tab-btn">
-                            <Eye size={18} />
-                            <span>Quyền Riêng Tư</span>
+                        <NavLink to="preferred-family" className="tab-btn">
+                            <Star size={18} />
+                            <span>Gia Phả Ưu Tiên</span>
                         </NavLink>
 
                         <NavLink to="notifications" className="tab-btn">

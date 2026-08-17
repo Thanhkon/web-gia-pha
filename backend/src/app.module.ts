@@ -13,6 +13,7 @@ import { EventsModule } from './modules/events/events.module';
 import { HonorsModule } from './modules/honors/honors.module';
 import { AlbumsModule } from './modules/albums/albums.module';
 import { MemberAttachmentsModule } from './modules/attachment/member-attachments.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { MemberAttachmentsModule } from './modules/attachment/member-attachments
     HonorsModule,
     AlbumsModule,
     MemberAttachmentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

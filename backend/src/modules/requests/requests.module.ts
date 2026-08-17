@@ -9,12 +9,14 @@ import { JoinRequest } from './entities/join-request.entity';
 import { RequestsController } from './requests.controller';
 import { RequestsService } from './requests.service';
 import { MemberAttachmentsModule } from '../attachment/member-attachments.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
     MemberAttachmentsModule,
+    NotificationsModule,
     TypeOrmModule.forFeature([EditRequest, JoinRequest, Family, Member]),
   ],
   controllers: [RequestsController],

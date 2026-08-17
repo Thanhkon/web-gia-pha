@@ -46,6 +46,12 @@ export class User {
   })
   role!: UserRole;
 
+  @Column({ type: 'jsonb', nullable: true })
+  notificationSettings?: any;
+
+  @Column({ type: 'int', nullable: true })
+  preferredFamilyId?: number | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

@@ -11,6 +11,7 @@ import { UserRole } from '../../types/auth';
 import defaultAvatar from '../../assets/avatar-female.svg';
 import { getAvatarUrl } from '../../utils/imageHelper';
 import LogoutConfirmModal from '../common/LogoutConfirmModal';
+import NotificationBell from '../Notifications/NotificationBell';
 import logoImg from '../../assets/logo.png';
 import '../../css/components/Navbar.css';
 
@@ -218,10 +219,7 @@ const Navbar = () => {
         </div>
 
         <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '280px', justifyContent: 'flex-end' }}>
-          <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => navigate(`/${currentFamilyId}/edit-requests`)}>
-            <Bell size={20} />
-            {pendingRequestsCount > 0 && <span className="notification-dot"></span>}
-          </button>
+          <NotificationBell isAuthenticated={isAuthenticated} activeFamilyId={currentFamilyId} />
 
           <div className="user-menu-container" ref={userMenuRef}>
             <button className="avatar-btn" aria-label="Tài khoản" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>

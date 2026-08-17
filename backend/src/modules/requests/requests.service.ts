@@ -19,6 +19,7 @@ import {
 import { JoinRequest } from './entities/join-request.entity';
 import { MemberAttachmentsService } from '../attachment/member-attachments.service';
 import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const ALLOWED_MEMBER_CHANGE_FIELDS = new Set<keyof Member>([
   'fullName',
@@ -51,6 +52,7 @@ export class RequestsService {
     private readonly dataSource: DataSource,
     private readonly memberAttachmentsService: MemberAttachmentsService,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(familyId: number, dto: CreateEditRequestDto) {
@@ -78,7 +80,17 @@ export class RequestsService {
       submittedByPhone: dto.submittedByPhone?.trim() || null,
     });
 
-    return this.editRequestsRepository.save(request);
+    await this.editRequestsRepository.save(request);
+
+    await this.notificationsService.createForFamily(
+      familyId,
+      'NEW_EDIT_REQUEST',
+      'Yêu cầu chỉnh sửa mới',
+      `Có yêu cầu chỉnh sửa thông tin từ ${request.submittedByName}.`,
+      request.id,
+    );
+
+    return request;
   }
 
   async findByFamily(familyId: number, status?: string) {
@@ -391,7 +403,17 @@ export class RequestsService {
       request.reviewedBy = reviewerId.toString();
       request.reviewedAt = new Date();
 
-      return joinRepo.save(request);
+      await joinRepo.save(request);
+
+      await this.notificationsService.createForUser(
+        request.userId,
+        'JOIN_APPROVED',
+        'Yêu cầu tham gia đã được duyệt',
+        `Yêu cầu tham gia gia phả của bạn đã được quản trị viên chấp thuận.`,
+        request.id,
+      );
+
+      return request;
     });
   }
 
@@ -417,6 +439,16 @@ export class RequestsService {
     request.reviewedBy = reviewerId.toString();
     request.reviewedAt = new Date();
 
-    return this.joinRequestsRepository.save(request);
+    await this.joinRequestsRepository.save(request);
+
+    await this.notificationsService.createForUser(
+      request.userId,
+      'JOIN_REJECTED',
+      'Yêu cầu tham gia bị từ chối',
+      `Yêu cầu tham gia gia phả của bạn đã bị từ chối.`,
+      request.id,
+    );
+
+    return request;
   }
 }

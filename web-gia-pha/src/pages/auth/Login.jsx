@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../../store/slices/authSlice";
 import apiClient from "../../utils/apiClient";
@@ -19,14 +20,19 @@ function Login() {
     const [showPass, setShowPass] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const location = useLocation();
     const dispatch = useDispatch();
-    const primaryFamilyId = useSelector(
-        (state) => state.settings.primaryFamilyId,
-    );
 
-    const handleSuccessLogin = () => {
-        if (primaryFamilyId) {
-            navigate(`/${primaryFamilyId}/home`);
+    const handleSuccessLogin = (userData) => {
+        toast.success("Đăng nhập thành công!", {
+            duration: 2000,
+            icon: "👋",
+        });
+        const prevPath = location.state?.from?.pathname;
+        if (prevPath && prevPath !== "/") {
+            navigate(prevPath);
+        } else if (userData?.preferredFamilyId) {
+            navigate(`/${userData.preferredFamilyId}/home`);
         } else {
             navigate("/admin/families");
         }
@@ -74,7 +80,7 @@ function Login() {
             });
 
             dispatch(login(response.data));
-            handleSuccessLogin();
+            handleSuccessLogin(response.data.user);
         } catch (requestError) {
             console.error("Login failed:", requestError);
             if (localUser) {

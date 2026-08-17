@@ -4,13 +4,10 @@ import { Navigate, Link } from 'react-router-dom';
 import '../css/pages/PublicHome.css';
 
 const PublicHome = () => {
-  const { isAuthenticated } = useSelector((state) => state.auth);
-
-  const { list: userFamilies } = useSelector((state) => state.families);
-  const { primaryFamilyId } = useSelector((state) => state.settings);
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   if (isAuthenticated) {
-    const activeFamilyId = primaryFamilyId || (userFamilies?.length > 0 ? userFamilies[0].id : null);
+    const activeFamilyId = user?.preferredFamilyId;
     if (activeFamilyId) {
       return <Navigate to={`/${activeFamilyId}/home`} replace />;
     }

@@ -8,6 +8,7 @@ import { PermissionsModule } from '../permissions/permissions.module'; // 👈 t
 import { Event } from './entities/event.entity';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { EventsService } from './events.service';
     UsersModule,
     TypeOrmModule.forFeature([Event, Family, Member]),
     PermissionsModule,
+    NotificationsModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

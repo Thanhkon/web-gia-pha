@@ -21,6 +21,7 @@ import {
   PostStatus,
   PostVisibility,
 } from './entities/post.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PostsService {
@@ -31,6 +32,7 @@ export class PostsService {
     private readonly familiesRepository: Repository<Family>,
     private readonly storageService: StorageService,
     private readonly permissionsService: PermissionsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -61,7 +63,19 @@ export class PostsService {
           : (this.normalizeDate(createPostDto.publishedAt) ?? null),
     });
 
-    return this.postsRepository.save(post);
+    await this.postsRepository.save(post);
+
+    if (post.status === 'PUBLISHED') {
+      await this.notificationsService.createForFamily(
+        familyId,
+        'NEW_POST',
+        'Có bài viết mới',
+        `"${post.title}" vừa được đăng trong gia phả.`,
+        post.id,
+      );
+    }
+
+    return post;
   }
 
   async findByFamily(

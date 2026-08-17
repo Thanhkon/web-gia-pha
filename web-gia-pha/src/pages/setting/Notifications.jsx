@@ -1,18 +1,50 @@
-import { useState } from "react";
-import { Bell, Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { Bell, Save, Loader } from "lucide-react";
+import apiClient from "../../utils/apiClient";
+import Modal from "../../components/Modal";
 
 const Notifications = () => {
+    const user = useSelector((state) => state.auth.user);
     const [notifSettings, setNotifSettings] = useState({
         anniversaryEmail: true,
         treeUpdate: true,
     });
+    const [isSaving, setIsSaving] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
+
+    useEffect(() => {
+        if (user?.notificationSettings) {
+            setNotifSettings((prev) => ({
+                ...prev,
+                ...user.notificationSettings
+            }));
+        }
+    }, [user]);
 
     const handleNotifToggle = (key) => {
         setNotifSettings((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSaveSettings = () => {
-        alert("Đã lưu cấu hình thông báo!");
+    const handleSaveSettings = async () => {
+        setIsSaving(true);
+        try {
+            await apiClient.put("/users/profile", {
+                notificationSettings: notifSettings,
+            });
+            setModalMessage("Đã lưu cấu hình thông báo thành công!");
+            setModalOpen(true);
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } catch (error) {
+            setModalMessage(error.response?.data?.message || "Có lỗi xảy ra khi lưu thiết lập.");
+            setModalOpen(true);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -62,9 +94,28 @@ const Notifications = () => {
                 </div>
             </div>
 
-            <button onClick={handleSaveSettings} className="save-btn">
-                <Save size={16} /> Lưu cài đặt
+            <button 
+                onClick={handleSaveSettings} 
+                className="save-btn"
+                disabled={isSaving}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+                {isSaving ? <Loader size={16} className="spin" /> : <Save size={16} />}
+                Lưu cài đặt
             </button>
+
+            <Modal 
+                isOpen={modalOpen} 
+                onClose={() => setModalOpen(false)} 
+                title="Thông báo"
+            >
+                <p>{modalMessage}</p>
+                <div className="modal-actions">
+                    <button className="btn-primary" onClick={() => setModalOpen(false)}>
+                        Đóng
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 };

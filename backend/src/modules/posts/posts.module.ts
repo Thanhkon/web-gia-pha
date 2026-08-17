@@ -7,6 +7,7 @@ import { PermissionsModule } from '../permissions/permissions.module';
 import { Post } from './entities/post.entity';
 import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PostsService } from './posts.service';
     UsersModule,
     TypeOrmModule.forFeature([Post, Family]),
     PermissionsModule,
+    NotificationsModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],
