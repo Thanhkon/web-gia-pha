@@ -8,6 +8,7 @@ import { Post } from './entities/post.entity';
 import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     TypeOrmModule.forFeature([Post, Family]),
     PermissionsModule,
     NotificationsModule,
+    ActivityLogsModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],

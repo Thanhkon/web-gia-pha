@@ -9,6 +9,7 @@ import { Event } from './entities/event.entity';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     TypeOrmModule.forFeature([Event, Family, Member]),
     PermissionsModule,
     NotificationsModule,
+    ActivityLogsModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

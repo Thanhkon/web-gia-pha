@@ -24,6 +24,7 @@ const EditRequests = lazy(() => import("./pages/EditRequests"));
 const AdminEditRequests = lazy(() => import("./pages/admin/AdminEditRequests"));
 const AdminJoinRequests = lazy(() => import("./pages/admin/AdminJoinRequests"));
 const AdminDashboardSettings = lazy(() => import("./pages/admin/AdminDashboardSettings"));
+const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
 const PublicMembers = lazy(() => import("./pages/PublicMembers"));
 const Posts = lazy(() => import("./pages/Posts"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
@@ -97,6 +98,7 @@ const App = () => {
                     <Route path="posts" element={<Posts />} />
                     <Route path="gallery" element={<Gallery />} />
                     <Route path="dashboard-settings" element={<AdminDashboardSettings />} />
+                    <Route path="activity-logs" element={<AdminActivityLog />} />
                   </Route>
                   <Route path="settings" element={<Setting />}>
                     <Route index element={<Navigate to="security" replace />} />

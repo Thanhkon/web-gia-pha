@@ -10,7 +10,7 @@ import { MembersController } from './members.controller';
 import { MembersService } from './members.service';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { MemberAttachmentsModule } from '../attachment/member-attachments.module';
-// 👆 sửa lại path cho đúng vị trí thực tế nếu khác
+import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -18,7 +18,8 @@ import { MemberAttachmentsModule } from '../attachment/member-attachments.module
     UsersModule,
     TypeOrmModule.forFeature([Family, Member, ParentChildRelation, Marriage]),
     PermissionsModule,
-    MemberAttachmentsModule, // 👈 thêm: MembersService cần MemberAttachmentsService
+    MemberAttachmentsModule,
+    ActivityLogsModule,
   ],
   controllers: [MembersController],
   providers: [MembersService],

@@ -20,6 +20,8 @@ import { Family } from './entities/family.entity';
 import { Marriage } from './entities/marriage.entity';
 import { Member } from './entities/member.entity';
 import { ParentChildRelation } from './entities/parent-child-relation.entity';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { ActivityAction } from '../activity-logs/entities/activity-log.entity';
 
 @Injectable()
 export class MembersService {
@@ -35,6 +37,7 @@ export class MembersService {
     private readonly storageService: StorageService,
     private readonly permissionsService: PermissionsService,
     private readonly memberAttachmentsService: MemberAttachmentsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllFamilies(userId: number) {
@@ -248,7 +251,23 @@ export class MembersService {
       fullName: createMemberDto.fullName.trim(),
     });
 
-    return this.membersRepository.save(member);
+    const savedMember = await this.membersRepository.save(member);
+
+    // Ghi log hoạt động (nếu được tạo bởi một user cụ thể)
+    if (userId) {
+      await this.activityLogsService
+        .log(
+          familyId,
+          userId,
+          ActivityAction.ADD_MEMBER,
+          'member',
+          savedMember.id,
+          savedMember.fullName,
+        )
+        .catch((err) => console.error('Failed to log activity:', err));
+    }
+
+    return savedMember;
   }
 
   async findMembersByFamily(familyId: number) {
@@ -347,7 +366,23 @@ export class MembersService {
       member,
       this.normalizeMemberInput(updateMemberDto),
     );
-    return this.membersRepository.save(member);
+    const savedMember = await this.membersRepository.save(member);
+
+    // Ghi log hoạt động
+    if (userId) {
+      await this.activityLogsService
+        .log(
+          member.familyId!,
+          userId,
+          ActivityAction.EDIT_MEMBER,
+          'member',
+          savedMember.id,
+          savedMember.fullName,
+        )
+        .catch((err) => console.error('Failed to log activity:', err));
+    }
+
+    return savedMember;
   }
 
   async uploadMemberAvatar(
@@ -389,6 +424,21 @@ export class MembersService {
     await this.permissionsService.assertFamilyEditor(userId, member.familyId!);
 
     await this.membersRepository.remove(member);
+
+    // Ghi log hoạt động
+    if (userId) {
+      await this.activityLogsService
+        .log(
+          member.familyId!,
+          userId,
+          ActivityAction.DELETE_MEMBER,
+          'member',
+          id,
+          member.fullName,
+        )
+        .catch((err) => console.error('Failed to log activity:', err));
+    }
+
     return { deleted: true, id };
   }
 

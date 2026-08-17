@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useFamily } from '../hooks/useFamily';
 import { useDispatch, useSelector } from 'react-redux';
-import { CalendarDays, Edit3, FileText, GitMerge, Home, Images, LogOut, Menu, Settings, Users, BookOpen } from 'lucide-react';
+import { CalendarDays, Edit3, FileText, GitMerge, Home, Images, LogOut, Menu, Settings, Users, BookOpen, ClipboardList } from 'lucide-react';
 import { logout } from '../store/slices/authSlice';
 import { selectPendingCount, fetchRequests } from '../store/slices/editRequestsSlice';
 import { UserRole } from '../types/auth';
@@ -107,6 +107,9 @@ const AdminLayout = () => {
               </NavLink>
               <NavLink to={`/admin/families/${familyId}/dashboard-settings`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Cấu hình Trang chủ">
                 <Settings size={18} /> {!isCollapsed && <span>Cấu hình Trang chủ</span>}
+              </NavLink>
+              <NavLink to={`/admin/families/${familyId}/activity-logs`} className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} title="Nhật ký hoạt động">
+                <ClipboardList size={18} /> {!isCollapsed && <span>Nhật ký hoạt động</span>}
               </NavLink>
             </>
           )}

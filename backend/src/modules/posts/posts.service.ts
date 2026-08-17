@@ -22,6 +22,8 @@ import {
   PostVisibility,
 } from './entities/post.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { ActivityAction } from '../activity-logs/entities/activity-log.entity';
 
 @Injectable()
 export class PostsService {
@@ -33,6 +35,7 @@ export class PostsService {
     private readonly storageService: StorageService,
     private readonly permissionsService: PermissionsService,
     private readonly notificationsService: NotificationsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async create(
@@ -74,6 +77,17 @@ export class PostsService {
         post.id,
       );
     }
+
+    await this.activityLogsService
+      .log(
+        familyId,
+        authorId,
+        ActivityAction.CREATE_POST,
+        'post',
+        post.id,
+        post.title,
+      )
+      .catch((err) => console.error('Failed to log activity:', err));
 
     return post;
   }
@@ -180,7 +194,20 @@ export class PostsService {
       post.publishedAt = null;
     }
 
-    return this.postsRepository.save(post);
+    const savedPost = await this.postsRepository.save(post);
+
+    await this.activityLogsService
+      .log(
+        post.familyId,
+        authorId,
+        ActivityAction.EDIT_POST,
+        'post',
+        post.id,
+        post.title,
+      )
+      .catch((err) => console.error('Failed to log activity:', err));
+
+    return savedPost;
   }
 
   async remove(id: number, userId: number) {
@@ -197,6 +224,17 @@ export class PostsService {
 
     post.deletedAt = new Date();
     await this.postsRepository.save(post);
+
+    await this.activityLogsService
+      .log(
+        post.familyId,
+        userId,
+        ActivityAction.DELETE_POST,
+        'post',
+        post.id,
+        post.title,
+      )
+      .catch((err) => console.error('Failed to log activity:', err));
 
     return { deleted: true, id };
   }
@@ -255,28 +293,27 @@ export class PostsService {
   }
 
   private normalizePostInput(dto: CreatePostDto | UpdatePostDto) {
-    const {
-      coverImage,
-      coverImagePublicId,
-      publishedAt: _publishedAt,
-      slug: _slug,
-      status: _status,
-      visibility: _visibility,
-      ...rest
-    } = dto;
-    const data = { ...rest } as Partial<Post> & {
+    const dataObj: Record<string, any> = { ...dto };
+    delete dataObj.coverImage;
+    delete dataObj.coverImagePublicId;
+    delete dataObj.publishedAt;
+    delete dataObj.slug;
+    delete dataObj.status;
+    delete dataObj.visibility;
+
+    const data = dataObj as Partial<Post> & {
       content?: PostContentBlock[] | string;
     };
 
-    if (data.thumbnailUrl === undefined && coverImage !== undefined) {
-      data.thumbnailUrl = coverImage;
+    if (data.thumbnailUrl === undefined && dto.coverImage !== undefined) {
+      data.thumbnailUrl = dto.coverImage;
     }
 
     if (
       data.thumbnailPublicId === undefined &&
-      coverImagePublicId !== undefined
+      dto.coverImagePublicId !== undefined
     ) {
-      data.thumbnailPublicId = coverImagePublicId;
+      data.thumbnailPublicId = dto.coverImagePublicId;
     }
 
     if (typeof data.title === 'string') {

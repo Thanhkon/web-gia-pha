@@ -14,6 +14,7 @@ import { HonorsModule } from './modules/honors/honors.module';
 import { AlbumsModule } from './modules/albums/albums.module';
 import { MemberAttachmentsModule } from './modules/attachment/member-attachments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AlbumsModule,
     MemberAttachmentsModule,
     NotificationsModule,
+    ActivityLogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

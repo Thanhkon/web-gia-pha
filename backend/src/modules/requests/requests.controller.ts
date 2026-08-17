@@ -48,18 +48,34 @@ export class RequestsController {
 
   @Patch('edit-requests/:id/approve')
   approve(
+    @Req() request: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Body() reviewEditRequestDto: ReviewEditRequestDto,
   ) {
-    return this.requestsService.approve(id, reviewEditRequestDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.requestsService.approve(
+      id,
+      request.user.id,
+      reviewEditRequestDto,
+    );
   }
 
   @Patch('edit-requests/:id/reject')
   reject(
+    @Req() request: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Body() reviewEditRequestDto: ReviewEditRequestDto,
   ) {
-    return this.requestsService.reject(id, reviewEditRequestDto);
+    if (!request.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return this.requestsService.reject(
+      id,
+      request.user.id,
+      reviewEditRequestDto,
+    );
   }
 
   @Delete('edit-requests/:id')

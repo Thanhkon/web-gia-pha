@@ -20,6 +20,8 @@ import { JoinRequest } from './entities/join-request.entity';
 import { MemberAttachmentsService } from '../attachment/member-attachments.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { ActivityAction } from '../activity-logs/entities/activity-log.entity';
 
 const ALLOWED_MEMBER_CHANGE_FIELDS = new Set<keyof Member>([
   'fullName',
@@ -53,6 +55,7 @@ export class RequestsService {
     private readonly memberAttachmentsService: MemberAttachmentsService,
     private readonly usersService: UsersService,
     private readonly notificationsService: NotificationsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async create(familyId: number, dto: CreateEditRequestDto) {
@@ -119,7 +122,7 @@ export class RequestsService {
     return request;
   }
 
-  async approve(id: number, dto: ReviewEditRequestDto) {
+  async approve(id: number, reviewerId: number, dto: ReviewEditRequestDto) {
     return this.dataSource.transaction(async (manager) => {
       const requestsRepository = manager.getRepository(EditRequest);
       const membersRepository = manager.getRepository(Member);
@@ -154,16 +157,30 @@ export class RequestsService {
 
       request.status = 'APPROVED';
       request.adminNote = dto.adminNote?.trim() || null;
-      request.reviewedBy = dto.reviewedBy?.trim() || 'Admin';
+      request.reviewedBy = reviewerId.toString();
       request.reviewedAt = new Date();
 
-      return requestsRepository.save(request);
+      const savedRequest = await requestsRepository.save(request);
+
+      await this.activityLogsService
+        .log(
+          request.familyId,
+          reviewerId,
+          ActivityAction.APPROVE_REQUEST,
+          'edit_request',
+          savedRequest.id,
+          member.fullName,
+        )
+        .catch((err) => console.error('Failed to log activity:', err));
+
+      return savedRequest;
     });
   }
 
-  async reject(id: number, dto: ReviewEditRequestDto) {
+  async reject(id: number, reviewerId: number, dto: ReviewEditRequestDto) {
     const request = await this.editRequestsRepository.findOne({
       where: { id },
+      relations: { targetMember: true },
     });
     if (!request) {
       throw new NotFoundException(`Edit request ${id} not found`);
@@ -175,10 +192,23 @@ export class RequestsService {
 
     request.status = 'REJECTED';
     request.adminNote = dto.adminNote?.trim() || null;
-    request.reviewedBy = dto.reviewedBy?.trim() || 'Admin';
+    request.reviewedBy = reviewerId.toString();
     request.reviewedAt = new Date();
 
-    return this.editRequestsRepository.save(request);
+    const savedRequest = await this.editRequestsRepository.save(request);
+
+    await this.activityLogsService
+      .log(
+        request.familyId,
+        reviewerId,
+        ActivityAction.REJECT_REQUEST,
+        'edit_request',
+        savedRequest.id,
+        request.targetMember?.fullName || 'Member',
+      )
+      .catch((err) => console.error('Failed to log activity:', err));
+
+    return savedRequest;
   }
 
   async remove(id: number) {

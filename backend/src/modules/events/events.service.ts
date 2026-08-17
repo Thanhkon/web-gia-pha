@@ -20,6 +20,8 @@ import {
   EventVisibility,
 } from './entities/event.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { ActivityAction } from '../activity-logs/entities/activity-log.entity';
 
 @Injectable()
 export class EventsService {
@@ -33,6 +35,7 @@ export class EventsService {
     private readonly storageService: StorageService,
     private readonly permissionsService: PermissionsService,
     private readonly notificationsService: NotificationsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async create(
@@ -95,6 +98,17 @@ export class EventsService {
         event.id,
       );
     }
+
+    await this.activityLogsService
+      .log(
+        familyId,
+        createdById,
+        ActivityAction.CREATE_EVENT,
+        'event',
+        event.id,
+        event.title,
+      )
+      .catch((err) => console.error('Failed to log activity:', err));
 
     return event;
   }
@@ -193,7 +207,20 @@ export class EventsService {
 
     this.validateDateRange(event.startAt, event.endAt);
 
-    return this.eventsRepository.save(event);
+    const savedEvent = await this.eventsRepository.save(event);
+
+    await this.activityLogsService
+      .log(
+        event.familyId,
+        userId,
+        ActivityAction.EDIT_EVENT,
+        'event',
+        savedEvent.id,
+        savedEvent.title,
+      )
+      .catch((err) => console.error('Failed to log activity:', err));
+
+    return savedEvent;
   }
 
   async uploadCoverImage(
@@ -239,6 +266,17 @@ export class EventsService {
 
     event.deletedAt = new Date();
     await this.eventsRepository.save(event);
+
+    await this.activityLogsService
+      .log(
+        event.familyId,
+        userId,
+        ActivityAction.DELETE_EVENT,
+        'event',
+        event.id,
+        event.title,
+      )
+      .catch((err) => console.error('Failed to log activity:', err));
 
     return { deleted: true, id };
   }
@@ -297,25 +335,24 @@ export class EventsService {
   }
 
   private normalizeEventInput(dto: CreateEventDto | UpdateEventDto) {
-    const {
-      startAt,
-      endAt,
-      eventType,
-      status,
-      visibility,
-      relatedMemberId,
-      ...rest
-    } = dto;
-    const data: Partial<Event> = { ...rest };
+    const data: Record<string, any> = { ...dto };
+    delete data.startAt;
+    delete data.endAt;
+    delete data.eventType;
+    delete data.status;
+    delete data.visibility;
+    delete data.relatedMemberId;
 
-    if (typeof data.title === 'string') {
-      data.title = data.title.trim();
-      if (!data.title) {
+    const eventData: Partial<Event> = data;
+
+    if (typeof eventData.title === 'string') {
+      eventData.title = eventData.title.trim();
+      if (!eventData.title) {
         throw new BadRequestException('title cannot be empty');
       }
     }
 
-    return data;
+    return eventData;
   }
 
   private normalizeStatus(status: string): EventStatus {
