@@ -125,7 +125,7 @@ export class UsersService {
   }
 
   // Lưu file ảnh đại diện được tải lên và trả về đường dẫn URL
-  async saveAvatarFile(file: any): Promise<string> {
+  saveAvatarFile(file: Express.Multer.File): string {
     if (!file) {
       throw new BadRequestException('File không hợp lệ');
     }

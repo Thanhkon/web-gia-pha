@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, LayoutGrid, Eye, Edit2, Trash2 } from 'lucide-react';
+import { List, LayoutGrid, Edit2, Trash2 } from 'lucide-react';
 import avatarMale from '../../assets/avatar-male.svg';
 import avatarFemale from '../../assets/avatar-female.svg';
 

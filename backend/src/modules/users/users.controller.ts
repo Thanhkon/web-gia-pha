@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   Body,
@@ -19,8 +20,9 @@ import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+// Removed diskStorage and extname
+
+import { multerOptions } from '../../utils/file-upload.util';
 
 @UseGuards(AccessTokenGuard)
 @Controller('users')
@@ -28,44 +30,22 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('upload-avatar')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-      },
-      fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-          return callback(
-            new BadRequestException('Only image files are allowed!'),
-            false,
-          );
-        }
-        callback(null, true);
-      },
-      storage: diskStorage({
-        destination: './uploads/avatarUser',
-        filename: (req, file, callback) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `avatar-${uniqueSuffix}${ext}`);
-        },
-      }),
-    }),
-  )
-  async uploadAvatar(@UploadedFile() file: any) {
+  @UseInterceptors(FileInterceptor('file', multerOptions()))
+  uploadAvatar(@UploadedFile() file: any) {
     if (!file) throw new BadRequestException('No file uploaded');
-    const url = await this.usersService.saveAvatarFile(file);
+    const url = this.usersService.saveAvatarFile(file);
     return { url };
   }
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Req() req, @Body() createUserDto: CreateUserDto) {
+    if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.create(createUserDto);
   }
 
   @Get()
-  findAll() {
+  findAll(@Req() req) {
+    if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.findAll();
   }
 
@@ -80,16 +60,24 @@ export class UsersController {
   @Put('profile')
   updateProfile(@Req() req, @Body() updateUserDto: UpdateUserDto) {
     const userId = req.user.sub || req.user.id;
+    // Không cho phép user thường tự đổi role
+    if (!req.user.isAdmin && updateUserDto.role) {
+      delete updateUserDto.role;
+    }
     return this.usersService.update(userId, updateUserDto);
   }
 
   @Get('username/:username')
-  findByUsername(@Param('username') username: string) {
+  findByUsername(@Req() req, @Param('username') username: string) {
+    if (!req.user.isAdmin && req.user.username !== username) {
+      throw new ForbiddenException('Admin only or self');
+    }
     return this.usersService.getUserByUsername(username);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Req() req, @Param('id') id: string) {
+    if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.findOne(+id);
   }
 
@@ -101,30 +89,21 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     const userId = req.user.sub || req.user.id;
-    if (
-      userId !== +id &&
-      req.user.role !== 'admin' &&
-      req.user.role !== 'ADMIN'
-    ) {
+    if (userId !== +id && !req.user.isAdmin) {
       throw new ForbiddenException(
         'Bạn không có quyền thực hiện hành động này',
       );
+    }
+    // Chỉ admin mới được đổi role
+    if (!req.user.isAdmin && updateUserDto.role) {
+      delete updateUserDto.role;
     }
     return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {
-    const userId = req.user.sub || req.user.id;
-    if (
-      userId !== +id &&
-      req.user.role !== 'admin' &&
-      req.user.role !== 'ADMIN'
-    ) {
-      throw new ForbiddenException(
-        'Bạn không có quyền thực hiện hành động này',
-      );
-    }
+    if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.remove(+id);
   }
 }

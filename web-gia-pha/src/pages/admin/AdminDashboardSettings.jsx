@@ -8,19 +8,19 @@ import '../../css/pages/Setting.css';
 const AdminDashboardSettings = () => {
   const dispatch = useDispatch();
   const familyId = useFamily();
-  
+
   const { list: userFamilies } = useSelector((state) => state.families);
   const activeFamily = userFamilies?.find(f => f.id === Number(familyId));
   const { hero: defaultHero, marqueeItems: defaultMarqueeItems } = useSelector((state) => state.settings);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
     bgImage: ''
   });
-  
+
   const [marqueeItems, setMarqueeItems] = useState([]);
-  
+
   const [imageFile, setImageFile] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -30,7 +30,7 @@ const AdminDashboardSettings = () => {
     const currentSettings = activeFamily?.settings || {};
     const heroSettings = currentSettings.hero || defaultHero;
     const marqueeSettings = currentSettings.marqueeItems || defaultMarqueeItems || [];
-    
+
     setFormData({
       title: heroSettings.title || '',
       subtitle: heroSettings.subtitle || '',
@@ -73,7 +73,7 @@ const AdminDashboardSettings = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     let finalBgImage = formData.bgImage;
 
     if (imageFile) {
@@ -95,7 +95,7 @@ const AdminDashboardSettings = () => {
     };
 
     await dispatch(updateFamily({ id: familyId, data: { settings: settingsToSave } }));
-    
+
     setIsSaving(false);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
@@ -111,13 +111,13 @@ const AdminDashboardSettings = () => {
 
         <div className="setting-content" style={{ display: 'block', padding: '2rem', overflowY: 'auto' }}>
           <form onSubmit={handleSubmit} className="setting-section active">
-            
+
             <h3 className="section-title">Thanh Thông Báo (Marquee Banner)</h3>
             <div className="form-group" style={{ marginBottom: '2rem' }}>
               <p className="text-muted" style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
                 Các dòng thông báo sẽ chạy ngang ở phần trên cùng của trang chủ.
               </p>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {marqueeItems.map((item, index) => (
                   <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -128,8 +128,8 @@ const AdminDashboardSettings = () => {
                       placeholder="Nhập nội dung thông báo..."
                       className="form-control"
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => handleRemoveMarqueeItem(index)}
                       className="btn btn-danger"
                       style={{ padding: '8px', minWidth: '40px' }}
@@ -140,9 +140,9 @@ const AdminDashboardSettings = () => {
                   </div>
                 ))}
               </div>
-              
-              <button 
-                type="button" 
+
+              <button
+                type="button"
                 onClick={handleAddMarqueeItem}
                 className="btn btn-outline"
                 style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -154,7 +154,7 @@ const AdminDashboardSettings = () => {
             <hr style={{ margin: '2rem 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
 
             <h3 className="section-title">Nội dung Banner Chính (Hero)</h3>
-            
+
             <div className="form-group">
               <label>Tiêu đề chính</label>
               <input

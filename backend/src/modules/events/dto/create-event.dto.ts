@@ -6,10 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import {
-  EVENT_STATUSES,
-  EVENT_VISIBILITIES,
-} from '../entities/event.entity';
+import { EVENT_STATUSES, EVENT_VISIBILITIES } from '../entities/event.entity';
 import type { EventStatus, EventVisibility } from '../entities/event.entity';
 
 export class CreateEventDto {

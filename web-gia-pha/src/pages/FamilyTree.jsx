@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { useParams, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useFamily } from '../hooks/useFamily';
 import { usePanZoom } from '../hooks/usePanZoom';
 import MemberForm from '../components/Members/MemberForm/MemberForm';
@@ -14,13 +14,13 @@ import {
   selectFamilyTreeGraphData,
   uploadMemberAvatar
 } from '../store/slices/membersSlice';
-import { buildAdjacencyLists } from '../utils/familyTreeUtils';
+// removed buildAdjacencyLists
 import TreeToolbar from '../components/FamilyTree/TreeToolbar';
 import TreeGraph from '../components/FamilyTree/TreeGraph';
 import MemberProfileModal from '../components/Members/MemberProfileModal';
 import KinshipModal from '../components/FamilyTree/KinshipModal';
 import MemberStatisticsWidget from '../components/Members/MemberStatisticsWidget';
-import { getTreeData } from '../utils/familyTreeUtils';
+// removed getTreeData
 import FeatureState from '../components/common/FeatureState';
 import { buildMemberPayload } from '../utils/memberPayload';
 import { useTreeExport } from '../hooks/useTreeExport';
@@ -58,7 +58,7 @@ const FamilyTree = () => {
   const relationships = useSelector(state => state.members.relationships);
   const loading = useSelector(state => state.members.loading);
   const error = useSelector(state => state.members.error);
-  const familyInfo = useSelector(state => state.members.familyInfo);
+// removed familyInfo
   const location = useLocation();
   const isAdminView = location.pathname.includes('/admin');
 
@@ -180,7 +180,7 @@ const FamilyTree = () => {
   const {
     scale, position, isDragging,
     onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onWheel,
-    resetView, zoomIn, zoomOut, updatePosition, updateScale
+    zoomIn, zoomOut, updatePosition, updateScale
   } = usePanZoom(0.85);
 
   const centerTree = useCallback(() => {
@@ -237,7 +237,7 @@ const FamilyTree = () => {
     }
   };
 
-  const { isExporting, handleExportPNG: exportPNG, handleExportPDF: exportPDF } = useTreeExport();
+  const { handleExportPNG: exportPNG, handleExportPDF: exportPDF } = useTreeExport();
 
   const filterExportNodes = (node) => {
     if (node.classList && (

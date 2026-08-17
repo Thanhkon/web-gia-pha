@@ -6,7 +6,7 @@ import MemberForm from '../../components/Members/MemberForm/MemberForm';
 import MemberProfileModal from '../../components/Members/MemberProfileModal';
 import MembersFilterBar from '../../components/Members/MembersFilterBar';
 import MembersTable from '../../components/Members/MembersTable';
-import MemberStatisticsWidget from '../../components/Members/MemberStatisticsWidget';
+// removed MemberStatisticsWidget
 import Pagination from '../../components/common/Pagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { buildMemberPayload } from '../../utils/memberPayload';
@@ -47,7 +47,7 @@ const AdminMembers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewingMember, setViewingMember] = useState(null);
-  const [showStats, setShowStats] = useState(false);
+// removed showStats
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
 
   // Pagination state

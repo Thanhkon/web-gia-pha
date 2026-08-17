@@ -14,6 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from '../../utils/file-upload.util';
 import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
@@ -76,7 +77,7 @@ export class MembersController {
   }
 
   @Post('families/:familyId/cover-image')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', multerOptions()))
   uploadFamilyCover(
     @Param('familyId', ParseIntPipe) familyId: number,
     @Req() request: AuthenticatedRequest,
@@ -154,7 +155,7 @@ export class MembersController {
   }
 
   @Post('members/:id/avatar')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', multerOptions()))
   uploadMemberAvatar(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: AuthenticatedRequest,

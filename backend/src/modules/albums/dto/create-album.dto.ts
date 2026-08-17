@@ -1,8 +1,5 @@
 import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import {
-  ALBUM_STATUSES,
-  ALBUM_VISIBILITIES,
-} from '../entities/album.entity';
+import { ALBUM_STATUSES, ALBUM_VISIBILITIES } from '../entities/album.entity';
 import type { AlbumStatus, AlbumVisibility } from '../entities/album.entity';
 
 export class CreateAlbumDto {

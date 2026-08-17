@@ -15,7 +15,7 @@ const KinshipLookup = () => {
   
   const persons = useSelector((state) => state.members.persons);
   const relationships = useSelector((state) => state.members.relationships);
-  const { status } = useSelector((state) => state.members);
+// removed status
 
   useEffect(() => {
     if (familyId) {

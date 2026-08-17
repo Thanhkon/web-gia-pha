@@ -25,6 +25,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { PasswordResetTokenEntity } from './entities/password-reset-token.entity';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
+import { MailService } from '../mail/mail.service';
 
 const scrypt = promisify(scryptCallback);
 const RESET_PASSWORD_TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -43,6 +44,7 @@ export class AuthService {
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
     @InjectRepository(PasswordResetTokenEntity)
     private readonly passwordResetTokenRepository: Repository<PasswordResetTokenEntity>,
+    private readonly mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -62,8 +64,6 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException('Username already exists');
     }
-
-    const defaultFamilyId = Number(process.env.DEFAULT_FAMILY_ID || 1);
 
     const user = await this.usersService.createEntity({
       username,
@@ -183,11 +183,14 @@ export class AuthService {
       }),
     );
 
-    return {
-      ...response,
-      resetToken,
-      expiresAt: resetPasswordExpiresAt,
-    };
+    // Call mail service to send the token (will only log in dev mode if no provider)
+    try {
+      await this.mailService.sendPasswordResetEmail(username, resetToken);
+    } catch (e) {
+      console.error('Failed to send reset email', e);
+    }
+
+    return response;
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {

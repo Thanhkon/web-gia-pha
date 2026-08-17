@@ -16,6 +16,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from '../../utils/file-upload.util';
 import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
@@ -40,8 +41,8 @@ export class PostsController {
     return this.postsService.create(familyId, request.user.id, createPostDto);
   }
 
-  @Post('posts/uploads/images')
-  @UseInterceptors(FileInterceptor('image'))
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('image', multerOptions()))
   uploadImage(@UploadedFile() file?: UploadedStorageFile) {
     return this.postsService.uploadImage(file);
   }

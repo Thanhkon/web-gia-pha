@@ -35,6 +35,8 @@ const GalleryDetail = lazy(() => import("./pages/GalleryDetail"));
 const KinshipLookup = lazy(() => import("./pages/KinshipLookup"));
 const Login = lazy(() => import("./pages/auth/Login"));
 const Register = lazy(() => import("./pages/auth/Register"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const AuthForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
 const FamilyList = lazy(() => import("./pages/FamilyList"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
@@ -82,6 +84,18 @@ const App = () => {
                 <>
                   <PublicNavbar />
                   <main className="main-content"><Register /></main>
+                </>
+              } />
+              <Route path="/reset-password" element={
+                <>
+                  <PublicNavbar />
+                  <main className="main-content"><ResetPassword /></main>
+                </>
+              } />
+              <Route path="/forgot-password" element={
+                <>
+                  <PublicNavbar />
+                  <main className="main-content"><AuthForgotPassword /></main>
                 </>
               } />
               <Route path="/admin" element={<ProtectedRoute />}>

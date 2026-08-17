@@ -10,8 +10,7 @@ const MemberStatisticsWidget = ({ persons = [], onClose }) => {
   const genCounts = {};
   let living = 0;
   let deceased = 0;
-  let direct = 0;
-  let inLaw = 0;
+  // removed direct, inLaw
 
   persons.forEach(p => {
     const gen = parseInt(p.generation, 10) || 1;
@@ -22,8 +21,7 @@ const MemberStatisticsWidget = ({ persons = [], onClose }) => {
     if (p.isDeceased) deceased++;
     else living++;
 
-    if (p.isInLaw) inLaw++;
-    else direct++;
+    // removed direct, inLaw counting
   });
 
   const generations = maxGen;

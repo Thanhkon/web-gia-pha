@@ -8,7 +8,7 @@ import {
   Plus,
   Search,
 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+// removed useSelector
 import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { useFamilyActor } from '../hooks/useFamilyActor';
@@ -106,7 +106,7 @@ const Events = () => {
   const { familyId } = useParams();
   const authUser = useFamilyActor();
   const isAuthenticated = Boolean(authUser);
-  const isAdminRoute = location.pathname.startsWith('/admin');
+// removed isAdminRoute
   const [currentUser, setCurrentUser] = useState(null);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [searchTerm, setSearchTerm] = useState('');
@@ -187,7 +187,7 @@ const Events = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [authUser, getViewUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter]);
+  }, [authUser, getViewUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter, familyId]);
 
   useEffect(() => {
     loadEvents();

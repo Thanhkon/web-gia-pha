@@ -158,7 +158,7 @@ const ProfilePage = () => {
                     setModalMessage("Cập nhật thành công!");
                     setModalOpen(true);
                 }
-            } catch (error) {
+            } catch (_error) {
                 setIsEditing(false);
                 setModalMessage("Lỗi khi cập nhật profile!");
                 setModalOpen(true);

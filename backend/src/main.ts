@@ -17,6 +17,29 @@ async function bootstrap() {
     }),
   );
 
+  if (process.env.NODE_ENV === 'production') {
+    const requiredEnv = [
+      'JWT_SECRET',
+      'DB_TYPE',
+      'DB_HOST',
+      'DB_PORT',
+      'DB_USERNAME',
+      'DB_PASSWORD',
+      'DB_DATABASE',
+    ];
+    for (const env of requiredEnv) {
+      if (!process.env[env]) {
+        throw new Error(
+          `Missing required environment variable in production: ${env}`,
+        );
+      }
+    }
+
+    if (process.env.DB_SYNCHRONIZE === 'true') {
+      throw new Error('DB_SYNCHRONIZE must not be true in production');
+    }
+  }
+
   // Khởi tạo các thư mục lưu file tĩnh
   const uploadAvatarDir = join(process.cwd(), 'uploads', 'avatars');
   const uploadFamilyAvatarDir = join(process.cwd(), 'uploads', 'family-avatar');

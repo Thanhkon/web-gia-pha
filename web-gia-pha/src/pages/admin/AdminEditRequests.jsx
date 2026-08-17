@@ -23,7 +23,7 @@ const AdminEditRequests = () => {
   const processedRequests = allRequests.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED');
   
   const currentUser = useSelector(state => state.auth.user);
-  const persons = useSelector(state => state.members.persons);
+// removed persons
 
   useEffect(() => {
     if (familyId) {

@@ -16,6 +16,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from '../../utils/file-upload.util';
 import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
@@ -79,7 +80,7 @@ export class AlbumsController {
   }
 
   @Post('albums/:id/cover-image')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', multerOptions(true)))
   uploadCoverImage(
     @Param('id', ParseIntPipe) albumId: number,
     @Req() request: AuthenticatedRequest,
@@ -130,7 +131,7 @@ export class AlbumsController {
   }
 
   @Post('albums/:id/media/uploads')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerOptions(true)))
   uploadMedia(
     @Param('id', ParseIntPipe) albumId: number,
     @Req() request: AuthenticatedRequest,

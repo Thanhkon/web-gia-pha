@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, ChevronRight, Heart } from 'lucide-react';
+import { Mail, Phone, MapPin, ChevronRight } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import '../../css/components/Footer.css';
 

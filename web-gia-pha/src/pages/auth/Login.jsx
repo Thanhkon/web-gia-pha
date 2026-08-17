@@ -2,10 +2,9 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { login } from "../../store/slices/authSlice";
 import apiClient from "../../utils/apiClient";
-import users from "../../assets/users.json";
 import "../../css/pages/Auth.css";
 
 function Login() {
@@ -38,21 +37,6 @@ function Login() {
         }
     };
 
-    const handleLocalLogin = (user) => {
-        dispatch(
-            login({
-                id: user.id,
-                username: user.username,
-                role: user.username === "admin" ? "FAMILY_HEAD" : "MEMBER",
-                familyId: "1",
-                memberId: user.username === "admin" ? null : String(user.id),
-                canCreatePost: user.username === "admin",
-                canManagePosts: user.username === "admin",
-            }),
-        );
-        handleSuccessLogin();
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
@@ -62,13 +46,7 @@ function Login() {
             return;
         }
 
-        const localUser = users.find(
-            (user) =>
-                user.username === loginData.username &&
-                user.password === loginData.password,
-        );
-
-        if (loginData.password.length < 6 && !localUser) {
+        if (loginData.password.length < 6) {
             setError("Mật khẩu không được ít hơn 6 kí tự");
             return;
         }
@@ -83,10 +61,6 @@ function Login() {
             handleSuccessLogin(response.data.user);
         } catch (requestError) {
             console.error("Login failed:", requestError);
-            if (localUser) {
-                handleLocalLogin(localUser);
-                return;
-            }
             setError(
                 requestError.response?.data?.message || "Đăng nhập thất bại",
             );
@@ -150,16 +124,26 @@ function Login() {
                         </div>
                     </div>
 
-                    <p>
-                        Chưa có tài khoản?{" "}
-                        <span
-                            style={{ color: "red", cursor: "pointer" }}
-                            onClick={() => navigate("/register")}
-                        >
-                            Đăng ký ngay
-                        </span>
-                    </p>
-                    <button type="submit" className="btn-auth">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                        <p style={{ margin: 0 }}>
+                            Chưa có tài khoản?{" "}
+                            <span
+                                style={{ color: "red", cursor: "pointer" }}
+                                onClick={() => navigate("/register")}
+                            >
+                                Đăng ký
+                            </span>
+                        </p>
+                        <p style={{ margin: 0 }}>
+                            <span
+                                style={{ color: "var(--primary-color)", cursor: "pointer" }}
+                                onClick={() => navigate("/forgot-password")}
+                            >
+                                Quên mật khẩu?
+                            </span>
+                        </p>
+                    </div>
+                    <button type="submit" className="btn-auth" style={{ marginTop: '20px' }}>
                         Đăng Nhập
                     </button>
                 </form>

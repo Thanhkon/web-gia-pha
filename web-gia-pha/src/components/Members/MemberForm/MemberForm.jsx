@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import GeneralInfo from './GeneralInfo';
 import DateInfo from './DateInfo';
 import ContactInfo from './ContactInfo';
@@ -13,14 +13,6 @@ const MemberForm = ({ initialData, persons, relationships, isEditing, onSubmit, 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [validationAlert, setValidationAlert] = useState({ isOpen: false, message: '' });
-
-  const handleInvalid = (e) => {
-    e.preventDefault();
-    setValidationAlert({
-      isOpen: true,
-      message: 'Vui lòng điền đầy đủ các trường thông tin bắt buộc có dấu (*) trước khi lưu.'
-    });
-  };
 
   const handleCancelClick = () => {
     const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);

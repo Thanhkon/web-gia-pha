@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Loader2, X } from "lucide-react";
 import apiClient from "../../utils/apiClient";
 import SearchableSelect from "../common/SearchableSelect";
@@ -13,16 +13,7 @@ const JoinRequestModal = ({ isOpen, onClose, familyId, familyName }) => {
     const [note, setNote] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        if (isOpen && familyId) {
-            fetchMembers();
-            // Reset form
-            setSelectedMember("");
-            setNote("");
-        }
-    }, [isOpen, familyId]);
-
-    const fetchMembers = async () => {
+    const fetchMembers = useCallback(async () => {
         setLoading(true);
         try {
             const res = await apiClient.get(`/families/${familyId}/members`);
@@ -33,7 +24,16 @@ const JoinRequestModal = ({ isOpen, onClose, familyId, familyName }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [familyId]);
+
+    useEffect(() => {
+        if (isOpen && familyId) {
+            fetchMembers();
+            // Reset form
+            setSelectedMember("");
+            setNote("");
+        }
+    }, [isOpen, familyId, fetchMembers]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

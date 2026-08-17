@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useFamily } from '../../hooks/useFamily';
-import { BookOpen, Bell, User, LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings, Home } from 'lucide-react';
+import { LogOut, Menu, X, ChevronDown, LayoutGrid, Users, Settings, Home } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import { fetchFamilies } from '../../store/slices/familiesSlice';
 import { selectPendingCount, fetchRequests } from '../../store/slices/editRequestsSlice';
 import { mockRoleLabels } from '../../data/mockAuth';
-import { UserRole } from '../../types/auth';
 import defaultAvatar from '../../assets/avatar-female.svg';
 import { getAvatarUrl } from '../../utils/imageHelper';
 import LogoutConfirmModal from '../common/LogoutConfirmModal';

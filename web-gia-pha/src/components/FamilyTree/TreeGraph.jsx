@@ -32,19 +32,19 @@ const TreeNode = React.memo(({
   const isCollapsed = isCollapsedFromRedux !== undefined ? isCollapsedFromRedux : level >= 2;
   const dispatch = useDispatch();
 
+  const treeData = useMemo(() => {
+    return getTreeData(personId, personsMap, adj, filters);
+  }, [personId, personsMap, adj, filters]);
+
   // Cycle guard với Set: O(1) thay vì O(n) array.includes()
   if (ancestorSet.has(personId)) return null;
+  if (!treeData) return null;
 
   const handleToggleCollapse = (e) => {
     e.stopPropagation();
     e.preventDefault();
     dispatch(setNodeCollapse({ personId, isCollapsed: !isCollapsed }));
   };
-
-  const treeData = useMemo(() => {
-    return getTreeData(personId, personsMap, adj, filters);
-  }, [personId, personsMap, adj, filters]);
-  if (!treeData) return null;
 
   const { person, spouses, children, hasAnyChildren } = treeData;
 

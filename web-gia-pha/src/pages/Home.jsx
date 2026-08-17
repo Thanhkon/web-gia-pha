@@ -10,7 +10,7 @@ import MarqueeBanner from '../components/Home/MarqueeBanner';
 import Skeleton from '../components/common/Skeleton';
 import { getPostActor, postService } from '../services/postService';
 import { eventService, getEventActor } from '../services/eventService';
-import { POST_ROLES } from '../types/posts';
+// removed POST_ROLES
 import { galleryService, getGalleryActor } from '../services/galleryService';
 import FamilyCouncil from '../components/Home/FamilyCouncil';
 import Footer from '../components/Navigation/Footer';

@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useFamilyActor } from '../hooks/useFamilyActor';
 import ConfirmModal from '../components/common/ConfirmModal';
 import PostBadge from '../components/Posts/PostBadge';
-import { POST_CONTENT_BLOCK, POST_ROLES, POST_STATUS } from '../types/posts';
+import { POST_CONTENT_BLOCK, POST_STATUS } from '../types/posts';
 import {
   canDeletePost,
   canHidePost,

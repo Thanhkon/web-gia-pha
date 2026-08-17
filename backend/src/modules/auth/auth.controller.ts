@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import type { AuthenticatedRequest } from './guards/access-token.guard';
 import { AuthService } from './auth.service';
@@ -13,11 +14,13 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -39,11 +42,13 @@ export class AuthController {
     return this.authService.logout(refreshTokenDto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   @Post('forgot-password')
   forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   @Post('reset-password')
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);

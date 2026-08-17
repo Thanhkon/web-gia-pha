@@ -16,6 +16,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from '../../utils/file-upload.util';
 import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
@@ -74,8 +75,8 @@ export class EventsController {
     return this.eventsService.update(id, request.user.id, updateEventDto); // 👈
   }
 
-  @Post('events/:id/cover-image')
-  @UseInterceptors(FileInterceptor('image'))
+  @Post('families/:familyId/upload')
+  @UseInterceptors(FileInterceptor('image', multerOptions()))
   uploadCoverImage(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: AuthenticatedRequest, // 👈 thêm

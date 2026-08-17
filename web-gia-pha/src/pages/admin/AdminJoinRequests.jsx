@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Check, X, Loader2, MessageSquare, Clock } from "lucide-react";
 import apiClient from "../../utils/apiClient";
@@ -12,11 +12,7 @@ const AdminJoinRequests = () => {
     const [actionLoading, setActionLoading] = useState(null); // id of request being processed
     const [roles, setRoles] = useState({}); // state lưu quyền cho từng request
 
-    useEffect(() => {
-        fetchRequests();
-    }, [familyId]);
-
-    const fetchRequests = async () => {
+    const fetchRequests = useCallback(async () => {
         setLoading(true);
         try {
             const res = await apiClient.get(`/families/${familyId}/join-requests?status=PENDING`);
@@ -27,7 +23,11 @@ const AdminJoinRequests = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [familyId]);
+
+    useEffect(() => {
+        fetchRequests();
+    }, [fetchRequests]);
 
     const handleAction = async (id, status) => {
         setActionLoading(id);

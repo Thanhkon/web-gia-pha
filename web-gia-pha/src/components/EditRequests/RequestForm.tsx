@@ -24,6 +24,7 @@ interface Person {
   generation: number;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const FIELD_DICT = {
   fullName: 'Họ và tên',
   otherName: 'Tên gọi khác',

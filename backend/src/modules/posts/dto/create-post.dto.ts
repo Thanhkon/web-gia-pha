@@ -1,8 +1,5 @@
 import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import {
-  POST_STATUSES,
-  POST_VISIBILITIES,
-} from '../entities/post.entity';
+import { POST_STATUSES, POST_VISIBILITIES } from '../entities/post.entity';
 import type {
   PostContentBlock,
   PostStatus,

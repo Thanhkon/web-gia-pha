@@ -5,7 +5,7 @@ import logoImg from '../../assets/logo.png';
 import '../../css/components/Navbar.css';
 
 const PublicNavbar = () => {
-  const navigate = useNavigate();
+// removed navigate
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (

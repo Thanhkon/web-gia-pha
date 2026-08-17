@@ -1,10 +1,4 @@
-import {
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { HONOR_STATUSES } from '../entities/honor.entity';
 import type { HonorStatus } from '../entities/honor.entity';
 

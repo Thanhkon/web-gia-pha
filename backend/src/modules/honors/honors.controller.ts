@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from '../../utils/file-upload.util';
 import type { UploadedStorageFile } from '../../common/storage/upload-result.interface';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
@@ -70,8 +71,8 @@ export class HonorsController {
     return this.honorsService.update(id, updateHonorDto);
   }
 
-  @Post('honors/:id/image')
-  @UseInterceptors(FileInterceptor('image'))
+  @Post('families/:familyId/upload')
+  @UseInterceptors(FileInterceptor('image', multerOptions()))
   uploadImage(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file?: UploadedStorageFile,

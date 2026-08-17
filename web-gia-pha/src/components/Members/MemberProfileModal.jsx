@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Edit2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import { Solar } from 'lunar-javascript';
 import '../../css/components/MemberProfileModal.css';
 import avatarMale from '../../assets/avatar-male.svg';
@@ -32,7 +32,7 @@ const formatDeathDate = (dateString) => {
     const canChi = getCanChiYear(lYear);
     
     return `${solarStr} (âm: ${lDD}/${lMM} năm ${canChi})`;
-  } catch (e) {
+  } catch (_e) {
     return 'Chưa cập nhật';
   }
 };
