@@ -12,6 +12,12 @@ import LogoutConfirmModal from '../common/LogoutConfirmModal';
 import NotificationBell from '../Notifications/NotificationBell';
 import logoImg from '../../assets/logo.png';
 import '../../css/components/Navbar.css';
+const ROLE_LABELS = {
+  ADMIN: 'Biên tập viên',
+  FAMILY_HEAD: 'Trưởng họ',
+  MEMBER: 'Thành viên',
+  GUEST: 'Khách',
+};
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -232,7 +238,7 @@ const Navbar = () => {
               <div className="user-dropdown-menu">
                 <div className="user-dropdown-header">
                   <strong>{user?.name || `${user?.lastName || ''} ${user?.firstName || ''}`}</strong>
-                  <span>{mockRoleLabels[activeFamily?.role || user?.role] || activeFamily?.role || user?.role || 'Khách'}</span>
+                  <span>{ROLE_LABELS[activeFamily?.role || user?.role] || activeFamily?.role || user?.role || 'Khách'}</span>
                 </div>
                 
                 <button className="user-dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/admin/families'); }}>

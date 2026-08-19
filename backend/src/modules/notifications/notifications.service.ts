@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
 import { Family } from '../members/entities/family.entity';
 import { MemberAttachment } from '../attachment/entities/member-attachments.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class NotificationsService {
@@ -14,6 +15,7 @@ export class NotificationsService {
     private readonly familiesRepository: Repository<Family>,
     @InjectRepository(MemberAttachment)
     private readonly memberAttachmentsRepository: Repository<MemberAttachment>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createForUser(
@@ -30,7 +32,10 @@ export class NotificationsService {
       content,
       referenceId,
     });
-    return this.notificationsRepository.save(notification);
+    const savedNotification =
+      await this.notificationsRepository.save(notification);
+    this.eventEmitter.emit('notification.created', savedNotification);
+    return savedNotification;
   }
 
   async createForFamily(
@@ -65,7 +70,11 @@ export class NotificationsService {
     );
 
     if (notifications.length > 0) {
-      await this.notificationsRepository.save(notifications);
+      const savedNotifications =
+        await this.notificationsRepository.save(notifications);
+      savedNotifications.forEach((n) =>
+        this.eventEmitter.emit('notification.created', n),
+      );
       console.log(
         `[createForFamily] Saved ${notifications.length} notifications`,
       );

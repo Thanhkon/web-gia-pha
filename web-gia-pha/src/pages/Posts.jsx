@@ -145,7 +145,7 @@ const Posts = () => {
       )}
 
       <div className="posts-results-bar">
-        <span>{pagination.total} bài viết phù hợp</span>
+        <span>{total} bài viết phù hợp</span>
         <span>{viewActor.role === POST_ROLES.GUEST ? 'Bạn đang xem với quyền khách.' : `Đang xem với quyền ${POST_ROLE_LABELS[viewActor.role]}.`}</span>
       </div>
 
@@ -183,8 +183,8 @@ const Posts = () => {
       )}
 
       <Pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
+        currentPage={page}
+        totalPages={totalPages}
         onPageChange={(page) => updateParams(filters, page)}
       />
 

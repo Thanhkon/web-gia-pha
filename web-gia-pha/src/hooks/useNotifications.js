@@ -1,10 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as notificationService from '../services/notificationService';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { useSelector } from 'react-redux';
 
 export const useNotifications = (isAuthenticated) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const token = useSelector((state) => state.auth.token);
+  const abortControllerRef = useRef(null);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -55,17 +59,58 @@ export const useNotifications = (isAuthenticated) => {
     }
   };
 
-  // Tự động kiểm tra thông báo mới mỗi 5 giây
+  // Thay thế Polling bằng Server-Sent Events (SSE)
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !token) return;
 
     fetchUnreadCount();
-    const interval = setInterval(() => {
-      fetchUnreadCount();
-    }, 5000); // 5 seconds
+    
+    abortControllerRef.current = new AbortController();
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-    return () => clearInterval(interval);
-  }, [isAuthenticated, fetchUnreadCount]);
+    const connectSSE = async () => {
+      try {
+        await fetchEventSource(`${apiUrl}/notifications/stream`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          signal: abortControllerRef.current.signal,
+          onmessage(ev) {
+            if (ev.data) {
+              const newNotification = JSON.parse(ev.data);
+              
+              setNotifications(prev => {
+                // Kiểm tra trùng lặp
+                if (prev.find(n => n.id === newNotification.id)) return prev;
+                return [newNotification, ...prev];
+              });
+              setUnreadCount(prev => prev + 1);
+            }
+          },
+          onclose() {
+            // Có thể thêm logic reconnect tùy chỉnh nếu muốn, 
+            // thư viện này tự động reconnect mặc định
+          },
+          onerror(err) {
+            console.error('SSE Error:', err);
+            // Throw err để thư viện tự động reconnect
+            throw err;
+          }
+        });
+      } catch (err) {
+        console.error('SSE connection failed:', err);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [isAuthenticated, fetchUnreadCount, token]);
 
   return {
     notifications,

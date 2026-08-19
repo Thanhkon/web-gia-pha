@@ -15,6 +15,7 @@ import EventActionDialog from '../components/Events/EventActionDialog';
 import EventDetailModal from '../components/Events/EventDetailModal';
 import EventFormModal from '../components/Events/EventFormModal';
 import { fetchEvents } from '../store/slices/eventsSlice';
+import { getEventActor } from '../services/eventService';
 import {
   eventStatusLabels,
   eventTypeLabels,

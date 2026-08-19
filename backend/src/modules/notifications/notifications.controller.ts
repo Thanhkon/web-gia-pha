@@ -7,7 +7,13 @@ import {
   UnauthorizedException,
   UseGuards,
   ParseIntPipe,
+  Sse,
+  MessageEvent,
 } from '@nestjs/common';
+import { Observable, fromEvent } from 'rxjs';
+import { map, filter } from 'rxjs/operators';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Notification } from './entities/notification.entity';
 import { NotificationsService } from './notifications.service';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
 import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
@@ -15,7 +21,25 @@ import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 @UseGuards(AccessTokenGuard)
 @Controller('notifications')
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
+
+  @Sse('stream')
+  stream(@Req() request: AuthenticatedRequest): Observable<MessageEvent> {
+    if (!request.user?.id) throw new UnauthorizedException();
+    const userId = request.user.id;
+
+    return fromEvent(this.eventEmitter, 'notification.created').pipe(
+      filter(
+        (notification: Notification) => notification.recipientId === userId,
+      ),
+      map((notification: Notification) => ({
+        data: notification,
+      })),
+    );
+  }
 
   @Get()
   findAll(@Req() request: AuthenticatedRequest) {
