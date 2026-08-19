@@ -6,7 +6,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import { fetchFamilies } from '../../store/slices/familiesSlice';
 import { selectPendingCount, fetchRequests } from '../../store/slices/editRequestsSlice';
-import { mockRoleLabels } from '../../data/mockAuth';
 import defaultAvatar from '../../assets/avatar-female.svg';
 import { getAvatarUrl } from '../../utils/imageHelper';
 import LogoutConfirmModal from '../common/LogoutConfirmModal';

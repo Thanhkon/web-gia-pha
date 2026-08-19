@@ -335,7 +335,7 @@ export class EventsService {
   }
 
   private normalizeEventInput(dto: CreateEventDto | UpdateEventDto) {
-    const data: Record<string, any> = { ...dto };
+    const data: Record<string, unknown> = { ...dto };
     delete data.startAt;
     delete data.endAt;
     delete data.eventType;

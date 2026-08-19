@@ -125,7 +125,7 @@ export class StorageService {
       bytes: result.bytes,
       width: result.width,
       height: result.height,
-      duration: isVideo ? result.duration : undefined,
+      duration: isVideo ? (result.duration as number) : undefined,
       thumbnailUrl: !isVideo
         ? cloudinary.url(result.public_id, {
             transformation: [{ width: 600, height: 400, crop: 'fill' }],

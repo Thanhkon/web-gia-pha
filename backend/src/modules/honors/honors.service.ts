@@ -235,6 +235,7 @@ export class HonorsService {
   }
 
   private normalizeHonorInput(dto: CreateHonorDto | UpdateHonorDto) {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     const {
       awardedAt,
       startAt,
@@ -245,6 +246,8 @@ export class HonorsService {
       displayOrder,
       ...rest
     } = dto;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+
     const data: Partial<Honor> = { ...rest };
 
     if (typeof data.title === 'string') {

@@ -27,5 +27,5 @@ export class UpdateFamilyDto {
 
   @IsOptional()
   @IsObject()
-  settings?: any;
+  settings?: Record<string, unknown> | null;
 }

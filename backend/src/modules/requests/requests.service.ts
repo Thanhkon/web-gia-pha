@@ -58,7 +58,11 @@ export class RequestsService {
     private readonly activityLogsService: ActivityLogsService,
   ) {}
 
-  async create(familyId: number, dto: CreateEditRequestDto) {
+  async create(
+    familyId: number,
+    dto: CreateEditRequestDto,
+    submittedById?: number,
+  ) {
     await this.ensureFamilyExists(familyId);
 
     const member = await this.membersRepository.findOne({
@@ -81,6 +85,7 @@ export class RequestsService {
       reason: dto.reason.trim(),
       submittedByName: dto.submittedByName.trim(),
       submittedByPhone: dto.submittedByPhone?.trim() || null,
+      submittedById: submittedById || null,
     });
 
     await this.editRequestsRepository.save(request);
@@ -173,6 +178,16 @@ export class RequestsService {
         )
         .catch((err) => console.error('Failed to log activity:', err));
 
+      if (request.submittedById) {
+        await this.notificationsService.createForUser(
+          request.submittedById,
+          'REQUEST_APPROVED',
+          'Yêu cầu chỉnh sửa đã được duyệt',
+          `Yêu cầu chỉnh sửa thông tin của ${member.fullName} đã được quản trị viên chấp thuận.`,
+          savedRequest.id,
+        );
+      }
+
       return savedRequest;
     });
   }
@@ -207,6 +222,16 @@ export class RequestsService {
         request.targetMember?.fullName || 'Member',
       )
       .catch((err) => console.error('Failed to log activity:', err));
+
+    if (request.submittedById) {
+      await this.notificationsService.createForUser(
+        request.submittedById,
+        'REQUEST_REJECTED',
+        'Yêu cầu chỉnh sửa bị từ chối',
+        `Yêu cầu chỉnh sửa thông tin của ${request.targetMember?.fullName || 'Member'} đã bị từ chối.`,
+        savedRequest.id,
+      );
+    }
 
     return savedRequest;
   }
@@ -286,7 +311,8 @@ export class RequestsService {
         return null;
       }
 
-      const date = value instanceof Date ? value : new Date(String(value));
+      const date =
+        value instanceof Date ? value : new Date(value as string | number);
       if (Number.isNaN(date.getTime())) {
         throw new BadRequestException(`Invalid date for ${field}`);
       }
@@ -307,7 +333,7 @@ export class RequestsService {
       return generation;
     }
 
-    if (field === 'fullName' && !String(value ?? '').trim()) {
+    if (field === 'fullName' && (typeof value !== 'string' || !value.trim())) {
       throw new BadRequestException('fullName cannot be empty');
     }
 

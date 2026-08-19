@@ -16,9 +16,11 @@ export type AccessTokenPayload = {
 };
 
 export type AuthenticatedRequest = Request & {
-  user?: {
+  user: {
     id: number;
     username?: string;
+    isAdmin?: boolean;
+    sub?: number;
   };
 };
 

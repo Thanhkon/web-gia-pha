@@ -1,112 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
-import apiClient from '../../utils/apiClient';
+import React, { useEffect } from 'react';
 import { useFamily } from '../../hooks/useFamily';
 import Pagination from '../../components/common/Pagination';
+import { useActivityLogs } from '../../hooks/useActivityLogs';
+import { ACTIVITY_ACTION_LABELS, ACTIVITY_ACTION_COLORS } from '../../constants/activity';
 import '../../css/pages/AdminActivityLog.css';
-
-const ACTIVITY_ACTION_LABELS = {
-  ADD_MEMBER: 'Thêm thành viên',
-  EDIT_MEMBER: 'Sửa thành viên',
-  DELETE_MEMBER: 'Xóa thành viên',
-  APPROVE_REQUEST: 'Duyệt yêu cầu',
-  REJECT_REQUEST: 'Từ chối yêu cầu',
-  CREATE_POST: 'Đăng bài viết',
-  EDIT_POST: 'Sửa bài viết',
-  DELETE_POST: 'Xóa bài viết',
-  CREATE_EVENT: 'Tạo sự kiện',
-  EDIT_EVENT: 'Sửa sự kiện',
-  DELETE_EVENT: 'Xóa sự kiện',
-  JOIN_FAMILY: 'Tham gia gia phả',
-  UPLOAD_PHOTO: 'Tải ảnh lên',
-};
-
-const ACTIVITY_ACTION_COLORS = {
-  ADD_MEMBER: 'badge-green',
-  EDIT_MEMBER: 'badge-blue',
-  DELETE_MEMBER: 'badge-red',
-  APPROVE_REQUEST: 'badge-emerald',
-  REJECT_REQUEST: 'badge-rose',
-  CREATE_POST: 'badge-indigo',
-  EDIT_POST: 'badge-purple',
-  DELETE_POST: 'badge-red',
-  CREATE_EVENT: 'badge-teal',
-  EDIT_EVENT: 'badge-cyan',
-  DELETE_EVENT: 'badge-red',
-  JOIN_FAMILY: 'badge-lime',
-  UPLOAD_PHOTO: 'badge-yellow',
-};
 
 const AdminActivityLog = () => {
   const familyId = useFamily();
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    limit: 20,
-    totalPages: 1,
-  });
 
-  const [filters, setFilters] = useState({
-    action: '',
-    fromDate: '',
-    toDate: '',
-  });
-
-  const fetchLogs = async (page = 1) => {
-    if (!familyId) return;
-
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page,
-        limit: pagination.limit,
-      });
-
-      if (filters.action) params.append('action', filters.action);
-      if (filters.fromDate) params.append('fromDate', filters.fromDate);
-      if (filters.toDate) params.append('toDate', filters.toDate);
-
-      const res = await apiClient.get(`/families/${familyId}/activity-logs?${params.toString()}`);
-      setLogs(res.data.data);
-      setPagination({
-        ...pagination,
-        page: res.data.page,
-        total: res.data.total,
-        totalPages: res.data.totalPages,
-      });
-    } catch (error) {
-      console.error('Error fetching activity logs:', error);
-      toast.error('Không thể tải nhật ký hoạt động');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    logs,
+    loading,
+    pagination,
+    filters,
+    fetchLogs,
+    handleFilterChange,
+    applyFilters,
+    handlePageChange,
+    resetFilters,
+  } = useActivityLogs(familyId);
 
   useEffect(() => {
     fetchLogs(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familyId]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-  };
-
-  const applyFilters = () => {
-    fetchLogs(1);
-  };
-
-  const handlePageChange = (newPage) => {
-    fetchLogs(newPage);
-  };
-
-  const resetFilters = () => {
-    setFilters({ action: '', fromDate: '', toDate: '' });
-    // setTimeout to allow state to update before fetching
-    setTimeout(() => fetchLogs(1), 0);
-  };
 
   return (
     <div className="admin-activity-container">
@@ -131,7 +48,7 @@ const AdminActivityLog = () => {
               ))}
             </select>
           </div>
-          
+
           <div className="activity-filter-group">
             <label className="activity-filter-label">Từ ngày</label>
             <input
@@ -179,7 +96,7 @@ const AdminActivityLog = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="4">
+                  <td colSpan={4}>
                     <div className="activity-loading">
                       <div className="spinner"></div>
                       Đang tải dữ liệu...
@@ -188,7 +105,7 @@ const AdminActivityLog = () => {
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan="4">
+                  <td colSpan={4}>
                     <div className="activity-empty">
                       <div className="activity-empty-icon">
                         <i className="fi fi-rr-document"></i>

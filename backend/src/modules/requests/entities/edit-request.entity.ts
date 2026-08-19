@@ -54,6 +54,9 @@ export class EditRequest {
   @Column({ name: 'submittedByPhone', type: 'varchar', nullable: true })
   submittedByPhone: string | null;
 
+  @Column({ name: 'submittedById', type: 'int', nullable: true })
+  submittedById: number | null;
+
   @Column({ name: 'reviewedBy', type: 'varchar', nullable: true })
   reviewedBy: string | null;
 

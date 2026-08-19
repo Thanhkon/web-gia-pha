@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useFamilyActor } from '../hooks/useFamilyActor';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   GitMerge, FileText, Image,
@@ -8,10 +8,12 @@ import {
 } from 'lucide-react';
 import MarqueeBanner from '../components/Home/MarqueeBanner';
 import Skeleton from '../components/common/Skeleton';
-import { getPostActor, postService } from '../services/postService';
-import { eventService, getEventActor } from '../services/eventService';
-// removed POST_ROLES
-import { galleryService, getGalleryActor } from '../services/galleryService';
+import { getPostActor } from '../services/postService';
+import { getEventActor } from '../services/eventService';
+import { getGalleryActor } from '../services/galleryService';
+import { fetchPosts } from '../store/slices/postsSlice';
+import { fetchEvents } from '../store/slices/eventsSlice';
+import { fetchAlbums } from '../store/slices/albumsSlice';
 import FamilyCouncil from '../components/Home/FamilyCouncil';
 import Footer from '../components/Navigation/Footer';
 import logoImg from '../assets/logo.png';
@@ -44,37 +46,49 @@ const Home = () => {
     bgImage: familyHeroSettings?.bgImage || activeFamily?.coverImageUrl || activeFamily?.coverImg || defaultHero.bgImage,
   };
 
-  // Dữ liệu động từ API (Services)
-  const [posts, setPosts] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [galleryAlbums, setGalleryAlbums] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Dữ liệu động từ API (Redux Slices)
+  const dispatch = useDispatch();
+  
+  const { list: postsList = [], loading: postsLoading } = useSelector(state => state.posts);
+  const { list: allEvents = [], loading: eventsLoading } = useSelector(state => state.events);
+  const { list: albumsList = [], loading: albumsLoading } = useSelector(state => state.albums);
+
+  const isLoading = postsLoading || eventsLoading || albumsLoading;
+  
+  const upcomingEvents = React.useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const upcomingEnd = todayStart + 30 * 86400000;
+    
+    return allEvents.filter(e => {
+      const start = new Date(e.startAt).getTime();
+      const end = e.endAt ? new Date(e.endAt).getTime() : start;
+      return start <= upcomingEnd && end >= todayStart;
+    });
+  }, [allEvents]);
+
+  // Lấy dữ liệu cho trang chủ
+  const posts = postsList.slice(0, 4);
+  const events = upcomingEvents.slice(0, 3);
+  const galleryAlbums = albumsList.slice(0, 4);
+
+  const fetchedFamilyId = React.useRef(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const postActor = getPostActor(authUser, isAuthenticated, familyId);
-        const eventActor = getEventActor(authUser, isAuthenticated, familyId);
-        const galleryActor = getGalleryActor(authUser, isAuthenticated, familyId);
+    if (!isAuthenticated || !authUser || !familyId) return;
+    if (fetchedFamilyId.current === familyId) return;
 
-        const [postsRes, eventsRes, albumsRes] = await Promise.all([
-          postService.getPosts({ actor: postActor, filters: { sortDirection: 'newest' }, page: 1, pageSize: 4 }),
-          eventService.getUpcomingEvents(30, {}, eventActor),
-          galleryService.getAlbums({ actor: galleryActor }),
-        ]);
+    const postActor = getPostActor(authUser, isAuthenticated, familyId);
+    const eventActor = getEventActor(authUser, isAuthenticated, familyId);
+    const galleryActor = getGalleryActor(authUser, isAuthenticated, familyId);
 
-        setPosts(postsRes.items);
-        setEvents(eventsRes.data.slice(0, 3));
-        setGalleryAlbums(albumsRes.slice(0, 4));
-      } catch (err) {
-        console.error("Failed to load dashboard data", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [authUser, isAuthenticated, familyId]);
+    // Lấy dữ liệu nếu chưa có hoặc cập nhật mới
+    dispatch(fetchPosts({ options: { actor: postActor, filters: { sortDirection: 'newest' } }, legacyPage: 1, legacyPageSize: 4 }));
+    dispatch(fetchEvents({ params: {}, actor: eventActor }));
+    dispatch(fetchAlbums({ actor: galleryActor }));
+    
+    fetchedFamilyId.current = familyId;
+  }, [dispatch, authUser, isAuthenticated, familyId]);
 
   return (
     <div className="home-page animate-fade-in">

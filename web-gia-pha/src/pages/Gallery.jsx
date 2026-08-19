@@ -13,11 +13,12 @@ import {
   Search,
 } from 'lucide-react';
 import { AlbumFormModal, GalleryBadge } from '../components/gallery/GalleryModals';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAlbums, createAlbum } from '../store/slices/albumsSlice';
 import { getActorText } from '../components/gallery/galleryViewUtils';
 import {
   canCreateAlbum,
   canManageAlbum,
-  galleryService,
   getGalleryActor,
 } from '../services/galleryService';
 import {
@@ -57,32 +58,26 @@ const Gallery = () => {
   const actor = useMemo(() => getGalleryActor(authUser, isAuthenticated, familyId), [authUser, isAuthenticated, familyId]);
   const viewActor = actor;
   const filters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
-  const [albums, setAlbums] = useState([]);
+  const dispatch = useDispatch();
+  const { list: albums = [], loading: isLoading } = useSelector(state => state.albums);
+
   const [albumForm, setAlbumForm] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const isManager = canManageAlbum(viewActor);
   const searchText = searchParams.toString();
   const listUrl = `${location.pathname}${searchText ? `?${searchText}` : ''}`;
 
-  const loadAlbums = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await galleryService.getAlbums({ actor: viewActor, filters });
-      setAlbums(data);
-    } catch (error) {
-      setNotice({ type: 'error', text: error.message || 'Không thể tải thư viện.' });
-      setAlbums([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, viewActor]);
+  const fetchedParamsRef = React.useRef(null);
 
   useEffect(() => {
-    loadAlbums();
-  }, [loadAlbums]);
+    const currentParams = JSON.stringify({ filters, familyId });
+    if (fetchedParamsRef.current === currentParams) return;
+
+    dispatch(fetchAlbums({ actor: viewActor, filters }));
+    fetchedParamsRef.current = currentParams;
+  }, [dispatch, filters, viewActor, familyId]);
 
   useEffect(() => {
     if (!location.state?.notice) return;
@@ -94,12 +89,12 @@ const Gallery = () => {
   const handleSaveAlbum = async (payload) => {
     setIsSaving(true);
     try {
-      await galleryService.createAlbum(payload, actor);
+      await dispatch(createAlbum({ payload, actor })).unwrap();
       setAlbumForm(null);
       setNotice({ type: 'success', text: 'Album mới đã được tạo.' });
-      await loadAlbums();
+      // Không cần loadAlbums vì createAlbum thunk đã push vào Redux state
     } catch (error) {
-      setNotice({ type: 'error', text: error.message || 'Không thể lưu album.' });
+      setNotice({ type: 'error', text: error.message || error || 'Không thể lưu album.' });
     } finally {
       setIsSaving(false);
     }

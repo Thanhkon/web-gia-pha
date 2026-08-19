@@ -1,0 +1,31 @@
+export const ACTIVITY_ACTION_LABELS: Record<string, string> = {
+  ADD_MEMBER: 'Thêm thành viên',
+  EDIT_MEMBER: 'Sửa thành viên',
+  DELETE_MEMBER: 'Xóa thành viên',
+  APPROVE_REQUEST: 'Duyệt yêu cầu',
+  REJECT_REQUEST: 'Từ chối yêu cầu',
+  CREATE_POST: 'Đăng bài viết',
+  EDIT_POST: 'Sửa bài viết',
+  DELETE_POST: 'Xóa bài viết',
+  CREATE_EVENT: 'Tạo sự kiện',
+  EDIT_EVENT: 'Sửa sự kiện',
+  DELETE_EVENT: 'Xóa sự kiện',
+  JOIN_FAMILY: 'Tham gia gia phả',
+  UPLOAD_PHOTO: 'Tải ảnh lên',
+};
+
+export const ACTIVITY_ACTION_COLORS: Record<string, string> = {
+  ADD_MEMBER: 'badge-green',
+  EDIT_MEMBER: 'badge-blue',
+  DELETE_MEMBER: 'badge-red',
+  APPROVE_REQUEST: 'badge-emerald',
+  REJECT_REQUEST: 'badge-rose',
+  CREATE_POST: 'badge-indigo',
+  EDIT_POST: 'badge-purple',
+  DELETE_POST: 'badge-red',
+  CREATE_EVENT: 'badge-teal',
+  EDIT_EVENT: 'badge-cyan',
+  DELETE_EVENT: 'badge-red',
+  JOIN_FAMILY: 'badge-lime',
+  UPLOAD_PHOTO: 'badge-yellow',
+};

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   Body,
@@ -17,6 +16,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
+import type { AuthenticatedRequest } from '../auth/guards/access-token.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -31,34 +31,40 @@ export class UsersController {
 
   @Post('upload-avatar')
   @UseInterceptors(FileInterceptor('file', multerOptions()))
-  uploadAvatar(@UploadedFile() file: any) {
+  uploadAvatar(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
     const url = this.usersService.saveAvatarFile(file);
     return { url };
   }
 
   @Post()
-  create(@Req() req, @Body() createUserDto: CreateUserDto) {
+  create(
+    @Req() req: AuthenticatedRequest,
+    @Body() createUserDto: CreateUserDto,
+  ) {
     if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.create(createUserDto);
   }
 
   @Get()
-  findAll(@Req() req) {
+  findAll(@Req() req: AuthenticatedRequest) {
     if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.findAll();
   }
 
   // Lấy profile cá nhân
   @Get('profile')
-  getProfile(@Req() req) {
+  getProfile(@Req() req: AuthenticatedRequest) {
     const userId = req.user.sub || req.user.id;
     return this.usersService.findOne(userId);
   }
 
   // Cập nhật profile cá nhân
   @Put('profile')
-  updateProfile(@Req() req, @Body() updateUserDto: UpdateUserDto) {
+  updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     const userId = req.user.sub || req.user.id;
     // Không cho phép user thường tự đổi role
     if (!req.user.isAdmin && updateUserDto.role) {
@@ -68,7 +74,10 @@ export class UsersController {
   }
 
   @Get('username/:username')
-  findByUsername(@Req() req, @Param('username') username: string) {
+  findByUsername(
+    @Req() req: AuthenticatedRequest,
+    @Param('username') username: string,
+  ) {
     if (!req.user.isAdmin && req.user.username !== username) {
       throw new ForbiddenException('Admin only or self');
     }
@@ -76,7 +85,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Req() req, @Param('id') id: string) {
+  findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.findOne(+id);
   }
@@ -84,7 +93,7 @@ export class UsersController {
   @Put(':id')
   @Patch(':id')
   update(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
@@ -102,7 +111,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  remove(@Req() req, @Param('id') id: string) {
+  remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     if (!req.user.isAdmin) throw new ForbiddenException('Admin only');
     return this.usersService.remove(+id);
   }

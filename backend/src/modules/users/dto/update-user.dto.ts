@@ -40,7 +40,7 @@ export class UpdateUserDto {
 
   @IsObject()
   @IsOptional()
-  notificationSettings?: any;
+  notificationSettings?: Record<string, unknown> | null;
 
   @IsInt()
   @IsOptional()

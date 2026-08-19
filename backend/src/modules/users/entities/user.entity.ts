@@ -47,7 +47,7 @@ export class User {
   role!: UserRole;
 
   @Column({ type: 'jsonb', nullable: true })
-  notificationSettings?: any;
+  notificationSettings?: Record<string, unknown> | null;
 
   @Column({ type: 'int', nullable: true })
   preferredFamilyId?: number | null;

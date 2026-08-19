@@ -1,5 +1,13 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
-import apiClient from '../../utils/apiClient';
+import {
+  getFamilyTreeAPI,
+  addMemberAPI,
+  updateMemberAPI,
+  deleteMemberAPI,
+  uploadMemberAvatarAPI,
+  addParentChildRelationAPI,
+  addMarriageRelationAPI
+} from '../../services/memberService';
 import { buildAdjacencyLists } from '../../utils/familyTreeUtils';
 
 // Thunks
@@ -7,8 +15,8 @@ export const fetchFamilyTree = createAsyncThunk(
   'members/fetchFamilyTree',
   async (familyId, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get(`/families/${familyId}/members`);
-      const { family, members, parentChildRelations, marriages } = response.data;
+      const data = await getFamilyTreeAPI(familyId);
+      const { family, members, parentChildRelations, marriages } = data;
       
       // Convert backend relations to frontend unified format
       const relationships = [];
@@ -54,8 +62,8 @@ export const addMemberToFamily = createAsyncThunk(
   'members/addMember',
   async ({ familyId, memberData }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post(`/families/${familyId}/members`, memberData);
-      return response.data;
+      const data = await addMemberAPI(familyId, memberData);
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add member');
     }
@@ -66,8 +74,8 @@ export const updateMemberToFamily = createAsyncThunk(
   'members/updateMember',
   async ({ memberId, memberData }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.patch(`/members/${memberId}`, memberData);
-      return response.data;
+      const data = await updateMemberAPI(memberId, memberData);
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update member');
     }
@@ -78,7 +86,7 @@ export const deleteMemberFromFamily = createAsyncThunk(
   'members/deleteMember',
   async (memberId, { rejectWithValue }) => {
     try {
-      await apiClient.delete(`/members/${memberId}`);
+      await deleteMemberAPI(memberId);
       return memberId;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete member');
@@ -90,8 +98,8 @@ export const softDeleteMember = createAsyncThunk(
   'members/softDeleteMember',
   async (memberId, { rejectWithValue }) => {
     try {
-      const response = await apiClient.patch(`/members/${memberId}`, { isDeleted: true });
-      return response.data;
+      const data = await updateMemberAPI(memberId, { isDeleted: true });
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to soft delete member');
     }
@@ -102,14 +110,8 @@ export const uploadMemberAvatar = createAsyncThunk(
   'members/uploadAvatar',
   async ({ memberId, file }, { rejectWithValue }) => {
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const response = await apiClient.post(`/members/${memberId}/avatar`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data; // This is the updated member object with avatarUrl
+      const data = await uploadMemberAvatarAPI(memberId, file);
+      return data; // This is the updated member object with avatarUrl
     } catch (error) {
       console.error('Failed to upload member avatar:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to upload member avatar');
@@ -121,12 +123,12 @@ export const addParentChildRelation = createAsyncThunk(
   'members/addParentChild',
   async (relationData, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post(`/parent-child-relations`, relationData);
+      const data = await addParentChildRelationAPI(relationData);
       return {
-        id: `pc_${response.data.id}`,
-        type: response.data.relationType || 'biological_child',
-        person_a: response.data.parentId,
-        person_b: response.data.childId
+        id: `pc_${data.id}`,
+        type: data.relationType || 'biological_child',
+        person_a: data.parentId,
+        person_b: data.childId
       };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add relation');
@@ -138,12 +140,12 @@ export const addMarriageRelation = createAsyncThunk(
   'members/addMarriage',
   async (marriageData, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post(`/marriages`, marriageData);
+      const data = await addMarriageRelationAPI(marriageData);
       return {
-        id: `m_${response.data.id}`,
+        id: `m_${data.id}`,
         type: 'marriage',
-        person_a: response.data.memberAId,
-        person_b: response.data.memberBId
+        person_a: data.memberAId,
+        person_b: data.memberBId
       };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add marriage');

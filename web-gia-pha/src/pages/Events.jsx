@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   AlertCircle,
   Calendar,
@@ -8,13 +9,12 @@ import {
   Plus,
   Search,
 } from 'lucide-react';
-// removed useSelector
-import { useLocation } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useFamilyActor } from '../hooks/useFamilyActor';
 import EventActionDialog from '../components/Events/EventActionDialog';
 import EventDetailModal from '../components/Events/EventDetailModal';
 import EventFormModal from '../components/Events/EventFormModal';
+import { fetchEvents } from '../store/slices/eventsSlice';
 import {
   eventStatusLabels,
   eventTypeLabels,
@@ -106,21 +106,19 @@ const Events = () => {
   const { familyId } = useParams();
   const authUser = useFamilyActor();
   const isAuthenticated = Boolean(authUser);
-// removed isAdminRoute
+  
+  const dispatch = useDispatch();
+  const { list: allEvents = [], loading: isLoading } = useSelector(state => state.events);
+
   const [currentUser, setCurrentUser] = useState(null);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [calendarEvents, setCalendarEvents] = useState([]);
-  const [todayEvents, setTodayEvents] = useState([]);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -132,62 +130,70 @@ const Events = () => {
   const canManageSelectedEvent = selectedEvent ? canManageEvent(currentUser, selectedEvent) : false;
   const hasOpenModal = Boolean(selectedEvent || isFormOpen || cancelTarget || deleteTarget);
 
-  const getViewUser = useCallback((actor) => {
-    return actor;
-  }, []);
+  // Filter logic based on the centralized list
+  const searchResults = isSearching ? allEvents : [];
+  
+  const { calendarEvents, todayEvents, upcomingEvents } = useMemo(() => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const firstDay = new Date(year, month, 1).getTime();
+    const lastDay = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
+    
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayEnd = todayStart + 86400000 - 1;
+    
+    const upcomingEnd = todayStart + 30 * 86400000;
+
+    const calendar = [];
+    const today = [];
+    const upcoming = [];
+
+    allEvents.forEach(e => {
+      const start = new Date(e.startAt).getTime();
+      const end = e.endAt ? new Date(e.endAt).getTime() : start;
+
+      // Calendar
+      if (start <= lastDay && end >= firstDay) {
+        calendar.push(e);
+      }
+      
+      // Today
+      if (start <= todayEnd && end >= todayStart) {
+        today.push(e);
+      }
+      
+      // Upcoming
+      if (start <= upcomingEnd && end >= todayStart) {
+        upcoming.push(e);
+      }
+    });
+
+    return { calendarEvents: calendar, todayEvents: today, upcomingEvents: upcoming };
+  }, [allEvents, monthDate]);
+
+  // Initialize currentUser from getEventActor (synchronous)
+  useEffect(() => {
+    const actor = getEventActor(authUser, isAuthenticated, familyId);
+    setCurrentUser(actor);
+  }, [authUser, isAuthenticated, familyId]);
+
+  const fetchedParamsRef = React.useRef(null);
 
   const loadEvents = useCallback(async () => {
-    setIsLoading(true);
+    const currentParams = JSON.stringify({ normalizedSearchTerm, typeFilter, familyId });
+    if (fetchedParamsRef.current === currentParams) return;
+    
     setError('');
-
     try {
-      const params = {
-        year: monthDate.getFullYear(),
-        month: monthDate.getMonth(),
-        search: normalizedSearchTerm,
-        type: typeFilter,
-      };
-
-      const userResponse = await eventService.getCurrentUser(authUser, isAuthenticated, familyId);
-      const actor = userResponse.data;
-      const viewUser = getViewUser(actor);
-      const calendarRequest = eventService.getCalendarEvents(params, viewUser);
-
-      if (isSearching) {
-        const [calendarResponse, searchResponse] = await Promise.all([
-          calendarRequest,
-          eventService.getEvents({ search: normalizedSearchTerm, type: typeFilter }, viewUser),
-        ]);
-
-        setCurrentUser(viewUser);
-        setCalendarEvents(calendarResponse.data);
-        setTodayEvents([]);
-        setUpcomingEvents([]);
-        setSearchResults(searchResponse.data);
-        return;
-      }
-
-      const [calendarResponse, todayResponse, upcomingResponse] = await Promise.all([
-        calendarRequest,
-        eventService.getTodayEvents({ type: typeFilter }, viewUser),
-        eventService.getUpcomingEvents(30, { type: typeFilter }, viewUser),
-      ]);
-
-      setCurrentUser(viewUser);
-      setCalendarEvents(calendarResponse.data);
-      setTodayEvents(todayResponse.data);
-      setUpcomingEvents(upcomingResponse.data);
-      setSearchResults([]);
+      const actor = getEventActor(authUser, isAuthenticated, familyId);
+      // Fetch all events from API once, let useMemo slice them
+      await dispatch(fetchEvents({ params: { search: normalizedSearchTerm, type: typeFilter }, actor })).unwrap();
+      fetchedParamsRef.current = currentParams;
     } catch (loadError) {
-      setError(loadError.message || 'Có lỗi xảy ra khi tải sự kiện.');
-      setCalendarEvents([]);
-      setTodayEvents([]);
-      setUpcomingEvents([]);
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
+      setError(loadError.message || loadError || 'Có lỗi xảy ra khi tải sự kiện.');
     }
-  }, [authUser, getViewUser, isAuthenticated, isSearching, monthDate, normalizedSearchTerm, typeFilter, familyId]);
+  }, [authUser, isAuthenticated, normalizedSearchTerm, typeFilter, familyId, dispatch]);
 
   useEffect(() => {
     loadEvents();

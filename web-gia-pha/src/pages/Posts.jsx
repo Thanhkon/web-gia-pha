@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { FileText, Loader2, PlusCircle } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useFamilyActor } from '../hooks/useFamilyActor';
@@ -6,7 +7,8 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import Pagination from '../components/common/Pagination';
 import PostCard from '../components/Posts/PostCard';
 import PostFilters from '../components/Posts/PostFilters';
-import { canCreatePost, getPostActor, isPostManager, postService } from '../services/postService';
+import { canCreatePost, getPostActor, isPostManager } from '../services/postService';
+import { fetchPosts, publishPost, hidePost, deletePost } from '../store/slices/postsSlice';
 import { POST_ROLE_LABELS, POST_ROLES } from '../types/posts';
 import '../css/pages/Posts.css';
 
@@ -31,16 +33,11 @@ const Posts = () => {
   const viewActor = actor;
   const isManager = useMemo(() => isPostManager(viewActor), [viewActor]);
 
-  const [posts, setPosts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { list: posts = [], total, totalPages, page, loading: isLoading } = useSelector(state => state.posts);
   const [loadError, setLoadError] = useState('');
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
-  const [pagination, setPagination] = useState({
-    page: Number(searchParams.get('page')) || 1,
-    totalPages: 1,
-    total: 0,
-  });
 
   const filters = useMemo(() => ({
     keyword: searchParams.get('keyword') || '',
@@ -52,31 +49,27 @@ const Posts = () => {
 
   const currentPage = Number(searchParams.get('page')) || 1;
 
+  const fetchedParamsRef = React.useRef(null);
+
   const loadPosts = useCallback(async () => {
-    setIsLoading(true);
+    const currentParams = JSON.stringify({ currentPage, filters, familyId });
+    if (fetchedParamsRef.current === currentParams) return;
+
     setLoadError('');
-
     try {
-      const result = await postService.getPosts({
-        actor: viewActor,
-        filters,
-        page: currentPage,
-        pageSize: PAGE_SIZE,
-      });
-
-      setPosts(result.items);
-      setPagination({
-        page: result.page,
-        totalPages: result.totalPages,
-        total: result.total,
-      });
+      await dispatch(fetchPosts({
+        options: {
+          actor: viewActor,
+          filters,
+        },
+        legacyPage: currentPage,
+        legacyPageSize: PAGE_SIZE,
+      })).unwrap();
+      fetchedParamsRef.current = currentParams;
     } catch (error) {
-      setPosts([]);
-      setLoadError(error.message || 'Không thể tải danh sách bài viết.');
-    } finally {
-      setIsLoading(false);
+      setLoadError(error.message || error || 'Không thể tải danh sách bài viết.');
     }
-  }, [currentPage, filters, viewActor]);
+  }, [currentPage, filters, viewActor, familyId, dispatch]);
 
   useEffect(() => {
     loadPosts();
@@ -107,19 +100,17 @@ const Posts = () => {
 
     try {
       if (action === 'publish') {
-        await postService.publishPost(post.id, actor);
+        await dispatch(publishPost({ id: post.id, actor })).unwrap();
         setNotice({ type: 'success', text: 'Bài viết đã được đăng.' });
       } else if (action === 'hide') {
-        await postService.hidePost(post.id, actor);
+        await dispatch(hidePost({ id: post.id, actor })).unwrap();
         setNotice({ type: 'success', text: 'Bài viết đã được ẩn.' });
       } else {
-        await postService.deletePost(post.id, actor);
+        await dispatch(deletePost({ id: post.id, actor })).unwrap();
         setNotice({ type: 'success', text: 'Bài viết đã được xóa.' });
       }
-
-      await loadPosts();
     } catch (error) {
-      setNotice({ type: 'error', text: error.message || 'Thao tác thất bại.' });
+      setNotice({ type: 'error', text: error.message || error || 'Thao tác thất bại.' });
     }
   };
 

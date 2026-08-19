@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import apiClient from '../../utils/apiClient';
 
-// Lấy auth từ localStorage (nếu có)
+// Lấy auth từ sessionStorage (nếu có)
 const loadAuthState = () => {
   try {
-    const serializedState = localStorage.getItem('auth');
+    const serializedState = sessionStorage.getItem('auth');
     if (serializedState === null) {
       return { user: null, token: null, isAuthenticated: false };
     }
@@ -98,7 +98,7 @@ export const authSlice = createSlice({
       state.user = user;
       state.token = token;
       state.isAuthenticated = true;
-      localStorage.setItem('auth', JSON.stringify({
+      sessionStorage.setItem('auth', JSON.stringify({
         user: state.user,
         token: state.token,
         isAuthenticated: true
@@ -108,7 +108,7 @@ export const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('auth');
+      sessionStorage.removeItem('auth');
     },
     clearError: (state) => {
       state.error = null;
@@ -128,8 +128,8 @@ export const authSlice = createSlice({
         state.user = user;
         state.token = token;
         state.isAuthenticated = true;
-        // Save to localStorage
-        localStorage.setItem('auth', JSON.stringify({
+        // Save to sessionStorage
+        sessionStorage.setItem('auth', JSON.stringify({
           user: state.user,
           token: state.token,
           isAuthenticated: true
@@ -154,7 +154,7 @@ export const authSlice = createSlice({
           state.user = user;
           state.token = token;
           state.isAuthenticated = true;
-          localStorage.setItem('auth', JSON.stringify({
+          sessionStorage.setItem('auth', JSON.stringify({
             user: state.user,
             token: state.token,
             isAuthenticated: true

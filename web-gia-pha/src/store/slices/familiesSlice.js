@@ -1,5 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import apiClient from '../../utils/apiClient';
+import { 
+  getFamilies, 
+  getFamilyByCode, 
+  createFamilyAPI, 
+  updateFamilyAPI, 
+  uploadCoverImageAPI, 
+  deleteFamilyAPI 
+} from '../../services/familyService';
 import defaultBg from '../../assets/default-bg.jpg';
 
 // 1. GET: Lấy danh sách gia phả của user
@@ -7,8 +14,8 @@ export const fetchFamilies = createAsyncThunk(
   'families/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get('/families');
-      return response.data;
+      const data = await getFamilies();
+      return data;
     } catch (error) {
       console.warn('API /families failed.', error);
       return rejectWithValue(
@@ -31,8 +38,8 @@ export const findFamilyByCode = createAsyncThunk(
   'families/findByCode',
   async (code, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get(`/families/code/${code}`);
-      return response.data; // nếu backend trả về null thì response.data là null
+      const data = await getFamilyByCode(code);
+      return data; // nếu backend trả về null thì response.data là null
     } catch (error) {
       return rejectWithValue(
         error?.response?.data || error.message || `Failed to find family by code ${code}`
@@ -46,18 +53,14 @@ export const createFamily = createAsyncThunk(
   'families/create',
   async (familyData, { rejectWithValue }) => {
     try {
-      const isFormData = familyData instanceof FormData;
-      const response = await apiClient.post('/families', familyData, {
-        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
-      });
-
-      const coverImageUrl = response.data.coverImageUrl || response.data.coverImg;
+      const data = await createFamilyAPI(familyData);
+      const coverImageUrl = data.coverImageUrl || data.coverImg;
 
       const newFamily = {
-        ...response.data,
-        membersCount: response.data.membersCount ?? 1,
-        generations: response.data.generations ?? 1,
-        role: response.data.role ?? 'admin',
+        ...data,
+        membersCount: data.membersCount ?? 1,
+        generations: data.generations ?? 1,
+        role: data.role ?? 'admin',
         coverImg: coverImageUrl || defaultBg,
       };
       return newFamily;
@@ -74,8 +77,8 @@ export const updateFamily = createAsyncThunk(
   'families/update',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.patch(`/families/${id}`, data);
-      return response.data;
+      const updatedData = await updateFamilyAPI(id, data);
+      return updatedData;
     } catch (error) {
       console.warn(`API PATCH /families/${id} failed.`, error);
       return rejectWithValue(error.response?.data || error.message || 'Failed to update family');
@@ -87,14 +90,8 @@ export const uploadFamilyCoverImage = createAsyncThunk(
   'families/uploadCover',
   async ({ familyId, file }, { rejectWithValue }) => {
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const response = await apiClient.post(`/families/${familyId}/cover-image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data; // This is the updated family object with coverImageUrl
+      const data = await uploadCoverImageAPI(familyId, file);
+      return data; // This is the updated family object with coverImageUrl
     } catch (error) {
       console.error('Failed to upload family cover:', error);
       return rejectWithValue(error.response?.data || error.message);
@@ -106,7 +103,7 @@ export const deleteFamily = createAsyncThunk(
   'families/delete',
   async (id, { rejectWithValue }) => {
     try {
-      await apiClient.delete(`/families/${id}`);
+      await deleteFamilyAPI(id);
       return id;
     } catch (error) {
       console.warn(`API DELETE /families/${id} failed.`, error);

@@ -19,7 +19,7 @@ type SafeUser = Omit<User, 'passwordHash'> & {
 type CreateEntityInput = DeepPartial<User> & {
   password?: string;
   username: string;
-  member?: any;
+  member?: Record<string, unknown>;
 };
 
 const scrypt = promisify(scryptCallback);

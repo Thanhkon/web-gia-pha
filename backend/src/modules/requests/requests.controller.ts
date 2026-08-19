@@ -27,10 +27,15 @@ export class RequestsController {
 
   @Post('families/:familyId/edit-requests')
   create(
+    @Req() request: AuthenticatedRequest,
     @Param('familyId', ParseIntPipe) familyId: number,
     @Body() createEditRequestDto: CreateEditRequestDto,
   ) {
-    return this.requestsService.create(familyId, createEditRequestDto);
+    return this.requestsService.create(
+      familyId,
+      createEditRequestDto,
+      request.user?.id,
+    );
   }
 
   @Get('families/:familyId/edit-requests')

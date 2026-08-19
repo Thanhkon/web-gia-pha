@@ -370,7 +370,10 @@ export class AlbumsService {
   }
 
   private normalizeAlbumInput(dto: CreateAlbumDto | UpdateAlbumDto) {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     const { status, visibility, ...rest } = dto;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+
     const data: Partial<Album> = { ...rest };
 
     if (typeof data.title === 'string') {

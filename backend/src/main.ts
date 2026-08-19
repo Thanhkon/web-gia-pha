@@ -3,6 +3,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -16,6 +17,16 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Setup Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Gia Phả API')
+    .setDescription('Tài liệu API cho hệ thống quản lý Gia Phả')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   if (process.env.NODE_ENV === 'production') {
     const requiredEnv = [

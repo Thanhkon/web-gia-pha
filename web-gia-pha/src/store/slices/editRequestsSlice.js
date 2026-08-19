@@ -1,12 +1,18 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
-import apiClient from '../../utils/apiClient';
+import {
+  getEditRequestsAPI,
+  addEditRequestAPI,
+  approveEditRequestAPI,
+  rejectEditRequestAPI,
+  deleteEditRequestAPI
+} from '../../services/editRequestService';
 
 export const fetchRequests = createAsyncThunk(
   'editRequests/fetchRequests',
   async (familyId, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get(`/families/${familyId}/edit-requests`);
-      return response.data;
+      const data = await getEditRequestsAPI(familyId);
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch requests');
     }
@@ -25,8 +31,8 @@ export const addRequest = createAsyncThunk(
   'editRequests/addRequest',
   async ({ familyId, requestData }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post(`/families/${familyId}/edit-requests`, requestData);
-      return response.data;
+      const data = await addEditRequestAPI(familyId, requestData);
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add request');
     }
@@ -37,11 +43,8 @@ export const approveRequestThunk = createAsyncThunk(
   'editRequests/approveRequest',
   async ({ id, adminNote, reviewerName }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.patch(`/edit-requests/${id}/approve`, {
-        adminNote,
-        reviewedBy: reviewerName
-      });
-      return response.data;
+      const data = await approveEditRequestAPI(id, adminNote, reviewerName);
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to approve request');
     }
@@ -52,11 +55,8 @@ export const rejectRequestThunk = createAsyncThunk(
   'editRequests/rejectRequest',
   async ({ id, adminNote, reviewerName }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.patch(`/edit-requests/${id}/reject`, {
-        adminNote,
-        reviewedBy: reviewerName
-      });
-      return response.data;
+      const data = await rejectEditRequestAPI(id, adminNote, reviewerName);
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to reject request');
     }
@@ -67,7 +67,7 @@ export const deleteRequestThunk = createAsyncThunk(
   'editRequests/deleteRequest',
   async (id, { rejectWithValue }) => {
     try {
-      await apiClient.delete(`/edit-requests/${id}`);
+      await deleteEditRequestAPI(id);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete request');

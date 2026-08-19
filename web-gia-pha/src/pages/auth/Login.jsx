@@ -22,7 +22,7 @@ function Login() {
     const location = useLocation();
     const dispatch = useDispatch();
 
-    const handleSuccessLogin = (userData) => {
+    const handleSuccessLogin = async (userData) => {
         toast.success("Đăng nhập thành công!", {
             duration: 2000,
             icon: "👋",
@@ -33,7 +33,24 @@ function Login() {
         } else if (userData?.preferredFamilyId) {
             navigate(`/${userData.preferredFamilyId}/home`);
         } else {
-            navigate("/admin/families");
+            // Tự động kiểm tra gia phả
+            try {
+                const response = await apiClient.get('/families');
+                const families = response.data;
+                if (families && families.length > 0) {
+                    const firstFamilyId = families[0].id;
+                    await apiClient.put("/users/profile", {
+                        preferredFamilyId: Number(firstFamilyId),
+                    });
+                    // Cập nhật Redux store để lưu preferredFamilyId (nếu cần)
+                    navigate(`/${firstFamilyId}/home`);
+                } else {
+                    navigate("/admin/families");
+                }
+            } catch (error) {
+                console.error("Failed to check families:", error);
+                navigate("/admin/families");
+            }
         }
     };
 
