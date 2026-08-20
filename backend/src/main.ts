@@ -37,6 +37,8 @@ async function bootstrap() {
       'DB_USERNAME',
       'DB_PASSWORD',
       'DB_DATABASE',
+      'FRONTEND_URL',
+      'RESEND_API_KEY',
     ];
     for (const env of requiredEnv) {
       if (!process.env[env]) {
