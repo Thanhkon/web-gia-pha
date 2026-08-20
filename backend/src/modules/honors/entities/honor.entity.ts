@@ -70,7 +70,7 @@ export class Honor {
   @Column({ name: 'endAt', type: 'timestamp', nullable: true })
   endAt: Date | null;
 
-  @Column({ default: 'ACTIVE' })
+  @Column({ type: 'varchar', default: 'ACTIVE' })
   status: HonorStatus;
 
   @Column({ name: 'displayOrder', default: 0 })

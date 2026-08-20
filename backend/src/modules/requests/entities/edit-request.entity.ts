@@ -39,7 +39,7 @@ export class EditRequest {
   @Column({ name: 'requestType', default: 'edit_member' })
   requestType: string;
 
-  @Column({ default: 'PENDING' })
+  @Column({ type: 'varchar', default: 'PENDING' })
   status: string;
 
   @Column({ type: 'jsonb' })

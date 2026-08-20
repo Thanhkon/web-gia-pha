@@ -32,7 +32,7 @@ export class Marriage {
   @JoinColumn({ name: 'memberBId' })
   memberB: Member;
 
-  @Column({ default: 'ACTIVE' })
+  @Column({ type: 'varchar', default: 'ACTIVE' })
   status: string;
 
   @Column({ name: 'marriedAt', type: 'timestamp', nullable: true })

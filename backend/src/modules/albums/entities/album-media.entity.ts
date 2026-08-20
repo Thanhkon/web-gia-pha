@@ -24,7 +24,7 @@ export class AlbumMedia {
   @JoinColumn({ name: 'albumId' })
   album: Album;
 
-  @Column()
+  @Column({ type: 'varchar' })
   type: MediaType;
 
   @Column({ type: 'text' })

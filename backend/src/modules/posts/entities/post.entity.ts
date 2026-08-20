@@ -77,10 +77,10 @@ export class Post {
   @Column({ type: 'varchar', nullable: true })
   category: string | null;
 
-  @Column({ default: 'DRAFT' })
+  @Column({ type: 'varchar', default: 'DRAFT' })
   status: PostStatus;
 
-  @Column({ default: 'FAMILY' })
+  @Column({ type: 'varchar', default: 'FAMILY' })
   visibility: PostVisibility;
 
   @Column({ name: 'thumbnailUrl', type: 'varchar', nullable: true })

@@ -34,8 +34,8 @@ export class Member {
   @Column({ name: 'otherName', type: 'varchar', nullable: true })
   otherName?: string | null;
 
-  @Column({ default: 'unknown' })
-  gender?: string;
+  @Column({ type: 'varchar', default: 'unknown' })
+  gender: string;
 
   @Column({ type: 'int', nullable: true })
   generation?: number | null;

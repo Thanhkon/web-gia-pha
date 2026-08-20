@@ -49,10 +49,10 @@ export class Album {
   @Column({ name: 'coverImagePublicId', type: 'varchar', nullable: true })
   coverImagePublicId: string | null;
 
-  @Column({ default: 'INTERNAL' })
+  @Column({ type: 'varchar', default: 'INTERNAL' })
   visibility: AlbumVisibility;
 
-  @Column({ default: 'VISIBLE' })
+  @Column({ type: 'varchar', default: 'VISIBLE' })
   status: AlbumStatus;
 
   @Column({ name: 'notifiedAt', type: 'timestamp', nullable: true })

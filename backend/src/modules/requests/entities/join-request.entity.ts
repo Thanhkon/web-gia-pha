@@ -37,7 +37,7 @@ export class JoinRequest {
   @JoinColumn({ name: 'targetMemberId' })
   targetMember: Member;
 
-  @Column({ default: 'PENDING' })
+  @Column({ type: 'varchar', default: 'PENDING' })
   status: string; // PENDING, APPROVED, REJECTED
 
   @Column({ type: 'text', nullable: true })

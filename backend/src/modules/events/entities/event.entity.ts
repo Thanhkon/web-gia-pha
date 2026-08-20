@@ -58,10 +58,10 @@ export class Event {
   @Column({ name: 'eventType', default: 'OTHER' })
   eventType: string;
 
-  @Column({ default: 'UPCOMING' })
+  @Column({ type: 'varchar', default: 'UPCOMING' })
   status: EventStatus;
 
-  @Column({ default: 'FAMILY' })
+  @Column({ type: 'varchar', default: 'FAMILY' })
   visibility: EventVisibility;
 
   @Column({ name: 'startAt', type: 'timestamp' })
