@@ -13,6 +13,7 @@ import PreferredFamily from "./pages/setting/PreferredFamily";
 import Notifications from "./pages/setting/Notifications";
 import { Toaster } from "react-hot-toast";
 import { Loader2 } from "lucide-react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./App.css";
 
 // Lazy load các trang nặng để giảm initial bundle size
@@ -62,6 +63,7 @@ const App = () => {
   return (
     <ErrorBoundary>
       <Toaster position="top-right" />
+      <SpeedInsights />
       <Router>
         <Suspense fallback={<PageLoader />}>
           <div className="app-container">
