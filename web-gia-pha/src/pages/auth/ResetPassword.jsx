@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import apiClient from '../../utils/apiClient';
+import '../../css/pages/Auth.css';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -17,13 +18,13 @@ const ResetPassword = () => {
 
   if (!resetToken) {
     return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>Lỗi</h1>
-            <p>Liên kết không hợp lệ hoặc đã hết hạn.</p>
-          </div>
-          <button className="auth-button" onClick={() => navigate('/login')}>
+      <div className="auth-page">
+        <div className="auth-box">
+          <h2>Lỗi</h2>
+          <p style={{ textAlign: 'center', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
+            Liên kết không hợp lệ hoặc đã hết hạn.
+          </p>
+          <button className="btn-auth" onClick={() => navigate('/login')}>
             Quay lại Đăng nhập
           </button>
         </div>
@@ -63,16 +64,16 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h1>Đặt lại mật khẩu</h1>
-          <p>Nhập mật khẩu mới cho tài khoản của bạn</p>
-        </div>
+    <div className="auth-page">
+      <div className="auth-box">
+        <h2>Đặt Lại Mật Khẩu</h2>
+        <p style={{ textAlign: 'center', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
+          Nhập mật khẩu mới cho tài khoản của bạn
+        </p>
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <div className="input-with-icon">
-              <Lock className="input-icon" size={20} />
+          <div className="input-box">
+            <label className="label-auth">Mật khẩu mới</label>
+            <div className="password-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Mật khẩu mới"
@@ -83,17 +84,18 @@ const ResetPassword = () => {
               />
               <button
                 type="button"
-                className="toggle-password-btn"
+                className="btn-showPass"
                 onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          <div className="form-group">
-            <div className="input-with-icon">
-              <Lock className="input-icon" size={20} />
+          <div className="input-box">
+            <label className="label-auth">Xác nhận mật khẩu</label>
+            <div className="password-wrapper">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Xác nhận mật khẩu mới"
@@ -104,15 +106,16 @@ const ResetPassword = () => {
               />
               <button
                 type="button"
-                className="toggle-password-btn"
+                className="btn-showPass"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                tabIndex={-1}
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          <button type="submit" className="auth-button" disabled={isLoading}>
+          <button type="submit" className="btn-auth" disabled={isLoading} style={{ marginTop: '1rem' }}>
             {isLoading ? 'Đang xử lý...' : 'Xác nhận'}
           </button>
         </form>
